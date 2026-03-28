@@ -243,12 +243,12 @@ Deferred items:
 
 | Phase | Status | Branch | Notes |
 |-------|--------|--------|-------|
-| Phase 1: Fee Removal & Code Purge | 🟢 | `phase1/fee-removal-cleanup` | Complete (runtime restricted) |
-| Phase 1.5: Deep Algorithm Cleanup | 🔴 | (deferred) | Optional future work |
-| Phase 2: Rebrand | 🟢 | `phase2/rebrand` | Task 2.1 ✅, 2.2 ✅, 2.3 ⏭️ deferred, 2.4 ✅ |
-| Phase 3: Podman Test Harness | 🔴 | `phase3/test-harness` | After Phase 2 |
-| Phase 4: CI/CD Pipeline | 🔴 | `phase4/ci-cd` | Depends on Phase 3 |
-| Phase 5: Documentation | 🔴 | `phase5/docs` | Can start during Phase 3 |
+| Phase 1: Fee Removal & Code Purge | 🟡 | merged to master | Task 1.1 ✅ fee removed. Task 1.2 PARTIAL — coins[] stripped but dead algo code remains (~200 refs). Task 1.3 not started. **REVISIT AFTER PHASE 3.** |
+| Phase 2: Rebrand | 🟢 | merged to master | Task 2.1 ✅, 2.2 ✅, 2.3 ⏭️ deferred, 2.4 ✅ |
+| Phase 3: Podman Test Harness | 🔴 | — | **CURRENT** — create from master |
+| Phase 1 (Round 2): Deep Code Purge | 🔴 | — | After Phase 3. Remove dead algo code from cryptonight.hpp, cryptonight_aesni.h, minethd.cpp, gpu.cpp, NVIDIA kernels |
+| Phase 4: CI/CD Pipeline | 🔴 | — | Depends on Phase 3 |
+| Phase 5: Documentation | 🔴 | — | Can start during Phase 4 |
 
 ### Session Notes
 _(Updated by cron sessions as work progresses)_

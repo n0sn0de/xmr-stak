@@ -33,9 +33,11 @@ A cron job fires every 20 minutes. Each session:
 ## Blockers
 _(none)_
 
-## Completed Phases
-- **Phase 1 ✅** — Dev fee removal, algorithm strip to cryptonight_gpu only (merged to master)
+## Phase Status
+- **Phase 1 🟡 PARTIAL** — Dev fee removed ✅, coins[] stripped ✅, but dead algorithm code still in codebase (~200 refs across cryptonight.hpp, cryptonight_aesni.h, minethd.cpp, gpu.cpp, NVIDIA kernels). **REVISIT AFTER PHASE 3.**
 - **Phase 2 ✅** — Rebrand to n0s-cngpu, license compliance, config simplification (merged to master)
+- **Phase 3 🔴 NEXT** — Podman test harness
+- **Phase 1 Round 2 🔴** — Deep code purge of dead algorithms (after Phase 3, before Phase 4)
 
 ## Session Log
 
