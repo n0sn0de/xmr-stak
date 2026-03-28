@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o.d"
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o"
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o.d"
+  "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o"
+  "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o.d"
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o"
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o.d"
   "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o"

@@ -2,7 +2,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-// STRIPPED: variant4_random_math.h removed (CryptonightR not supported)
+#include "variant4_random_math.h"
 
 #if defined _MSC_VER
 #define ABI_ATTRIBUTE
@@ -11,41 +11,19 @@
 #endif
 
 struct cryptonight_ctx;
-struct xmrstak_algo; // Forward declaration
 
 typedef void (*cn_mainloop_fun)(cryptonight_ctx* ctx);
 typedef void (*cn_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
 typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
 
-// STUB: CryptonightR support removed, v4_compile_code not needed for cn_gpu
-// Stub implementation to satisfy compile-time requirements
-inline void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size) {
-	// Empty stub - CryptonightR not supported
-}
-
-// STUB: extra_ctx_r kept for compile-time compatibility only (unused by cn_gpu)
-// Minimal stub to satisfy cryptonight_aesni.h requirements
-struct V4_Instruction_stub { uint8_t dummy[8]; };
-#define NUM_INSTRUCTIONS_MAX 256
-using V4_Instruction = V4_Instruction_stub;
+void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size);
 
 struct extra_ctx_r
 {
 	uint64_t height = 0;
-	V4_Instruction code[NUM_INSTRUCTIONS_MAX + 1]; // Stub array
+	// the buffer must be able to hold NUM_INSTRUCTIONS_MAX and a termination instruction
+	V4_Instruction code[NUM_INSTRUCTIONS_MAX + 1];
 };
-
-// STUB: v4_random_math functions - empty stubs for compile-time compatibility
-template<typename T>
-inline void v4_random_math(V4_Instruction* code, const void* data) {
-	// Empty stub - CryptonightR not supported
-}
-
-template<typename T>
-inline int v4_random_math_init(V4_Instruction* code, uint64_t height) {
-	// Empty stub - CryptonightR not supported
-	return 0;
-}
 
 struct cryptonight_ctx
 {

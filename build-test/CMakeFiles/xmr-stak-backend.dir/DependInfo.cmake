@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/nitro/xmr-stak/xmrstak/backend/backendConnector.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o.d"
   "/home/nitro/xmr-stak/xmrstak/backend/cpu/cpuType.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o.d"
+  "/home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o.d"
   "/home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o.d"
   "/home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o.d"
   "/home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cryptonight_common.cpp" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o" "gcc" "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o.d"

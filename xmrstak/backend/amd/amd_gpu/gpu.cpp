@@ -13,7 +13,7 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-// STRIPPED: OclCryptonightR_gen.hpp removed (CryptonightR not supported)
+#include "xmrstak/backend/amd/OclCryptonightR_gen.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/net/msgstruct.hpp"

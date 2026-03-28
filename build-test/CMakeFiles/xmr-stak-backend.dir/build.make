@@ -97,10 +97,24 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/nitro/xmr-stak/xmrstak/backend/cpu/cpuType.cpp -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.s
 
+CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
+CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp
+CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp
+
+CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp > CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i
+
+CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s
+
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.i: cmake_force
@@ -114,7 +128,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.s: cma
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.i: cmake_force
@@ -128,7 +142,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.s: c
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cryptonight_common.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cryptonight_common.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.i: cmake_force
@@ -142,7 +156,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/hwlocMemory.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/hwlocMemory.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.i: cmake_force
@@ -156,7 +170,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.s: cmake_for
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/jconf.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/jconf.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.i: cmake_force
@@ -170,7 +184,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/cpu/minethd.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/cpu/minethd.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.i: cmake_force
@@ -184,7 +198,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o: /home/nitro/xmr-stak/xmrstak/backend/globalStates.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o -c /home/nitro/xmr-stak/xmrstak/backend/globalStates.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.i: cmake_force
@@ -198,7 +212,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o: /home/nitro/xmr-stak/xmrstak/http/httpd.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o -c /home/nitro/xmr-stak/xmrstak/http/httpd.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.i: cmake_force
@@ -212,7 +226,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o: /home/nitro/xmr-stak/xmrstak/http/webdesign.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o -c /home/nitro/xmr-stak/xmrstak/http/webdesign.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.i: cmake_force
@@ -226,7 +240,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o: /home/nitro/xmr-stak/xmrstak/jconf.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o -c /home/nitro/xmr-stak/xmrstak/jconf.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.i: cmake_force
@@ -240,7 +254,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/console.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/console.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.i: cmake_force
@@ -254,7 +268,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/environment.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/environment.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.i: cmake_force
@@ -268,7 +282,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/executor.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/executor.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.i: cmake_force
@@ -282,7 +296,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/telemetry.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/telemetry.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.i: cmake_force
@@ -296,7 +310,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/uac.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/uac.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.i: cmake_force
@@ -310,7 +324,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o: /home/nitro/xmr-stak/xmrstak/misc/utility.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o -c /home/nitro/xmr-stak/xmrstak/misc/utility.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.i: cmake_force
@@ -324,7 +338,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o: /home/nitro/xmr-stak/xmrstak/net/jpsock.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o -c /home/nitro/xmr-stak/xmrstak/net/jpsock.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.i: cmake_force
@@ -338,7 +352,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o: /home/nitro/xmr-stak/xmrstak/net/socket.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o -c /home/nitro/xmr-stak/xmrstak/net/socket.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.i: cmake_force
@@ -352,7 +366,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.s: cmake_force
 CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o: CMakeFiles/xmr-stak-backend.dir/flags.make
 CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o: /home/nitro/xmr-stak/xmrstak/version.cpp
 CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o: CMakeFiles/xmr-stak-backend.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o -MF CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o.d -o CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o -c /home/nitro/xmr-stak/xmrstak/version.cpp
 
 CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.i: cmake_force
@@ -367,6 +381,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.s: cmake_force
 xmr__stak__backend_OBJECTS = \
 "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o" \
 "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o" \
+"CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o" \
 "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o" \
 "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o" \
 "CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o" \
@@ -392,6 +407,7 @@ xmr__stak__backend_EXTERNAL_OBJECTS =
 
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o
+bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o
@@ -413,7 +429,7 @@ bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cp
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/build.make
 bin/libxmr-stak-backend.a: CMakeFiles/xmr-stak-backend.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Linking CXX static library bin/libxmr-stak-backend.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Linking CXX static library bin/libxmr-stak-backend.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/xmr-stak-backend.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/xmr-stak-backend.dir/link.txt --verbose=$(VERBOSE)
 

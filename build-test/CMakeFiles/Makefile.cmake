@@ -8,9 +8,12 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
   "/home/nitro/xmr-stak/CMakeLists.txt"
+  "CMakeFiles/3.28.3/CMakeASMCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeSystem.cmake"
+  "/usr/share/cmake-3.28/Modules/CMakeASMCompiler.cmake.in"
+  "/usr/share/cmake-3.28/Modules/CMakeASMInformation.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeCCompiler.cmake.in"
   "/usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c"
   "/usr/share/cmake-3.28/Modules/CMakeCInformation.cmake"
@@ -19,6 +22,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeCompilerIdDetection.cmake"
+  "/usr/share/cmake-3.28/Modules/CMakeDetermineASMCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeDetermineCompileFeatures.cmake"
@@ -36,6 +40,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-3.28/Modules/CMakeSystem.cmake.in"
   "/usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake"
+  "/usr/share/cmake-3.28/Modules/CMakeTestASMCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeTestCompilerCommon.cmake"
@@ -61,6 +66,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-3.28/Modules/Compiler/Fujitsu-DetermineCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/Compiler/GHS-DetermineCompiler.cmake"
+  "/usr/share/cmake-3.28/Modules/Compiler/GNU-ASM.cmake"
   "/usr/share/cmake-3.28/Modules/Compiler/GNU-C-DetermineCompiler.cmake"
   "/usr/share/cmake-3.28/Modules/Compiler/GNU-C.cmake"
   "/usr/share/cmake-3.28/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake"
@@ -130,11 +136,13 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/3.28.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeCXXCompiler.cmake"
+  "CMakeFiles/3.28.3/CMakeASMCompiler.cmake"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
+  "CMakeFiles/xmr-stak-asm.dir/DependInfo.cmake"
   "CMakeFiles/xmr-stak-c.dir/DependInfo.cmake"
   "CMakeFiles/xmr-stak-backend.dir/DependInfo.cmake"
   "CMakeFiles/xmr-stak.dir/DependInfo.cmake"

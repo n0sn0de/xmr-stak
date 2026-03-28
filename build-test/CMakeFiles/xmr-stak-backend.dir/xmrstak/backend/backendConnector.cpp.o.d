@@ -220,6 +220,8 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/dl_find_object.h \
  /home/nitro/xmr-stak/xmrstak/backend/cpu/minethd.hpp \
  /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cryptonight.h \
+ /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/variant4_random_math.h \
+ /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/c_blake256.h \
  /home/nitro/xmr-stak/./xmrstak/jconf.hpp \
  /home/nitro/xmr-stak/./xmrstak/misc/coinDescription.hpp \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \

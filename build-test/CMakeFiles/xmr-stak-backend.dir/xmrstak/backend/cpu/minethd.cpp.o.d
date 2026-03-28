@@ -282,6 +282,10 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/xopintrin.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/cpuid.h \
  /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/cryptonight.h \
+ /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/variant4_random_math.h \
+ /home/nitro/xmr-stak/./xmrstak/misc/console.hpp \
+ /home/nitro/xmr-stak/./xmrstak/misc/environment.hpp \
+ /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/c_blake256.h \
  /usr/include/c++/13/cfenv /usr/include/c++/13/fenv.h /usr/include/fenv.h \
  /usr/include/x86_64-linux-gnu/bits/fenv.h /usr/include/memory.h \
  /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h \
@@ -294,7 +298,6 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: \
  /home/nitro/xmr-stak/xmrstak/backend/cpu/crypto/soft_aes.hpp \
  /home/nitro/xmr-stak/xmrstak/backend/cpu/jconf.hpp \
  /home/nitro/xmr-stak/./xmrstak/params.hpp \
- /home/nitro/xmr-stak/./xmrstak/misc/environment.hpp \
  /home/nitro/xmr-stak/./xmrstak/misc/home_dir.hpp /usr/include/pwd.h \
  /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
@@ -314,7 +317,6 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o: \
  /usr/include/c++/13/bits/allocated_ptr.h \
  /usr/include/c++/13/ext/aligned_buffer.h \
  /usr/include/c++/13/ext/concurrence.h \
- /home/nitro/xmr-stak/./xmrstak/misc/console.hpp \
  /home/nitro/xmr-stak/./xmrstak/backend/iBackend.hpp \
  /home/nitro/xmr-stak/./xmrstak/net/msgstruct.hpp \
  /usr/include/c++/13/chrono /usr/include/c++/13/climits \

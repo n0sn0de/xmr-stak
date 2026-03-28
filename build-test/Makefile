@@ -162,6 +162,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named xmr-stak-asm
+
+# Build rule for target.
+xmr-stak-asm: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 xmr-stak-asm
+.PHONY : xmr-stak-asm
+
+# fast build rule for target.
+xmr-stak-asm/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-asm.dir/build.make CMakeFiles/xmr-stak-asm.dir/build
+.PHONY : xmr-stak-asm/fast
+
+#=============================================================================
 # Target rules for targets named xmr-stak-c
 
 # Build rule for target.
@@ -247,6 +260,46 @@ xmrstak/backend/cpu/cpuType.s: xmrstak/backend/cpu/cpuType.cpp.s
 xmrstak/backend/cpu/cpuType.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-backend.dir/build.make CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.s
 .PHONY : xmrstak/backend/cpu/cpuType.cpp.s
+
+xmrstak/backend/cpu/crypto/CryptonightR_gen.o: xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.o
+
+# target to build an object file
+xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-backend.dir/build.make CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o
+
+xmrstak/backend/cpu/crypto/CryptonightR_gen.i: xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.i
+
+# target to preprocess a source file
+xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-backend.dir/build.make CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.i
+
+xmrstak/backend/cpu/crypto/CryptonightR_gen.s: xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.s
+
+# target to generate assembly for a file
+xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-backend.dir/build.make CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s
+.PHONY : xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.s
+
+xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.o: xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S.o
+.PHONY : xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.o
+
+# target to build an object file
+xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-asm.dir/build.make CMakeFiles/xmr-stak-asm.dir/xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S.o
+.PHONY : xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S.o
+
+xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.o: xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S.o
+.PHONY : xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.o
+
+# target to build an object file
+xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/xmr-stak-asm.dir/build.make CMakeFiles/xmr-stak-asm.dir/xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S.o
+.PHONY : xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S.o
 
 xmrstak/backend/cpu/crypto/c_blake256.o: xmrstak/backend/cpu/crypto/c_blake256.c.o
 .PHONY : xmrstak/backend/cpu/crypto/c_blake256.o
@@ -861,6 +914,7 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... xmr-stak"
+	@echo "... xmr-stak-asm"
 	@echo "... xmr-stak-backend"
 	@echo "... xmr-stak-c"
 	@echo "... xmrstak/backend/backendConnector.o"
@@ -869,6 +923,11 @@ help:
 	@echo "... xmrstak/backend/cpu/cpuType.o"
 	@echo "... xmrstak/backend/cpu/cpuType.i"
 	@echo "... xmrstak/backend/cpu/cpuType.s"
+	@echo "... xmrstak/backend/cpu/crypto/CryptonightR_gen.o"
+	@echo "... xmrstak/backend/cpu/crypto/CryptonightR_gen.i"
+	@echo "... xmrstak/backend/cpu/crypto/CryptonightR_gen.s"
+	@echo "... xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.o"
+	@echo "... xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.o"
 	@echo "... xmrstak/backend/cpu/crypto/c_blake256.o"
 	@echo "... xmrstak/backend/cpu/crypto/c_blake256.i"
 	@echo "... xmrstak/backend/cpu/crypto/c_blake256.s"

@@ -97,9 +97,24 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
  /home/nitro/xmr-stak/./xmrstak/backend/cpu/crypto/cryptonight.h \
- /usr/include/inttypes.h /home/nitro/xmr-stak/./xmrstak/params.hpp \
- /home/nitro/xmr-stak/./xmrstak/misc/home_dir.hpp \
- /usr/include/c++/13/string /usr/include/c++/13/bits/stringfwd.h \
+ /usr/include/inttypes.h \
+ /home/nitro/xmr-stak/./xmrstak/backend/cpu/crypto/variant4_random_math.h \
+ /home/nitro/xmr-stak/./xmrstak/backend/cpu/crypto/../../cryptonight.hpp \
+ /usr/include/c++/13/array /usr/include/c++/13/compare \
+ /usr/include/c++/13/initializer_list \
+ /usr/include/c++/13/bits/stl_algobase.h \
+ /usr/include/c++/13/bits/cpp_type_traits.h \
+ /usr/include/c++/13/ext/type_traits.h \
+ /usr/include/c++/13/ext/numeric_traits.h \
+ /usr/include/c++/13/bits/stl_iterator_base_types.h \
+ /usr/include/c++/13/bits/stl_iterator_base_funcs.h \
+ /usr/include/c++/13/bits/concept_check.h \
+ /usr/include/c++/13/debug/assertions.h \
+ /usr/include/c++/13/bits/stl_iterator.h \
+ /usr/include/c++/13/bits/ptr_traits.h /usr/include/c++/13/debug/debug.h \
+ /usr/include/c++/13/bits/predefined_ops.h \
+ /usr/include/c++/13/bits/range_access.h /usr/include/c++/13/string \
+ /usr/include/c++/13/bits/stringfwd.h \
  /usr/include/c++/13/bits/memoryfwd.h \
  /usr/include/c++/13/bits/char_traits.h \
  /usr/include/c++/13/bits/postypes.h /usr/include/c++/13/cwchar \
@@ -110,7 +125,6 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/c++/13/bits/allocator.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++allocator.h \
  /usr/include/c++/13/bits/new_allocator.h \
- /usr/include/c++/13/bits/cpp_type_traits.h \
  /usr/include/c++/13/bits/localefwd.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++locale.h \
  /usr/include/c++/13/clocale /usr/include/locale.h \
@@ -118,22 +132,9 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/c++/13/cctype /usr/include/ctype.h \
  /usr/include/c++/13/bits/ostream_insert.h \
  /usr/include/c++/13/bits/cxxabi_forced.h \
- /usr/include/c++/13/bits/stl_iterator_base_funcs.h \
- /usr/include/c++/13/bits/concept_check.h \
- /usr/include/c++/13/debug/assertions.h \
- /usr/include/c++/13/bits/stl_iterator_base_types.h \
- /usr/include/c++/13/bits/stl_iterator.h \
- /usr/include/c++/13/ext/type_traits.h \
- /usr/include/c++/13/bits/ptr_traits.h \
  /usr/include/c++/13/bits/stl_function.h \
  /usr/include/c++/13/backward/binders.h \
- /usr/include/c++/13/ext/numeric_traits.h \
- /usr/include/c++/13/bits/stl_algobase.h \
- /usr/include/c++/13/debug/debug.h \
- /usr/include/c++/13/bits/predefined_ops.h \
  /usr/include/c++/13/bits/refwrap.h \
- /usr/include/c++/13/bits/range_access.h \
- /usr/include/c++/13/initializer_list \
  /usr/include/c++/13/bits/basic_string.h \
  /usr/include/c++/13/ext/alloc_traits.h \
  /usr/include/c++/13/bits/alloc_traits.h \
@@ -154,7 +155,13 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/bits/charconv.h \
  /usr/include/c++/13/bits/functional_hash.h \
- /usr/include/c++/13/bits/basic_string.tcc /usr/include/pwd.h \
+ /usr/include/c++/13/bits/basic_string.tcc /usr/include/string.h \
+ /usr/include/strings.h \
+ /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+ /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
+ /home/nitro/xmr-stak/./xmrstak/backend/cpu/crypto/c_blake256.h \
+ /home/nitro/xmr-stak/./xmrstak/params.hpp \
+ /home/nitro/xmr-stak/./xmrstak/misc/home_dir.hpp /usr/include/pwd.h \
  /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
@@ -166,10 +173,7 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/linux/close_range.h \
  /home/nitro/xmr-stak/./xmrstak/misc/executor.hpp \
  /home/nitro/xmr-stak/./xmrstak/misc/telemetry.hpp \
- /usr/include/c++/13/cstring /usr/include/string.h /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /home/nitro/xmr-stak/./xmrstak/misc/thdq.hpp \
+ /usr/include/c++/13/cstring /home/nitro/xmr-stak/./xmrstak/misc/thdq.hpp \
  /usr/include/c++/13/condition_variable \
  /usr/include/c++/13/bits/shared_ptr.h \
  /usr/include/c++/13/bits/shared_ptr_base.h \
@@ -210,8 +214,6 @@ CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o: \
  /usr/include/c++/13/bits/istream.tcc \
  /home/nitro/xmr-stak/./xmrstak/cpputil/read_write_lock.h \
  /home/nitro/xmr-stak/./xmrstak/net/msgstruct.hpp \
- /home/nitro/xmr-stak/./xmrstak/backend/cryptonight.hpp \
- /usr/include/c++/13/array /usr/include/c++/13/compare \
  /usr/include/c++/13/chrono /usr/include/c++/13/climits \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h \

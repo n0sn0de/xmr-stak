@@ -98,11 +98,13 @@ bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libcrypto.so
 bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libhwloc.so
 bin/xmr-stak: bin/libxmr-stak-c.a
 bin/xmr-stak: bin/libxmr-stak-backend.a
+bin/xmr-stak: bin/libxmr-stak-asm.a
 bin/xmr-stak: bin/libxmr-stak-c.a
 bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libmicrohttpd.so
 bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libssl.so
 bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libcrypto.so
 bin/xmr-stak: /usr/lib/x86_64-linux-gnu/libhwloc.so
+bin/xmr-stak: bin/libxmr-stak-asm.a
 bin/xmr-stak: CMakeFiles/xmr-stak.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/nitro/xmr-stak/build-test/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/xmr-stak"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/xmr-stak.dir/link.txt --verbose=$(VERBOSE)
