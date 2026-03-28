@@ -1,0 +1,27 @@
+n0s-cngpu — CryptoNight-GPU Miner
+====================================
+
+This software is a fork of xmr-stak, originally developed by:
+
+  fireice-uk and psychocrypt
+  https://github.com/fireice-uk/xmr-stak
+
+The original xmr-stak was released under the GNU General Public License
+version 3 (GPLv3). This fork, n0s-cngpu, is also licensed under GPLv3.
+
+In accordance with GPLv3 Section 5, this notice documents the following
+modifications made in the n0s-cngpu fork:
+
+  - Removed developer fee system (pool switching, donation addresses)
+  - Stripped runtime support to CryptoNight-GPU algorithm only
+  - Rebranded project identity (binary name, version strings, UI)
+  - Updated copyright headers to reflect fork contributors
+  - Simplified configuration for single-algorithm use
+
+Original copyright:
+  Copyright (C) 2017-2019 fireice-uk, psychocrypt
+
+Fork copyright:
+  Copyright (C) 2026 n0sn0de contributors
+
+The full text of the GPLv3 license is included in the LICENSE file.
