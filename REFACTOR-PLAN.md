@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency. Remove ~70% of dead algorithm code, all developer fee infrastructure, and the entire NVIDIA/CUDA backend. Rebrand as `n0s-cngpu`, add proper CI/CD with multi-distro Podman testing, and ship clean release builds.
+Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency supporting both AMD (OpenCL) and NVIDIA (CUDA) GPUs. Remove ~60% of dead algorithm code and all developer fee infrastructure. Rebrand as `n0s-cngpu`, add proper CI/CD with multi-distro Podman testing, and ship clean release builds.
 
 ---
 
@@ -47,15 +47,18 @@ Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency. 
 - [ ] CPU minethd.cpp — remove all algorithm switch branches except `cryptonight_gpu`
 - [ ] Remove `autoAdjust.hpp` multi-algo memory calculations (simplify to cn_gpu only)
 
-### Task 1.3: Remove NVIDIA/CUDA Backend Entirely
-- [ ] Delete entire `xmrstak/backend/nvidia/` directory (23 files)
-- [ ] Remove CUDA_ENABLE from CMakeLists.txt
-- [ ] Remove CUDA find_package, build targets, and link libraries
-- [ ] Remove nvidia from BACKEND_TYPES
-- [ ] Remove .cu file compilation rules
-- [ ] Update backend connector to not reference nvidia
+### Task 1.3: Clean NVIDIA/CUDA Backend (KEEP — CNGPU runs on both AMD and NVIDIA)
+- [ ] Strip non-CNGPU kernel code from `nvcc_code/` (keep `cuda_cryptonight_gpu.hpp`, remove other algo-specific kernels)
+- [ ] Remove `CudaCryptonightR_gen.cpp/.hpp` (CryptonightR is not cn-gpu)
+- [ ] Simplify `nvidia/minethd.cpp` — remove all algorithm branches except `cryptonight_gpu`
+- [ ] Simplify `nvidia/autoAdjust.hpp` — remove multi-algo memory calculations
+- [ ] Clean up `nvidia/jconf.cpp` — remove non-GPU algo config paths
+- [ ] Keep CUDA_ENABLE in CMakeLists.txt (users choose at build time)
 
-**Validation:** Build with `cmake -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON .. && make` — must compile clean and mine cn-gpu.
+**Validation:** Build ALL three configurations and verify:
+- AMD only: `cmake -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON .. && make`
+- NVIDIA only: `cmake -DCUDA_ENABLE=ON -DOpenCL_ENABLE=OFF .. && make`
+- Both: `cmake -DCUDA_ENABLE=ON -DOpenCL_ENABLE=ON .. && make`
 
 ---
 
@@ -76,8 +79,7 @@ Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency. 
 - [ ] Update copyright headers: add `Copyright (C) 2026 n0sn0de contributors`
 - [ ] Keep original copyright: `Copyright (C) 2017-2019 fireice-uk, psychocrypt`
 - [ ] Update THIRD-PARTY-LICENSES:
-  - Keep all existing entries (wolf9466 AMD, RapidJSON, PicoSHA2, cpputil)
-  - Remove NVIDIA reference (backend deleted)
+  - Keep all existing entries (tsiv/KlausT NVIDIA, wolf9466 AMD, RapidJSON, PicoSHA2, cpputil)
   - Add note about fork lineage
 - [ ] Add NOTICE file documenting the fork relationship per GPLv3 §5
 
@@ -120,10 +122,13 @@ Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency. 
   - Reports pass/fail per distro
   - Supports parallel builds
 
-### Task 3.2: OpenCL Build Testing
+### Task 3.2: GPU Backend Build Testing
 - [ ] Add OpenCL variant Containerfiles (at least for jammy + noble with ROCm)
 - [ ] `Containerfile.noble-opencl` — install ROCm OpenCL dev headers
-- [ ] Test that OpenCL backend compiles (can't test GPU at container runtime without GPU passthrough, but compilation must succeed)
+- [ ] Test that OpenCL backend compiles (compilation only — no GPU passthrough in containers)
+- [ ] Add CUDA variant Containerfiles (at least for focal + jammy + noble)
+- [ ] `Containerfile.noble-cuda` — install CUDA toolkit dev headers
+- [ ] Test that CUDA backend compiles (compilation only — no GPU in containers)
 
 ### Task 3.3: Test Runner Script
 - [ ] `scripts/test-all-distros.sh` — master test orchestrator
@@ -144,7 +149,7 @@ Strip xmr-stak down to a single-purpose CryptoNight-GPU miner for RYO Currency. 
 - [ ] Create `.github/workflows/build.yml`:
   - Trigger: push to main, PR to main
   - Matrix: bionic, focal, jammy, noble × cpu-only
-  - Additional job: noble-opencl
+  - Additional jobs: noble-opencl, noble-cuda
   - Uses the Containerfiles from Phase 3
 - [ ] Create `.github/workflows/release.yml`:
   - Trigger: tag push (v*)
@@ -237,7 +242,6 @@ _(Updated by cron sessions as work progresses)_
 **2026-03-28:** Initial plan created. Codebase audited:
 - ~40K lines of C/C++ code
 - 18 algorithm variants, only keeping 1 (cryptonight_gpu)
-- NVIDIA backend: 23 files to delete entirely
-- Dev fee: touches 8 files, ~100 lines of pool switching logic
-- GPU OpenCL kernels: 9 .cl files, only 1 needed (cryptonight_gpu.cl + its deps)
+- Both GPU backends kept: AMD/OpenCL (9 .cl files → strip to cn_gpu) + NVIDIA/CUDA (strip to cn_gpu kernels)
+- Dev fee: touches 8 files, ~100 lines of pool switching logic to remove
 - License: GPLv3, must keep + add fork copyright notice
