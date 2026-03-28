@@ -11,32 +11,57 @@ A cron job fires every 20 minutes. Each session:
 ---
 
 ## Current Task
-**Phase 1, Task 1.2: Remove Non-CNGPU Algorithm Code** (IN PROGRESS - BLOCKED)
+**Phase 1, Task 1.2: Remove Non-CNGPU Algorithm Code** (IN PROGRESS - NEW BLOCKER)
 
 ## Next Steps
-**BLOCKER:** CPU backend (cryptonight_aesni.h, minethd.cpp) has extensive algorithm-specific
-code that prevents compilation after stripping algorithm enum. Hundreds of lines of template
-specializations and switch statements for removed algorithms.
+**NEW BLOCKER:** cryptonight_aesni.h has deep CryptonightR integration with template-based
+v4_random_math calls that cannot be easily stubbed. Simple stubs don't match template signatures.
 
 **Two paths forward:**
-1. **Major refactor** - Strip all algorithm branches from CPU backend (high risk, ~1000+ lines)
-2. **Stub approach** - Keep enum stubs for removed algos to avoid compile errors, mark as unsupported at runtime
+1. **#ifdef approach** - Wrap all CryptonightR code paths in cryptonight_aesni.h with compile-time guards
+2. **Skip CPU cleanup** - Keep algorithm enum and CPU code as-is, focus only on removing unused OpenCL/CUDA kernels
 
-**Recommendation:** Proceed with stub approach for now — keep algorithm enum entries as compile-time
-stubs, reject them at runtime in jconf validation. This allows us to continue Phase 1 cleanup without
-getting stuck in a massive CPU backend refactor. Full cleanup can be Phase 1.5 after core removals are done.
+**Recommendation:** Option 2 (skip CPU cleanup for now). The CPU backend is not the primary target
+for n0s-cngpu. Focus on:
+1. Remove unused OpenCL kernels (keep only cryptonight_gpu.cl)
+2. Remove unused CUDA kernels (keep only cn_gpu variants)
+3. Continue to Phase 2 (rebrand)
+4. Mark CPU backend for Phase 1.5 optional cleanup
 
 **Next session action items:**
-1. Revert algorithm enum stripping commit
-2. Instead, keep algorithm IDs but remove from coins[] array
-3. Add runtime validation in jconf to reject non-GPU algorithms
-4. Continue with Phase 1 cleanup (remove CryptonightR files, remove unused OpenCL kernels)
-5. Mark CPU backend multi-algo code for future removal (Phase 1.5)
+1. Revert the WIP commit that breaks compilation
+2. Accept that coins[] array strip (commit fb5e124) is sufficient for runtime restrictions
+3. Move to OpenCL kernel cleanup (remove cryptonight.cl, keep only cryptonight_gpu.cl)
+4. Move to Phase 2 if kernel cleanup succeeds
 
 ## Blockers
 _(none yet)_
 
 ## Session Log
+
+### Session 3 — 2026-03-28 16:19 CDT (CryptonightR File Removal - BLOCKED)
+✅ **Completed:**
+- Adopted stub approach: kept algorithm enum intact, stripped coins[] array to cryptonight_gpu + ryo only
+- Build succeeds with stub approach (commit fb5e124)
+- Removed CryptonightR files:
+  - CryptonightR_gen.cpp/.hpp (CPU/AMD/NVIDIA)
+  - CryptonightR_template ASM files + WOW templates
+  - variant4_random_math.h
+- Removed cryptonight_v8_main_loop ASM files (not needed for cn_gpu)
+- Removed xmr-stak-asm CMake target entirely
+- Removed all xmr-stak-asm link dependencies from CMakeLists.txt
+
+⚠️ **NEW BLOCKER:** cryptonight_aesni.h has template-based CryptonightR code that cannot compile
+with simple stubs. Template parameter mismatch on v4_random_math_init<ALGO>() calls.
+
+**Commit log:**
+- fb5e124: "Strip coins array to cryptonight_gpu only (stub approach)" — ✅ WORKING BUILD
+- 0ac153f: "WIP: Remove CryptonightR files and ASM optimizations" — ❌ BREAKS BUILD
+
+**Decision:** Revert WIP commit, accept coins[] strip as sufficient. Skip deep CPU backend cleanup.
+Focus on OpenCL/CUDA kernel cleanup instead.
+
+**Next session:** Revert 0ac153f, move to OpenCL kernel cleanup.
 
 ### Session 2 — 2026-03-28 16:13 CDT (Algorithm Enum Strip - BLOCKED)
 ⚠️ **Blocked on CPU backend complexity**
