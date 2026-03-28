@@ -35,10 +35,7 @@ struct coinDescription
 struct coin_selection
 {
 	const char* coin_name = nullptr;
-	/* [0] -> user pool
-		 * [1] -> dev pool
-		 */
-	coinDescription pool_coin[2];
+	coinDescription pool_coin[2]; // [0] = user pool, [1] = same (dev pool removed in n0s-cngpu)
 	const char* default_pool = nullptr;
 
 	coin_selection() = default;
@@ -55,32 +52,29 @@ struct coin_selection
 		pool_coin[1] = dev_coinDescription;
 	}
 
-	/** get coin description for the pool
+	/** get coin description
 		 *
-		 * @param poolId 0 select dev pool, else the user pool is selected
+		 * @param poolId ignored — always returns user pool coin description
 		 */
 	inline coinDescription GetDescription(size_t poolId) const
 	{
-		coinDescription tmp = (poolId == 0 ? pool_coin[1] : pool_coin[0]);
-		return tmp;
+		(void)poolId;
+		return pool_coin[0]; // always user pool (no dev pool)
 	}
 
-	/** return all POW algorithm for the current selected currency
+	/** return all POW algorithms for the current coin
 		 *
 		 * @return required POW algorithms without duplicated entries
 		 */
 	inline std::vector<xmrstak_algo> GetAllAlgorithms()
 	{
 		std::vector<xmrstak_algo> allAlgos = {
-			GetDescription(0).GetMiningAlgo(),
-			GetDescription(0).GetMiningAlgoRoot(),
-			GetDescription(1).GetMiningAlgo(),
-			GetDescription(1).GetMiningAlgoRoot()};
+			pool_coin[0].GetMiningAlgo(),
+			pool_coin[0].GetMiningAlgoRoot()};
 
 		std::sort(allAlgos.begin(), allAlgos.end());
 		std::remove(allAlgos.begin(), allAlgos.end(), invalid_algo);
 		auto last = std::unique(allAlgos.begin(), allAlgos.end());
-		// remove duplicated algorithms
 		allAlgos.erase(last, allAlgos.end());
 
 		return allAlgos;

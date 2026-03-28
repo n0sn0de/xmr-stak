@@ -108,7 +108,6 @@ void help()
 	cout << "  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)" << endl;
 	cout << "  -p, --pass PASSWD          pool password, in the most cases x or empty \"\"" << endl;
 	cout << "  --use-nicehash             the pool should run in nicehash mode" << endl;
-	cout << "  --currency NAME            currency to mine" << endl;
 	cout << endl;
 #ifdef _WIN32
 	cout << "Environment variables:\n"
@@ -117,10 +116,7 @@ void help()
 	cout << "                	            for non UAC execution" << endl;
 	cout << endl;
 #endif
-	std::string algos;
-	jconf::GetAlgoList(algos);
-	cout << "Supported coin options: " << endl
-		 << algos << endl;
+	cout << "Algorithm: CryptoNight-GPU (hardcoded)" << endl;
 	cout << "Version: " << get_version_str_short() << endl;
 	cout << "n0s-cngpu - CryptoNight-GPU miner for RYO Currency" << endl;
 	cout << "Forked from xmr-stak by fireice_uk and psychocrypt - GPLv3" << endl;
@@ -153,7 +149,7 @@ std::string get_multipool_entry(bool& final)
 			  << std::endl;
 
 	std::string pool;
-	std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+	std::cout << "- Pool address: e.g. pool.ryo-currency.com:3333" << std::endl;
 	std::cin >> pool;
 
 	std::string userName;
@@ -222,22 +218,9 @@ void do_guided_pool_config()
 	configTpl.set(std::string(tpl));
 	bool prompted = false;
 
-	auto currency = params::inst().currency;
-	if(currency.empty() || !jconf::IsOnAlgoList(currency))
-	{
-		prompt_once(prompted);
-
-		std::string tmp;
-		while(tmp.empty() || !jconf::IsOnAlgoList(tmp))
-		{
-			std::string list;
-			jconf::GetAlgoList(list);
-			std::cout << "- Please enter the currency that you want to mine: " << std::endl;
-			std::cout << list << std::endl;
-			std::cin >> tmp;
-		}
-		currency = tmp;
-	}
+	// n0s-cngpu: hardcoded to cryptonight_gpu — no coin selection needed
+	auto currency = std::string("cryptonight_gpu");
+	params::inst().currency = currency;
 
 	auto pool = params::inst().poolURL;
 	bool userSetPool = true;
@@ -246,7 +229,7 @@ void do_guided_pool_config()
 		prompt_once(prompted);
 
 		userSetPool = false;
-		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+		std::cout << "- Pool address: e.g. pool.ryo-currency.com:3333" << std::endl;
 		std::cin >> pool;
 	}
 
@@ -572,6 +555,7 @@ int main(int argc, char* argv[])
 		}
 		else if(opName.compare("--currency") == 0)
 		{
+			// n0s-cngpu: --currency is accepted but ignored (hardcoded to cryptonight_gpu)
 			++i;
 			if(i >= argc)
 			{
@@ -579,7 +563,7 @@ int main(int argc, char* argv[])
 				win_exit();
 				return 1;
 			}
-			params::inst().currency = argv[i];
+			printer::inst()->print_msg(L1, "Note: --currency is ignored. n0s-cngpu only supports cryptonight_gpu.");
 		}
 		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
 		{
