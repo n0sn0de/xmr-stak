@@ -32,3 +32,4 @@ cmake-build-debug/
 ._*
 build/
 *.txt
+build-cpu/

@@ -11,36 +11,61 @@ A cron job fires every 20 minutes. Each session:
 ---
 
 ## Current Task
-**Phase 1 Complete — Moving to Phase 2**
+**Phase 2, Task 2.1: Project Identity (IN PROGRESS)**
 
 ## Next Steps
-**Phase 1 Decision:** Skip aggressive algorithm code removal. Rationale:
-1. **Runtime restriction is sufficient:** coins[] strip (commit fb5e124) prevents non-GPU mining
-2. **CPU backend complexity:** 1000+ lines of algorithm-specific template code tightly coupled
-3. **OpenCL kernel complexity:** cryptonight.cl is base, cryptonight_gpu.cl injected via regex — not modular
-4. **Risk vs reward:** Deep cleanup = high break risk, low user-facing value for a GPU miner
+**Phase 2.1 partial complete:** Basic rebrand done, more user-facing strings to update
+1. ✅ CMake project name updated
+2. ✅ Binary output renamed to n0s-cngpu
+3. ✅ Version strings updated (1.0.0)
+4. ✅ Startup banner updated
+5. ✅ Build verified working
 
-**Completed in Phase 1:**
-- ✅ Task 1.1: Developer fee system completely removed
-- ✅ Task 1.2 (partial): Runtime restricted to cryptonight_gpu via coins[] array strip
-- ✅ Build verified working (CPU-only configuration)
+**Remaining for Task 2.1:**
+- Update HTTP dashboard title/headers
+- Update error messages with xmr-stak references
+- Search for any remaining "xmr-stak" strings in user-facing output
 
-**Deferred to Phase 1.5 (optional future cleanup):**
-- Algorithm enum reduction (currently stubbed, works fine)
-- CPU backend algorithm code removal
-- OpenCL/CUDA kernel file removal
-- Hash function library cleanup
+**Next subtasks (Phase 2):**
+- Task 2.2: License compliance (copyright headers, NOTICE file)
+- Task 2.3: Configuration simplification (remove coin selection)
+- Task 2.4: Clean up legacy branding in configs
 
-**Next session:** Start Phase 2 (Rebrand to n0s-cngpu)
-1. Update CMake project name
-2. Rename binary output
-3. Update version strings and banner
-4. Test build + verify new branding
+**Next session action:** Continue Task 2.1 — update HTTP dashboard and remaining user-facing strings
 
 ## Blockers
 _(none yet)_
 
 ## Session Log
+
+### Session 5 — 2026-03-28 16:54 CDT (Phase 2 Rebrand Started)
+✅ **Completed:**
+- **Phase 2 Task 2.1 (partial): Project Identity**
+  * CMake project renamed: `xmr-stak` → `n0s-cngpu`
+  * Binary output renamed: `bin/xmr-stak` → `bin/n0s-cngpu`
+  * Version updated: `2.10.8` → `1.0.0`
+  * Product name macro: `XMR_STAK_NAME` → `"n0s-cngpu"`
+  * Startup banner rebranded:
+    - Added n0s-cngpu identity
+    - Simplified RYO Currency branding
+    - Retained original author credits (GPLv3 compliance)
+  * Build verified working
+  * Version output verified: `n0s-cngpu 1.0.0 [git-hash]`
+  * Help output verified: Usage shows `n0s-cngpu`
+
+**Files modified:**
+- CMakeLists.txt: project name, executable name, install target
+- xmrstak/version.cpp: XMR_STAK_NAME, XMR_STAK_VERSION
+- xmrstak/cli/cli-miner.cpp: startup banner, help text
+
+**Branch:** `phase2/rebrand` (pushed to origin)
+**Commit:** ea2c2a9 "Phase 2 Task 2.1: Rebrand to n0s-cngpu"
+
+**Remaining work for Task 2.1:**
+- HTTP dashboard title/branding
+- Remaining user-facing strings (error messages, prompts)
+
+**Next session:** Continue Task 2.1 (HTTP dashboard + remaining strings), then Task 2.2 (license compliance)
 
 ### Session 4 — 2026-03-28 16:34 CDT (Phase 1 Complete, Phase 2 Prep)
 ✅ **Completed:**
