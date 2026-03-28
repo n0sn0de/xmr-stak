@@ -1,0 +1,73 @@
+[  5%] Building ASM object CMakeFiles/xmr-stak-asm.dir/xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S.o
+[  5%] Building ASM object CMakeFiles/xmr-stak-asm.dir/xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S.o
+[  8%] Linking C static library bin/libxmr-stak-asm.a
+[  8%] Built target xmr-stak-asm
+[ 20%] Building C object CMakeFiles/xmr-stak-c.dir/xmrstak/backend/cpu/crypto/c_groestl.c.o
+[ 20%] Building C object CMakeFiles/xmr-stak-c.dir/xmrstak/backend/cpu/crypto/c_jh.c.o
+[ 20%] Building C object CMakeFiles/xmr-stak-c.dir/xmrstak/backend/cpu/crypto/c_blake256.c.o
+[ 20%] Building C object CMakeFiles/xmr-stak-c.dir/xmrstak/backend/cpu/crypto/c_keccak.c.o
+[ 23%] Building C object CMakeFiles/xmr-stak-c.dir/xmrstak/backend/cpu/crypto/c_skein.c.o
+[ 26%] Linking C static library bin/libxmr-stak-c.a
+[ 26%] Built target xmr-stak-c
+[ 29%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/backendConnector.cpp.o
+[ 32%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/CryptonightR_gen.cpp.o
+[ 35%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp.o
+[ 38%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cn_gpu_ssse3.cpp.o
+[ 41%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/cpuType.cpp.o
+[ 44%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/crypto/cryptonight_common.cpp.o
+[ 47%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/jconf.cpp.o
+[ 50%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/hwlocMemory.cpp.o
+[ 52%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/httpd.cpp.o
+[ 55%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/cpu/minethd.cpp.o
+[ 58%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/jconf.cpp.o
+[ 64%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/telemetry.cpp.o
+[ 64%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/backend/globalStates.cpp.o
+[ 67%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/environment.cpp.o
+[ 70%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/http/webdesign.cpp.o
+[ 73%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/console.cpp.o
+[ 76%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/executor.cpp.o
+[ 79%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/uac.cpp.o
+[ 82%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/misc/utility.cpp.o
+[ 88%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/socket.cpp.o
+[ 88%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/version.cpp.o
+[ 91%] Building CXX object CMakeFiles/xmr-stak-backend.dir/xmrstak/net/jpsock.cpp.o
+[ 94%] Linking CXX static library bin/libxmr-stak-backend.a
+[ 94%] Built target xmr-stak-backend
+[ 97%] Building CXX object CMakeFiles/xmr-stak.dir/xmrstak/cli/cli-miner.cpp.o
+/home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp: In function ‘int main(int, char**)’:
+/home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp:405:29: warning: ‘int ERR_load_BIO_strings()’ is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  405 |         ERR_load_BIO_strings();
+      |         ~~~~~~~~~~~~~~~~~~~~^~
+In file included from /usr/include/openssl/cryptoerr.h:17,
+                 from /usr/include/openssl/crypto.h:38,
+                 from /usr/include/openssl/bio.h:30,
+                 from /usr/include/openssl/err.h:29,
+                 from /home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp:46:
+/usr/include/openssl/cryptoerr_legacy.h:31:27: note: declared here
+   31 | OSSL_DEPRECATEDIN_3_0 int ERR_load_BIO_strings(void);
+      |                           ^~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/string.h:548,
+                 from /usr/include/c++/13/cstring:42,
+                 from /home/nitro/xmr-stak/./xmrstak/backend/miner_work.hpp:8,
+                 from /home/nitro/xmr-stak/./xmrstak/backend/globalStates.hpp:3,
+                 from /home/nitro/xmr-stak/./xmrstak/backend/iBackend.hpp:3,
+                 from /home/nitro/xmr-stak/./xmrstak/backend/backendConnector.hpp:3,
+                 from /home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp:24:
+In function ‘void* memcpy(void*, const void*, size_t)’,
+    inlined from ‘xmrstak::miner_work::miner_work(const char*, const uint8_t*, uint32_t, uint64_t, bool, size_t, uint64_t)’ at /home/nitro/xmr-stak/./xmrstak/backend/miner_work.hpp:46:9,
+    inlined from ‘int do_benchmark(int, int, int)’ at /home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp:957:53:
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:29:33: warning: ‘void* __builtin_memcpy(void*, const void*, long unsigned int)’ reading 64 bytes from a region of size 1 [-Wstringop-overread]
+   29 |   return __builtin___memcpy_chk (__dest, __src, __len,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+   30 |                                  __glibc_objsize0 (__dest));
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘void* memcpy(void*, const void*, size_t)’,
+    inlined from ‘xmrstak::miner_work::miner_work(const char*, const uint8_t*, uint32_t, uint64_t, bool, size_t, uint64_t)’ at /home/nitro/xmr-stak/./xmrstak/backend/miner_work.hpp:46:9,
+    inlined from ‘int do_benchmark(int, int, int)’ at /home/nitro/xmr-stak/xmrstak/cli/cli-miner.cpp:961:53:
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:29:33: warning: ‘void* __builtin_memcpy(void*, const void*, long unsigned int)’ reading 64 bytes from a region of size 1 [-Wstringop-overread]
+   29 |   return __builtin___memcpy_chk (__dest, __src, __len,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+   30 |                                  __glibc_objsize0 (__dest));
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+[100%] Linking CXX executable bin/xmr-stak
+[100%] Built target xmr-stak
