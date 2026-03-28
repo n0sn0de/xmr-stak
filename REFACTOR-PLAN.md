@@ -152,13 +152,15 @@ Deferred items:
   - Outputs colored pass/fail results with timing
   - Non-zero exit on any failure
 
-### Task 3.4: Container Runtime Validation ⚠️ BLOCKED
-- **Blocker:** Neither podman nor docker installed on dev machine (no sudo access to install)
-- Native noble build verified passing as proxy validation
-- **Action needed:** Jason to install podman (`sudo apt install podman`) then run: `./scripts/test-all-distros.sh --cpu-only`
-- Once podman is available, validate all 4 CPU distros + 2 OpenCL distros
+### Task 3.4: Container Runtime Validation ✅ COMPLETE (Session 12)
+- [x] Podman installed and available
+- [x] All 4 CPU-only container builds pass (bionic, focal, jammy, noble)
+- [x] All 2 OpenCL container builds pass (jammy-opencl, noble-opencl)
+- [x] Fixed GPU backend build breakage from Phase 1 deep code purge (removed `func_multi_selector`/`cn_r_ctx` refs)
+- [x] Fixed test script arithmetic bug (`((PASS++))` with `set -e`)
+- [x] Full test suite: `./scripts/test-all-distros.sh --all` → 6/6 PASS
 
-**Validation:** Native noble build + smoke tests pass ✅. Container builds need podman/docker install to validate.
+**Validation:** All 6 container builds validated with podman ✅.
 
 ---
 
@@ -220,7 +222,7 @@ Deferred items:
 |-------|--------|--------|-------|
 | Phase 1: Fee Removal & Code Purge | 🟡 | merged to master | Task 1.1 ✅ fee removed. Task 1.2 PARTIAL — coins[] stripped but dead algo code remains (~200 refs). Task 1.3 not started. **REVISIT AFTER PHASE 3.** |
 | Phase 2: Rebrand | 🟢 | merged to master | Task 2.1 ✅, 2.2 ✅, 2.3 ⏭️ deferred, 2.4 ✅ |
-| Phase 3: Podman Test Harness | 🟡 | `master` | Files complete, needs podman install to validate container builds |
+| Phase 3: Podman Test Harness | 🟢 | `master` | Files complete, all 6 container builds validated with podman ✅ |
 | Phase 1 (Round 2): Deep Code Purge | 🔴 | — | After Phase 3. Remove dead algo code from cryptonight.hpp, cryptonight_aesni.h, minethd.cpp, gpu.cpp, NVIDIA kernels |
 | Phase 4: CI/CD Pipeline | 🟢 | merged to master | Task 4.1 ✅ build.yml + release.yml, Task 4.2 ✅ package-release.sh + Containerfile.release, Task 4.3 ✅ legacy CI removed |
 | Phase 5: Documentation | 🟢 | merged to master | Tasks 5.1–5.4 ✅ — README, CONTRIBUTING, compile, usage, tuning, FAQ, troubleshooting all rewritten |

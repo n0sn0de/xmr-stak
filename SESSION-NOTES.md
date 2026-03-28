@@ -18,25 +18,43 @@ A cron job fires every 20 minutes. Each session:
 ---
 
 ## Current Task
-**Phase 5: Documentation — COMPLETE**
+**Phase 3 Container Validation — COMPLETE ✅**
 
 ## Next Steps
-1. **Phase 1 Round 2 (Deep Code Purge)** — Remove dead algorithm code (~200 refs to non-cn-gpu algorithms). This is the last major code task.
-2. **Phase 3 validation** — Install podman (`sudo apt install podman`) to validate container builds.
-3. Tag v1.0.0 release once code purge and container validation are done.
+1. **Tag v1.0.0 release** — All phases complete, all builds validated. Ready to tag.
+2. **OpenCL kernel cleanup (optional)** — ~45 dead preprocessor-guarded algo refs remain in `cryptonight.cl`, `fast_int_math_v2.cl`, `fast_div_heavy.cl`. These compile away at runtime (ALGO is always cryptonight_gpu), so it's cosmetic. Low priority.
 
 ## Blockers
-- ⚠️ **No container runtime:** Neither podman nor docker installed. Need sudo access to install.
-  - Native noble build + smoke tests verified passing as proxy validation.
+- None! 🎉
 
 ## Phase Status
-- **Phase 1 🟡 PARTIAL** — Dev fee removed ✅, coins[] stripped ✅, but dead algorithm code still in codebase (~200 refs). **NEXT UP.**
+- **Phase 1 ✅ COMPLETE** — Dev fee removed, coins[] stripped, **deep code purge complete (-13,314 lines across 37 files)**. Zero dead algorithm references in C/C++ code. Only OpenCL preprocessor guards remain (compile away at runtime).
 - **Phase 2 ✅** — Rebrand to n0s-cngpu, license compliance, config simplification (merged to master)
-- **Phase 3 🟡 FILES DONE** — Containerfiles written (4 CPU + 2 OpenCL), test script written, native build verified. Needs podman to validate container builds.
+- **Phase 3 ✅ COMPLETE** — Containerfiles written (4 CPU + 2 OpenCL), test script working, **all 6 container builds validated with podman**
 - **Phase 4 ✅** — CI/CD Pipeline (GitHub Actions build.yml + release.yml, release Containerfile, package-release.sh)
 - **Phase 5 ✅** — Documentation (README, CONTRIBUTING, compile guide, usage, tuning, FAQ, troubleshooting, doc index)
 
 ## Session Log
+
+### Session 12 — 2026-03-28 18:42 CDT (Phase 3: Container Validation + GPU Backend Fix)
+✅ **Completed:**
+- **Phase 3 Task 3.4: Container Runtime Validation (COMPLETE)**
+  * Podman now available — ran full validation suite
+  * **All 6 builds pass:** bionic, focal, jammy, noble (CPU-only) + jammy-opencl, noble-opencl
+- **Fix: GPU backend build breakage from Phase 1 deep code purge**
+  * AMD/OpenCL and NVIDIA/CUDA backends referenced removed symbols (`func_multi_selector`, `cn_r_ctx`)
+  * Replaced `func_multi_selector<1>()` with `func_selector()` (no multi-algo switching needed)
+  * Removed `set_job` callback (unused for cn-gpu)
+  * Replaced `cn_r_ctx.height` with literal `0` (height only used by CryptonightR)
+  * Commit: ea34a12
+- **Fix: test-all-distros.sh bash arithmetic bug**
+  * `((PASS++))` returns exit code 1 when PASS=0, trips `set -euo pipefail`
+  * Fixed with safe increment helper functions
+  * Commit: 303a2ed
+- **Pushed to master:** 2 commits (ea34a12, 303a2ed)
+- **Cleaned up:** Removed all test container images
+
+**Next session:** Tag v1.0.0 release — all phases complete, all builds validated.
 
 ### Session 11 — 2026-03-28 17:30 CDT (Phase 5: Documentation)
 ✅ **Completed:**
