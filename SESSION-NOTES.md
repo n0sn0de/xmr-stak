@@ -11,27 +11,51 @@ A cron job fires every 20 minutes. Each session:
 ---
 
 ## Current Task
-**Phase 2, Task 2.3: Source Tree Reorganization (NEXT)**
+**Phase 2 COMPLETE ✅ — All tasks done. Ready for Phase 3.**
 
 ## Next Steps
-**Phase 2.2 COMPLETE ✅** License compliance done — copyright headers, NOTICE, THIRD-PARTY-LICENSES
+**Phase 2 COMPLETE:**
+- Task 2.1 ✅ Project Identity (rebrand)
+- Task 2.2 ✅ License Compliance (copyright headers, NOTICE)
+- Task 2.3 ⏭️ Source Tree Reorganization — DEFERRED (keep xmrstak/ namespace, low risk)
+- Task 2.4 ✅ Configuration Simplification (hardcoded cryptonight_gpu)
 
-**Phase 2.3 (Source Tree Reorganization) - Next Session:**
-1. **Decision:** Keep `xmrstak/` namespace as-is for now (lower risk). Directory rename deferred.
-2. Consider renaming `xmrstak/` → `n0scngpu/` only if time/risk allows
-3. If skipping full rename, mark as deferred and move to Task 2.4
-
-**Phase 2.4 (Configuration Simplification) - After 2.3:**
-1. Simplify `jconf.cpp` — remove coin selection entirely, hardcode cn_gpu
-2. Remove "currency" config field (or make it read-only/ignored)
-3. Clean up the interactive setup wizard in `cli-miner.cpp` — remove coin choice
-4. Simplify pool configuration
-5. Update default pool suggestion to ryo-currency pool
+**Phase 3 (Podman Test Harness) - Next Session:**
+1. Create `containers/` directory
+2. Write Containerfiles for Ubuntu LTS: bionic, focal, jammy, noble
+3. Each builds CPU-only and runs smoke test (binary exists, --help works, version correct)
+4. Write `scripts/test-all-distros.sh` orchestrator
+5. Start with jammy (22.04) as first target — most common
 
 ## Blockers
 _(none yet)_
 
 ## Session Log
+
+### Session 8 — 2026-03-28 17:04 CDT (Phase 2 Task 2.4 Complete — Phase 2 Done!)
+✅ **Completed:**
+- **Phase 2 Task 2.3: Source Tree Reorganization — DEFERRED**
+  * Decision: Keep `xmrstak/` namespace as-is (lower risk, no user-facing impact)
+  * Full rename to `n0scngpu/` deferred to optional future work
+- **Phase 2 Task 2.4: Configuration Simplification (COMPLETE)**
+  * Hardcoded `cryptonight_gpu` as the only supported algorithm
+  * Removed coin selection from interactive setup wizard
+  * Removed currency choice prompt — wizard skips straight to pool config
+  * Simplified `pools.tpl` — removed legacy 30+ coin list, clean comments
+  * `GetMiningCoin()` always returns `"cryptonight_gpu"` (ignores config/CLI)
+  * `parse_config()` sets `currentCoin` directly without lookup
+  * `GetDescription()` always returns user pool (dev pool concept removed from coinDescription.hpp)
+  * `GetAllAlgorithms()` simplified to single pool entry
+  * `--currency` CLI flag accepted but ignored with info message
+  * Default pool suggestion hardcoded to `pool.ryo-currency.com:3333`
+  * Build verified working (CPU-only)
+
+**Files modified:** 4 files — cli-miner.cpp, jconf.cpp, coinDescription.hpp, pools.tpl
+**Branch:** `phase2/rebrand` (pushed to origin)
+**Commit:** 88b3030 "Phase 2 Task 2.4: Configuration simplification"
+**Stats:** 32 insertions, 117 deletions (net -85 lines)
+
+**🎉 Phase 2 Complete!** All rebrand tasks done. Next session: Phase 3 (Podman Test Harness)
 
 ### Session 7 — 2026-03-28 17:00 CDT (Phase 2 Task 2.2 Complete)
 ✅ **Completed:**

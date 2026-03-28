@@ -97,20 +97,19 @@ Deferred items:
   - Added xmr-stak upstream fork lineage entry
 - [x] Add NOTICE file documenting the fork relationship per GPLv3 §5
 
-### Task 2.3: Source Tree Reorganization
-- [ ] Rename `xmrstak/` directory → `n0scngpu/` (or keep as-is with namespace change — TBD based on build complexity)
-- [ ] Update all `#include` paths if directory is renamed
-- [ ] Update CMakeLists.txt glob patterns
-- [ ] Clean up namespace from `xmrstak` → `n0scngpu` (big search-replace, do carefully)
-  - **Decision needed:** Full namespace rename vs. keeping xmrstak namespace with a note. Full rename is cleaner but higher risk. Start with keeping namespace, rename in a follow-up if stable.
+### Task 2.3: Source Tree Reorganization ⏭️ DEFERRED
+- **Decision:** Keep `xmrstak/` namespace as-is (lower risk, no user-facing impact)
+- Full rename to `n0scngpu/` deferred to optional future work
 
-### Task 2.4: Configuration Simplification
-- [ ] Simplify `jconf.cpp` — remove coin selection entirely, hardcode cn_gpu
-- [ ] Remove "currency" config field (or make it read-only/ignored)
-- [ ] Remove coin_selection struct from `coinDescription.hpp`
-- [ ] Simplify pool configuration (remove dev pool concept)
-- [ ] Update default pool suggestion to ryo-currency pool
-- [ ] Clean up the interactive setup wizard in `cli-miner.cpp` — remove coin choice
+### Task 2.4: Configuration Simplification ✅ COMPLETE (Session 8)
+- [x] Simplify `jconf.cpp` — hardcoded cryptonight_gpu, removed coin lookup
+- [x] `GetMiningCoin()` always returns "cryptonight_gpu" (ignores config/CLI)
+- [x] Removed coin selection from interactive setup wizard
+- [x] Simplified `coinDescription.hpp` — GetDescription() always returns user pool
+- [x] Simplified pool configuration — removed dev pool concept from GetAllAlgorithms()
+- [x] Updated default pool suggestion to pool.ryo-currency.com:3333
+- [x] Cleaned up pools.tpl — removed 30+ legacy coin list
+- [x] `--currency` CLI flag accepted but ignored with info message
 
 **Validation:** Fresh build, run with pool config, verify mining works and version string shows n0s-cngpu.
 
@@ -246,7 +245,7 @@ Deferred items:
 |-------|--------|--------|-------|
 | Phase 1: Fee Removal & Code Purge | 🟢 | `phase1/fee-removal-cleanup` | Complete (runtime restricted) |
 | Phase 1.5: Deep Algorithm Cleanup | 🔴 | (deferred) | Optional future work |
-| Phase 2: Rebrand | 🟡 | `phase2/rebrand` | Task 2.1 ✅, 2.2 ✅ — Next: Task 2.3 (source tree) |
+| Phase 2: Rebrand | 🟢 | `phase2/rebrand` | Task 2.1 ✅, 2.2 ✅, 2.3 ⏭️ deferred, 2.4 ✅ |
 | Phase 3: Podman Test Harness | 🔴 | `phase3/test-harness` | After Phase 2 |
 | Phase 4: CI/CD Pipeline | 🔴 | `phase4/ci-cd` | Depends on Phase 3 |
 | Phase 5: Documentation | 🔴 | `phase5/docs` | Can start during Phase 3 |
@@ -254,7 +253,9 @@ Deferred items:
 ### Session Notes
 _(Updated by cron sessions as work progresses)_
 
-**2026-03-28 17:00 (Session 7):** Phase 2 Task 2.2 complete. Copyright headers added to 22 source files, NOTICE file created, THIRD-PARTY-LICENSES updated. Build verified. Next: Task 2.3 (source tree reorg) or 2.4 (config simplification).
+**2026-03-28 17:04 (Session 8):** Phase 2 COMPLETE! Task 2.4 done — hardcoded cryptonight_gpu, removed coin selection, simplified config. Net -85 lines. Ready for Phase 3.
+
+**2026-03-28 17:00 (Session 7):** Phase 2 Task 2.2 complete. Copyright headers added to 22 source files, NOTICE file created, THIRD-PARTY-LICENSES updated. Build verified.
 
 **2026-03-28 16:45 (Session 6):** Phase 2 Task 2.1 complete. All user-facing branding updated to n0s-cngpu (HTTP dashboard, UAC messages, binary name defaults). Build verified. Next: Task 2.2 (license compliance).
 
