@@ -11,21 +11,42 @@ A cron job fires every 20 minutes. Each session:
 ---
 
 ## Current Task
-**Phase 1, Task 1.2: Remove Non-CNGPU Algorithm Code**
+**Phase 1, Task 1.2: Remove Non-CNGPU Algorithm Code** (IN PROGRESS - BLOCKED)
 
 ## Next Steps
-1. Strip `xmrstak_algo_id` enum down to `invalid_algo` + `cryptonight_gpu` only
-2. Remove all non-GPU entries from `coins[]` array in jconf.cpp
-3. Remove all non-GPU POW entries from `cryptonight.hpp`
-4. Remove dead algorithm constants (keep only CN_GPU_* variants)
-5. CPU crypto cleanup: keep cn_gpu files, remove non-GPU variants
-6. AMD OpenCL cleanup: keep cryptonight_gpu.cl, remove cryptonight.cl
-7. Build and verify compilation still succeeds
+**BLOCKER:** CPU backend (cryptonight_aesni.h, minethd.cpp) has extensive algorithm-specific
+code that prevents compilation after stripping algorithm enum. Hundreds of lines of template
+specializations and switch statements for removed algorithms.
+
+**Two paths forward:**
+1. **Major refactor** - Strip all algorithm branches from CPU backend (high risk, ~1000+ lines)
+2. **Stub approach** - Keep enum stubs for removed algos to avoid compile errors, mark as unsupported at runtime
+
+**Recommendation:** Proceed with stub approach for now — keep algorithm enum entries as compile-time
+stubs, reject them at runtime in jconf validation. This allows us to continue Phase 1 cleanup without
+getting stuck in a massive CPU backend refactor. Full cleanup can be Phase 1.5 after core removals are done.
+
+**Next session action items:**
+1. Revert algorithm enum stripping commit
+2. Instead, keep algorithm IDs but remove from coins[] array
+3. Add runtime validation in jconf to reject non-GPU algorithms
+4. Continue with Phase 1 cleanup (remove CryptonightR files, remove unused OpenCL kernels)
+5. Mark CPU backend multi-algo code for future removal (Phase 1.5)
 
 ## Blockers
 _(none yet)_
 
 ## Session Log
+
+### Session 2 — 2026-03-28 16:13 CDT (Algorithm Enum Strip - BLOCKED)
+⚠️ **Blocked on CPU backend complexity**
+- Stripped algorithm enum down to `invalid_algo` + `cryptonight_gpu` (commit ed72d64)
+- Simplified coins[] array to only cryptonight_gpu and ryo
+- **Build fails:** CPU backend has 1000+ lines of algorithm-specific code in cryptonight_aesni.h
+  that references removed algorithm IDs in templates and switch statements
+- **Decision:** Revert aggressive stripping, adopt stub approach instead
+- **Commit:** ed72d64 "Strip algorithm enum and coins array to cryptonight_gpu only" (will revert)
+- **Next session:** Revert this commit, keep enum as stubs, remove from coins[] only
 
 ### Session 1 — 2026-03-28 16:00 CDT (Dev Fee Removal)
 ✅ **Task 1.1 Complete: Developer Fee System Removed**
