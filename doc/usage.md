@@ -1,82 +1,112 @@
-# HowTo Use Xmr-Stak
+# How to Use n0s-cngpu
 
-## Content Overview
-* [Configurations](#configurations)
-* [Usage on Windows](#usage-on-windows)
-* [Usage on Linux & macOS](#usage-on-linux--macos)
-* [Command Line Options](#command-line-options)
-* [Use different backends](#use-different-backends)
-* [HTML and JSON API report configuraton](#html-and-json-api-report-configuraton)
+## First Run
 
-## Configurations
+Start the miner:
 
-Before you started the miner the first time there are no config files available.
-Config files will be created at the first start.
-The number of files depends on the available backends.
-`config.txt` contains the common miner settings.
-`pools.txt` contains the selected mining pools and currency to mine.
-`amd.txt`, `cpu.txt` and `nvidia.txt` contains miner backend specific settings and can be used for further tuning ([Tuning Guide](tuning.md)).
+```bash
+./n0s-cngpu
+```
 
-Note: If the pool is ignoring the option `rig_id` in `pools.txt` to name your worker please check the pool documentation how a worker name can be set.
+On first run, the interactive setup wizard creates these config files:
 
-## Usage on Windows
-1) Double click the `xmr-stak.exe` file
-2) Fill in the pool url settings, currency, username and password
+- `config.txt` — general miner settings (HTTP API, logging, etc.)
+- `pools.txt` — pool address, wallet, and connection settings
+- `cpu.txt` — CPU backend thread configuration
+- `amd.txt` — AMD/OpenCL GPU configuration (if OpenCL backend built)
+- `nvidia.txt` — NVIDIA/CUDA GPU configuration (if CUDA backend built)
 
-`set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
+## Pool Configuration
 
+Edit `pools.txt` to set your pool and wallet:
 
-## Usage on Linux & macOS
-1) Open a terminal within the folder with the binary
-2) Start the miner with `./xmr-stak`
+```json
+"pool_list" :
+[
+    {
+        "pool_address" : "pool.ryo-currency.com:3333",
+        "wallet_address" : "YOUR_RYO_WALLET_ADDRESS",
+        "rig_id" : "",
+        "pool_password" : "x",
+        "use_nicehash" : false,
+        "use_tls" : false,
+        "tls_fingerprint" : "",
+        "pool_weight" : 1
+    }
+],
+```
+
+Multiple pools can be added for failover — the miner uses `pool_weight` to prioritize.
 
 ## Command Line Options
 
-The miner allow to overwrite some of the settings via command line options.
-Run `xmr-stak --help` to show all available command line options.
-
-## Use Different Backends
-
-On linux and OSX please add `./` before the binary name `xmr-stak`.
-
-### CPU Only:
-```
-xmr-stak --noAMD --noNVIDIA
-```
-
-### NVIDIA/AMD Only:
-
-The miner will automatically detect if CUDA (for NVIDIA GPUs) or OpenCL (for AMD GPUs) is available.
+Run `./n0s-cngpu --help` for all options. Key ones:
 
 ```
-xmr-stak --noCPU
+  -o, --url URL        Pool address (host:port)
+  -u, --user ADDR      Wallet address
+  -p, --pass PASS      Pool password (default: x)
+  -r, --rigid ID       Rig identifier for pool stats
+  -c, --config FILE    Path to config.txt
+  --poolconf FILE      Path to pools.txt
+  --cpu FILE           Path to cpu.txt
+  --amd FILE           Path to amd.txt
+  --nvidia FILE        Path to nvidia.txt
+  --benchmark          60-second offline benchmark
+  --noCPU              Disable CPU mining
+  --noAMD              Disable AMD GPU mining
+  --noNVIDIA           Disable NVIDIA GPU mining
+  --noUAC              Skip UAC prompt
+  -h, --help           Show help
 ```
 
-### NVIDIA via OpenCL
+## Backend Selection
 
-It is possible to use the OpenCl backend which is originally created for AMD GPUs with NVIDIA GPus.
-Some NVIDIA GPUs can reach better performance with this backend.
+Disable backends you don't need:
 
-```
-xmr-stak --openCLVendor NVIDIA --noNVIDIA
-```
+```bash
+# GPU only (no CPU mining)
+./n0s-cngpu --noCPU
 
-## Docker image usage
+# AMD GPU only
+./n0s-cngpu --noCPU --noNVIDIA
 
-You can run the Docker image the following way:
+# NVIDIA GPU only
+./n0s-cngpu --noCPU --noAMD
 
-```
-docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak
-docker stop xmr-stak
-docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak --config config.txt
-```
-
-Debug the docker image by getting inside:
-
-```
-docker run --entrypoint=/bin/bash --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak
+# CPU only
+./n0s-cngpu --noAMD --noNVIDIA
 ```
 
-## HTML and JSON API report configuration
+## HTTP API
 
-To configure the reports shown on the [README](../README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
+Enable the built-in monitoring API in `config.txt`:
+
+```json
+"httpd_port" : 8080,
+```
+
+Endpoints:
+
+- `http://localhost:8080/api.json` — hashrate, pool connection stats, results
+- `http://localhost:8080/h` — HTML dashboard
+
+## Benchmarking
+
+Run a 60-second offline benchmark (no pool connection needed):
+
+```bash
+./n0s-cngpu --benchmark 10
+```
+
+The number is the CryptoNight block version (use 10 for CryptoNight-GPU).
+
+## Verbose Logging
+
+Set `verbose_level` in `config.txt`:
+
+- `3` — normal (default)
+- `4` — detailed hashrate reports
+- `5+` — debug output
+
+Set `h_print_time` for hashrate report interval (seconds).

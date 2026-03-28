@@ -1,122 +1,132 @@
-# Compile **xmr-stak** for Linux
+# Compile n0s-cngpu for Linux
 
-## Install Dependencies
+## Dependencies
 
-### AMD Driver (only needed to use AMD GPUs)
+### Required
 
-- the AMD APP SDK is not longer needed (all is included in the driver package)
-- download & unzip the AMD driver: https://www.amd.com/en/support
-- run `./amdgpu-pro-install --opencl=legacy,pal` from the unzipped folder
-- set the environment variable to opencl `export AMDAPPSDKROOT=/opt/amdgpu-pro/`
-
-For linux also the OpenSource driver ROCm 1.9.X+ is a well working alternative, see https://rocm.github.io/ROCmInstall.html
-ROCm is not supporting old GPUs please check if your GPU is supported https://rocm.github.io/hardware.html.
-
-### Cuda 8.0+ (only needed to use NVIDIA GPUs)
-
-- download and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
-- for minimal install choose `Custom installation options` during the install and select
-    - CUDA/Develpment
-    - CUDA/Runtime
-    - Driver components
-
-### GNU Compiler
-```
-    # Ubuntu / Debian
-    sudo apt install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
-    git clone https://github.com/fireice-uk/xmr-stak.git
-    mkdir xmr-stak/build
-    cd xmr-stak/build
-    cmake ..
-    make install
-
-    # Arch
-    sudo pacman -S --needed base-devel hwloc openssl cmake libmicrohttpd
-    git clone https://github.com/fireice-uk/xmr-stak.git
-    mkdir xmr-stak/build
-    cd xmr-stak/build
-    cmake ..
-    make install
-
-    # Fedora
-    sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel libstdc++-static make openssl-devel cmake
-    git clone https://github.com/fireice-uk/xmr-stak.git
-    mkdir xmr-stak/build
-    cd xmr-stak/build
-    cmake ..
-    make install
-
-    # CentOS
-    sudo yum install centos-release-scl epel-release
-    sudo yum install cmake3 devtoolset-4-gcc* hwloc-devel libmicrohttpd-devel openssl-devel make
-    scl enable devtoolset-4 bash
-    git clone https://github.com/fireice-uk/xmr-stak.git
-    mkdir xmr-stak/build
-    cd xmr-stak/build
-    cmake3 ..
-    make install
-
-    # Ubuntu 14.04
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update
-    sudo apt install gcc-5 g++-5 make
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 1 --slave /usr/bin/g++ g++ /usr/bin/g++-5
-    curl -L http://www.cmake.org/files/v3.4/cmake-3.4.1.tar.gz | tar -xvzf - -C /tmp/
-    cd /tmp/cmake-3.4.1/ && ./configure && make && sudo make install && cd -
-    sudo update-alternatives --install /usr/bin/cmake cmake /usr/local/bin/cmake 1 --force
-    sudo apt install libmicrohttpd-dev libssl-dev libhwloc-dev
-    git clone https://github.com/fireice-uk/xmr-stak.git
-    mkdir xmr-stak/build
-    cd xmr-stak/build
-    cmake ..
-    make install
-
-    # TinyCore Linux 8.x
-    # TinyCore is 32-bit only, but there is an x86-64 port, known as "Pure 64,"
-    # hosted on the TinyCore home page, and it works well.
-    # Beware that huge page support is not enabled in the kernel distributed
-    # with Pure 64.  Consider http://wiki.tinycorelinux.net/wiki:custom_kernel
-    # Note that as of yet there are no distro packages for microhttpd or hwloc.
-    # hwloc is easy enough to install manually though, shown below.
-    # Also note that only CPU mining has been tested on this platform, thus the
-    # disabling of CUDA and OpenCL shown below.
-    tce-load -iw openssl-dev.tcz cmake.tcz make.tcz gcc.tcz git.tcz \
-                 glibc_base-dev.tcz linux-4.8.1_api_headers.tcz \
-                 glibc_add_lib.tcz
-    wget https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-1.11.8.tar.gz
-    tar xzvf hwloc-1.11.8.tar.gz
-    cd hwloc-1.11.8
-    ./configure --prefix=/usr/local
-    make
-    sudo make install
-    cd ..
-    git clone http://github.com/fireice-uk/xmr-stak
-    cd xmr-stak
-    mkdir build
-    cd build
-    CC=gcc cmake .. -DCUDA_ENABLE=OFF \
-                    -DOpenCL_ENABLE=OFF \
-                    -DMICROHTTPD_ENABLE=OFF
-    make install
+```bash
+# Ubuntu / Debian
+sudo apt install build-essential cmake libmicrohttpd-dev libssl-dev libhwloc-dev
 ```
 
-- g++ version 5.1 or higher is required for full C++11 support.
-If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
+### AMD OpenCL (optional — for AMD GPU mining)
 
-- Some newer gcc versions are not supported by CUDA (e.g. Ubuntu 17.10). It will require installing gcc 5 but you can avoid changing defaults.
-
-In that case you can force CUDA to use an older compiler in the following way:
-```
-cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
+```bash
+sudo apt install ocl-icd-opencl-dev opencl-headers
 ```
 
-- You need 1 Gb RAM to compile (a bit less might be enough, 512 Mb isn't). 
+You also need the AMD GPU driver installed:
+- **AMDGPU-PRO:** `./amdgpu-pro-install --opencl=legacy,pal`
+- **ROCm:** See [ROCm install guide](https://rocm.docs.amd.com/en/latest/deploy/linux/install.html)
 
-### To do a generic and static build for a system without gcc 5.1+
+### NVIDIA CUDA (optional — for NVIDIA GPU mining)
+
+Download and install the [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads).
+
+For minimal install, select:
+- CUDA / Development
+- CUDA / Runtime
+- Driver components
+
+## Build
+
+### CPU-only (simplest)
+
+```bash
+git clone https://github.com/n0sn0de/xmr-stak.git n0s-cngpu
+cd n0s-cngpu
+mkdir build && cd build
+cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF
+make -j$(nproc)
 ```
-    cmake -DCMAKE_LINK_STATIC=ON -DXMR-STAK_COMPILE=generic .
-    make install
-    cd bin\Release
-    copy C:\xmr-stak-dep\openssl\bin\* .
+
+### With AMD/OpenCL
+
+```bash
+mkdir build && cd build
+cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON
+make -j$(nproc)
 ```
-Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
+
+### With NVIDIA/CUDA
+
+```bash
+mkdir build && cd build
+cmake .. -DCUDA_ENABLE=ON -DOpenCL_ENABLE=OFF
+make -j$(nproc)
+```
+
+### With both GPU backends
+
+```bash
+mkdir build && cd build
+cmake .. -DCUDA_ENABLE=ON -DOpenCL_ENABLE=ON
+make -j$(nproc)
+```
+
+### Release build (portable)
+
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DXMR-STAK_COMPILE=generic
+make -j$(nproc)
+```
+
+Or use the packaging script:
+
+```bash
+./scripts/package-release.sh
+```
+
+## Install location
+
+After building, the binary is at `build/bin/n0s-cngpu`.
+
+To install to a custom prefix:
+
+```bash
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/n0s-cngpu
+make install
+```
+
+## CMake Options
+
+| Option | Default | Description |
+|---|---|---|
+| `CUDA_ENABLE` | ON | NVIDIA CUDA backend |
+| `OpenCL_ENABLE` | ON | AMD OpenCL backend |
+| `MICROHTTPD_ENABLE` | ON | HTTP monitoring API |
+| `OpenSSL_ENABLE` | ON | TLS pool connections |
+| `CMAKE_BUILD_TYPE` | Release | Build type |
+| `XMR-STAK_COMPILE` | native | CPU optimization (native/generic) |
+| `CMAKE_LINK_STATIC` | OFF | Static link libgcc/libstdc++ |
+
+## Supported Ubuntu Versions
+
+| Version | Codename | GCC | CMake | Notes |
+|---|---|---|---|---|
+| 18.04 | Bionic | 7 | 3.10 | Minimum supported |
+| 20.04 | Focal | 9 | 3.16 | |
+| 22.04 | Jammy | 11 | 3.22 | |
+| 24.04 | Noble | 13 | 3.28 | Recommended |
+
+Other distributions with GCC 7+ and CMake 3.10+ should work.
+
+## Troubleshooting
+
+### `internal compiler error: Killed`
+
+Not enough RAM. Need at least 1 GB free. Try reducing parallel jobs: `make -j1`
+
+### OpenCL not found
+
+Make sure `ocl-icd-opencl-dev` and `opencl-headers` are installed, and your GPU driver provides an ICD.
+
+### CUDA not found
+
+Ensure the CUDA toolkit is in your PATH:
+
+```bash
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```

@@ -1,27 +1,52 @@
 # FAQ
-To improve our support we created [Xmr-Stak forum](https://www.reddit.com/r/XmrStak). Check it out if you have a problem, or you are looking for most up to date config for your card and [guides](https://www.reddit.com/r/XmrStak/wiki/index).
 
+## What does n0s-cngpu mine?
 
-## Content Overview
-* [Virus Protection Alert](#virus-protection-alert)
-* [Change Currency to Mine](#change-currency-to-mine)
-* [How can I mine Monero](#how-can-i-mine-monero)
-* [Which currency must be chosen if my fork coin is not listed](#which-currency-must-be-chosen-if-my-fork-coin-is-not-listed)
+n0s-cngpu mines [RYO Currency](https://ryo-currency.com) using the CryptoNight-GPU algorithm. It does not support other coins or algorithms.
 
-### Virus Protection Alert
-Some virus protection software flags the miner binary as *malware*. This is a false positive — the software does not contain any malware (and since it is open source, you can verify that yourself!)
-If your antivirus software flags **xmr-stak**, it will likely move it to its quarantine area. You may have to whitelist **xmr-stak** in your antivirus.
+## Is there a developer fee?
 
-### Change Currency to Mine
-If the miner is compiled for Monero and Aeon than you can change
- - the value `currency` in the config *or*
- - start the miner with the [command line option](usage.md) `--currency monero` or `--currency aeon7`
- - run `xmr-stak --help` to see all supported currencies and algorithms
+No. 100% of your hashrate goes to your configured pool. Zero fees.
 
-### How can I mine Monero
-Set the value `currency` in `pools.txt` to `monero`.
+## Can I mine other coins?
 
-### Which currency must be chosen if my fork coin is not listed
-If your coin you want to mine is not listed please check the documentation of the coin and try to find out if `cryptonight` or `cryptonight-lite` is the used algorithm.
-Select one of these generic coin algorithms.
+No. n0s-cngpu is a single-algorithm miner for CryptoNight-GPU only. If you need multi-algorithm support, look at the upstream [xmr-stak](https://github.com/fireice-uk/xmr-stak) project.
 
+## What GPUs are supported?
+
+- **AMD** — any GPU supported by the OpenCL driver (AMDGPU-PRO or ROCm)
+- **NVIDIA** — any GPU supported by CUDA 8.0+ (compute capability 2.0+)
+
+## Can I mine with CPU only?
+
+Yes. Build with `-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF` and the miner uses CPU threads. GPU mining is significantly faster for CryptoNight-GPU, but CPU mining works for testing or small setups.
+
+## My antivirus flags the miner
+
+This is a false positive. Mining software is commonly flagged by antivirus heuristics. The source is open — you can verify it yourself and build from source.
+
+## How do I configure my pool?
+
+Edit `pools.txt` (created on first run) or use command line flags:
+
+```bash
+./n0s-cngpu -o pool.ryo-currency.com:3333 -u YOUR_WALLET -p x
+```
+
+## Where do I get a RYO wallet?
+
+Visit [ryo-currency.com](https://ryo-currency.com) for wallet downloads and documentation.
+
+## How do I check my hashrate?
+
+- Watch the console output (set `verbose_level` to `4` in `config.txt`)
+- Enable the HTTP API: set `"httpd_port" : 8080` in `config.txt`, then visit `http://localhost:8080/api.json`
+- Use `--benchmark 10` for offline benchmarking
+
+## Build fails with "internal compiler error: Killed"
+
+Not enough RAM. Need at least 1 GB free. Try `make -j1` to reduce memory usage.
+
+## What Linux distros are supported?
+
+Officially tested on Ubuntu 18.04, 20.04, 22.04, and 24.04 LTS. Other distros with GCC 7+ and CMake 3.10+ should work.
