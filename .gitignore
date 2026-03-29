@@ -37,3 +37,4 @@ build/
 build-*/
 *.o
 *.a
+dist/
