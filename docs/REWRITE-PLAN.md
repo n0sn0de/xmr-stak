@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ — Phase R4 next*
+*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ Phase R4 (in progress) — kernel renames done, host code next*
 
 ---
 
@@ -281,10 +281,18 @@ R1 is the most critical — without the validation harness, we're flying blind. 
   - Added clear pipeline documentation and phase labels
   - Golden hashes verified, all 3 machines build clean
 
+- ✅ **Phase R4 (partial): CUDA Kernel Renames** — `cuda_cryptonight_gpu.hpp`, `cuda_core.cu`
+  - Renamed all cryptic kernel/function/variable names (see commit for full list)
+  - 20+ renames: single_comupte→compute_fp_chain, look→SHUFFLE_PATTERN, ccnt→THREAD_CONSTANTS, etc.
+  - Added extensive documentation throughout kernel code
+  - Verified mining on all 3 GPUs: 0 rejections
+
 **Notes for next session:**
-- Phase R4 (CUDA backend rewrite) is the big one — 16-24 hours estimated
-- The xmr-stak-asm CMake target still exists but its code is never called — can remove in a future cleanup
-- extra_hashes[] array still defined in cryptonight_common.cpp but never called — dead code, low priority
+- Phase R4 continues: CUDA host code cleanup (cuda_extra.cu, device init, memory management)
+- Phase R5 (OpenCL backend) is next after R4
+- The xmr-stak-asm CMake target still exists but its code is never called — can remove
+- extra_hashes[] array still defined but never called — dead code
 - The xmrstak_algo struct and POW() function are used by all backends — don't touch yet
-- Consider integrating n0s/algorithm/cn_gpu.hpp into GPU kernels progressively during R4/R5
-- Windows-specific code in cryptonight_common.cpp is dead — Linux only, low priority cleanup
+- Consider: replace `cryptonight_core_gpu_phase3` name in cuda_core.cu (it's the implode/compress kernel)
+- Windows-specific code in cryptonight_common.cpp is dead — Linux only
+- The debug `print`/`SHOW` macros were removed from cuda_cryptonight_gpu.hpp — could add proper debug ifdef
