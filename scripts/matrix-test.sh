@@ -2,9 +2,10 @@
 # Full build matrix test: all Ubuntu LTS × CUDA versions × AMD OpenCL
 # Tests that the miner COMPILES (not mines — no GPU in containers)
 #
-# Usage: ./scripts/matrix-test.sh [--quick] [--filter PATTERN]
+# Usage: ./scripts/matrix-test.sh [--quick] [--filter PATTERN] [--test]
 #   --quick   Only test one CUDA + one AMD combo
 #   --filter  Only run tests matching PATTERN (e.g. "11.8" or "noble" or "opencl")
+#   --test    After compile matrix, deploy and mine-test on available hardware
 
 set -uo pipefail
 
@@ -12,6 +13,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 MODE="${1:-full}"
 FILTER="${2:-}"
+DO_MINE_TEST=false
+
+# Parse args — handle --test anywhere in args
+for arg in "$@"; do
+    case "$arg" in
+        --test) DO_MINE_TEST=true ;;
+    esac
+done
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -166,4 +175,60 @@ for r in "${RESULTS[@]}"; do
     esac
 done
 echo ""
+
+########################################################################
+# Optional: Mine test on real hardware using container-built binaries
+########################################################################
+if [ "$DO_MINE_TEST" = true ]; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "  Hardware Mine Tests (--test)"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    MINE_PASS=0; MINE_FAIL=0
+
+    # Build artifacts first (container-build.sh produces dist/cuda-X.Y/)
+    for CUDA_VER in 11.8 12.6; do
+        DIST="${REPO_DIR}/dist/cuda-${CUDA_VER}"
+        if [ ! -f "${DIST}/n0s-ryo-miner" ]; then
+            echo "Building CUDA ${CUDA_VER} artifacts for mine test..."
+            "${SCRIPT_DIR}/container-build.sh" "${CUDA_VER}" "" "22.04" || true
+        fi
+    done
+
+    # CUDA 11.8 → nos2 (Pascal, GTX 1070 Ti)
+    if [ -f "${REPO_DIR}/dist/cuda-11.8/n0s-ryo-miner" ]; then
+        printf "${CYAN}MINE${NC} %-25s " "cuda11.8 → nos2 (Pascal)"
+        if "${SCRIPT_DIR}/test-remote-binary.sh" nos2 "${REPO_DIR}/dist/cuda-11.8" 45 >/dev/null 2>&1; then
+            printf "${GREEN}PASS${NC}\n"; MINE_PASS=$((MINE_PASS + 1))
+        else
+            printf "${RED}FAIL${NC}\n"; MINE_FAIL=$((MINE_FAIL + 1))
+        fi
+    fi
+
+    # CUDA 12.6 → nosnode (Turing, RTX 2070)
+    if [ -f "${REPO_DIR}/dist/cuda-12.6/n0s-ryo-miner" ]; then
+        printf "${CYAN}MINE${NC} %-25s " "cuda12.6 → nosnode (Turing)"
+        if "${SCRIPT_DIR}/test-remote-binary.sh" nosnode "${REPO_DIR}/dist/cuda-12.6" 50 >/dev/null 2>&1; then
+            printf "${GREEN}PASS${NC}\n"; MINE_PASS=$((MINE_PASS + 1))
+        else
+            printf "${RED}FAIL${NC}\n"; MINE_FAIL=$((MINE_FAIL + 1))
+        fi
+    fi
+
+    # AMD OpenCL → local (RX 9070 XT)
+    printf "${CYAN}MINE${NC} %-25s " "opencl → nitro (RX 9070 XT)"
+    if (cd "${REPO_DIR}" && ./test-mine.sh >/dev/null 2>&1); then
+        printf "${GREEN}PASS${NC}\n"; MINE_PASS=$((MINE_PASS + 1))
+    else
+        printf "${RED}FAIL${NC}\n"; MINE_FAIL=$((MINE_FAIL + 1))
+    fi
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    printf "  Mine Tests: ${GREEN}%d passed${NC}, ${RED}%d failed${NC}\n" "$MINE_PASS" "$MINE_FAIL"
+    echo "═══════════════════════════════════════════════════════════════"
+fi
+
 [ $FAIL -eq 0 ]

@@ -18,12 +18,12 @@ echo ""
 # Build Matrix:
 # CUDA 11.8 on Ubuntu 22.04 — widest compat (Pascal through Ada)
 # CUDA 12.6 on Ubuntu 22.04 — adds Hopper support
-#
-# Note: CUDA 12.8+ for Blackwell will be added when images are available
+# CUDA 12.8 on Ubuntu 22.04 — adds Blackwell support
 
 BUILDS=(
     "11.8|61;75;80;86;89|22.04|Pascal through Ada"
     "12.6|61;75;80;86;89;90|22.04|Pascal through Hopper"
+    "12.8|61;75;80;86;89;90;100;120|22.04|Pascal through Blackwell"
 )
 
 PASS=0
