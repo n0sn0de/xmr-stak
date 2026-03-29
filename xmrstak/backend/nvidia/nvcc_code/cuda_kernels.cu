@@ -1,18 +1,27 @@
 /**
- * cuda_extra.cu — CUDA device init, Phase 1 (prepare), and Phase 5 (finalize)
+ * cuda_kernels.cu — All CUDA kernels and host-side GPU management
  *
- * Contains the "bookend" kernels and host-side GPU management:
+ * Contains the complete CryptoNight-GPU CUDA pipeline:
  *
- *   Phase 1 (prepare): Keccak hash → AES key expansion → initial state setup
- *   Phase 5 (finalize): AES compression → final Keccak → target comparison
+ *   Phase 1: cryptonight_extra_gpu_prepare — Keccak hash → AES key expansion
+ *   Phase 2: kernel_expand_scratchpad      — Keccak-based scratchpad fill (in cuda_cryptonight_gpu.hpp)
+ *   Phase 3: kernel_gpu_compute            — FP computation loop (in cuda_cryptonight_gpu.hpp)
+ *   Phase 4: kernel_implode_scratchpad     — AES compression + mix_and_propagate
+ *   Phase 5: cryptonight_extra_gpu_final   — Final Keccak + target check
  *
- *   Device management: Enumeration, init, memory allocation, capability checks
+ * Host functions:
+ *   cryptonight_core_gpu_hash  — Launches phases 2-4
+ *   cryptonight_core_cpu_hash  — Entry point from mining thread
+ *   cryptonight_extra_cpu_*    — Set data, prepare (phase 1), finalize (phase 5)
+ *   cuda_get_device*           — Device enumeration and capability checking
+ *   cryptonight_extra_cpu_init — Device memory allocation
  *
- * The extern "C" functions are the ABI between the CUDA shared library
- * (libxmrstak_cuda_backend.so) and the main miner binary.
+ * Was: cuda_extra.cu + cuda_core.cu (merged for single-file kernel management)
  */
 
+#include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
+
 #include <algorithm>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -20,16 +29,64 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <vector>
 
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
 
-#include "cuda_context.hpp"
 #include "cuda_aes.hpp"
+#include "cuda_context.hpp"
+#include "cuda_cryptonight_gpu.hpp"
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"
-#include "xmrstak/backend/cryptonight.hpp"
+
+// ============================================================
+// usleep wrapper (extern "C" for ABI compatibility)
+// ============================================================
+
+extern "C" void compat_usleep(uint64_t waitTime)
+{
+	usleep(waitTime);
+}
+
+// ============================================================
+// Index type: 64-bit for large grids on sm_30+
+// ============================================================
+
+#if defined(XMR_STAK_LARGEGRID) && (__CUDA_ARCH__ >= 300)
+typedef uint64_t IndexType;
+#else
+typedef int IndexType;
+#endif
+
+template <typename T>
+__forceinline__ __device__ void unusedVar(const T&) {}
+
+// ============================================================
+// Warp-level shuffle helper
+// ============================================================
+
+template <size_t group_n>
+__forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr, const uint32_t sub, const int val, const uint32_t src)
+{
+#if(__CUDA_ARCH__ < 300)
+	ptr[sub] = val;
+	return ptr[src & (group_n - 1)];
+#else
+	unusedVar(ptr);
+	unusedVar(sub);
+#if(__CUDACC_VER_MAJOR__ >= 9)
+	return __shfl_sync(__activemask(), val, src, group_n);
+#else
+	return __shfl(val, src, group_n);
+#endif
+#endif
+}
+
+// ============================================================
+// AES S-box (constant memory, used by Phase 1 key expansion)
+// ============================================================
 
 __constant__ uint8_t d_sub_byte[16][16] = {
 	{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76},
@@ -48,6 +105,10 @@ __constant__ uint8_t d_sub_byte[16][16] = {
 	{0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e},
 	{0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf},
 	{0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}};
+
+// ============================================================
+// AES-256 Key Expansion (device-side)
+// ============================================================
 
 __device__ __forceinline__ void cryptonight_aes_set_key(uint32_t* __restrict__ key, const uint32_t* __restrict__ data)
 {
@@ -83,15 +144,16 @@ __device__ __forceinline__ void cryptonight_aes_set_key(uint32_t* __restrict__ k
 	}
 }
 
-/**
- * Phase 1 Kernel: Prepare hash state from input
- *
- * For each nonce:
- *   1. Copy input blob and patch nonce at offset 39
- *   2. Keccak-1600 → 200-byte state
- *   3. AES-256 key expansion → key1 (from state[0:32]) and key2 (from state[32:64])
- *   4. XOR state halves → ctx_a and ctx_b (initial values for Phase 3)
- */
+// ============================================================
+// Phase 1 Kernel: Prepare hash state from input
+//
+// For each nonce:
+//   1. Copy input blob and patch nonce at offset 39
+//   2. Keccak-1600 → 200-byte state
+//   3. AES-256 key expansion → key1 (from state[0:32]) and key2 (from state[32:64])
+//   4. XOR state halves → ctx_a and ctx_b (initial values for Phase 3)
+// ============================================================
+
 template <xmrstak_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_prepare(int threads, uint32_t* __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t* __restrict__ d_ctx_state, uint32_t* __restrict__ d_ctx_state2, uint32_t* __restrict__ d_ctx_a, uint32_t* __restrict__ d_ctx_b, uint32_t* __restrict__ d_ctx_key1, uint32_t* __restrict__ d_ctx_key2)
 {
@@ -126,6 +188,109 @@ __global__ void cryptonight_extra_gpu_prepare(int threads, uint32_t* __restrict_
 	memcpy(d_ctx_state + thread * 50, ctx_state, 50 * 4);
 }
 
+// ============================================================
+// Phase 4 Kernel: Scratchpad Compression (Implode)
+//
+// Compresses the 2MB scratchpad back into the 200-byte hash state.
+// Uses AES pseudo-rounds with 8-thread shuffle for mix_and_propagate.
+//
+// cn_gpu mode: Two full passes over the scratchpad.
+// Each pass: XOR scratchpad block → AES round → shuffle-XOR (mix)
+//
+// 8 threads cooperate per hash (each handles 4 bytes of a 32-byte chunk).
+// ============================================================
+
+template <xmrstak_algo_id ALGO>
+__global__ void kernel_implode_scratchpad(
+	const uint32_t ITERATIONS, const size_t MEMORY,
+	int threads, int bfactor, int partidx,
+	uint32_t* scratchpad_in,
+	const uint32_t* const __restrict__ state_buffer_in,
+	uint32_t* __restrict__ d_ctx_key2)
+{
+	__shared__ uint32_t sharedMemoryX[256 * 32];
+
+	// Prevent compiler from folding the shared memory offset into the AES table lookup
+	const int twidx = (threadIdx.x * 4) % 128;
+	char* sharedMemory = (char*)sharedMemoryX + twidx;
+
+	// Initialize AES lookup tables in shared memory
+	cn_aes_gpu_init32(sharedMemoryX);
+	__syncthreads();
+
+	// Thread mapping: 8 threads per hash
+	const int thread = (blockDim.x * blockIdx.x + threadIdx.x) >> 3;
+	const int subv = (threadIdx.x & 7);        // thread index within 8-thread group [0-7]
+	const int sub = subv << 2;                  // byte offset within 32-byte chunk [0,4,8,...,28]
+
+	// Work splitting for bfactor
+	const int batchsize = MEMORY >> bfactor;
+	const int start = (partidx % (1 << bfactor)) * batchsize;
+	const int end = start + batchsize;
+
+	if(thread >= threads)
+		return;
+
+	// Point to this hash's scratchpad region (uint32 indexed, sub selects 4-byte lane)
+	const uint32_t* const scratchpad = scratchpad_in + ((IndexType)thread * MEMORY) + sub;
+
+	// Load AES key (10 rounds × 4 uint32 = 40 uint32)
+	uint32_t key[40], text[4];
+	#pragma unroll 10
+	for(int j = 0; j < 10; ++j)
+		((ulonglong4*)key)[j] = ((ulonglong4*)(d_ctx_key2 + thread * 40))[j];
+
+	// Load initial state text from hash_state[64+sub : 64+sub+16]
+	uint64_t* d_ctx_state = (uint64_t*)(state_buffer_in + thread * 50 + sub + 16);
+	#pragma unroll 2
+	for(int j = 0; j < 2; ++j)
+		((uint64_t*)text)[j] = loadGlobal64<uint64_t>(d_ctx_state + j);
+
+	__syncthreads();
+
+	// Pre-sm_30 shuffle fallback memory
+#if(__CUDA_ARCH__ < 300)
+	extern __shared__ uint32_t shuffleMem[];
+	volatile uint32_t* sPtr = (volatile uint32_t*)(shuffleMem + (threadIdx.x & 0xFFFFFFF8));
+#else
+	volatile uint32_t* sPtr = NULL;
+#endif
+
+	// Main compression loop: iterate over scratchpad in 32-byte steps
+	for(int i = start; i < end; i += 32)
+	{
+		// XOR scratchpad block into running state
+		uint32_t tmp[4];
+		((ulonglong2*)(tmp))[0] = ((ulonglong2*)(scratchpad + i))[0];
+		#pragma unroll 4
+		for(int j = 0; j < 4; ++j)
+			text[j] ^= tmp[j];
+
+		// AES pseudo-round (10 rounds with precomputed key)
+		((uint4*)text)[0] = cn_aes_pseudo_round_mut32((uint32_t*)sharedMemory, ((uint4*)text)[0], (uint4*)key);
+
+		// mix_and_propagate: XOR with adjacent thread's result (circular shift by 1)
+		{
+			uint32_t tmp[4];
+			#pragma unroll 4
+			for(int j = 0; j < 4; ++j)
+				tmp[j] = shuffle<8>(sPtr, subv, text[j], (subv + 1) & 7);
+			#pragma unroll 4
+			for(int j = 0; j < 4; ++j)
+				text[j] ^= tmp[j];
+		}
+	}
+
+	// Write compressed state back to hash_state
+	#pragma unroll 2
+	for(int j = 0; j < 2; ++j)
+		storeGlobal64<uint64_t>(d_ctx_state + j, ((uint64_t*)text)[j]);
+}
+
+// ============================================================
+// Phase 5 helper: mix_and_propagate (serial, for finalization)
+// ============================================================
+
 __device__ __forceinline__ void mix_and_propagate(uint32_t* state)
 {
 	uint32_t tmp0[4];
@@ -142,18 +307,19 @@ __device__ __forceinline__ void mix_and_propagate(uint32_t* state)
 		(state + 4 * 7)[x] = (state + 4 * 7)[x] ^ tmp0[x];
 }
 
-/**
- * Phase 5 Kernel: Finalize hash and check against target
- *
- * For each hash:
- *   1. Load state from Phase 4 output
- *   2. 16 rounds of AES pseudo-round + mix_and_propagate
- *   3. Final Keccak-f permutation
- *   4. Compare hash against difficulty target
- *   5. If below target, atomically store nonce in result buffer
- *
- * cn_gpu outputs directly: no extra_hashes branch (blake/groestl/jh/skein).
- */
+// ============================================================
+// Phase 5 Kernel: Finalize hash and check against target
+//
+// For each hash:
+//   1. Load state from Phase 4 output
+//   2. 16 rounds of AES pseudo-round + mix_and_propagate
+//   3. Final Keccak-f permutation
+//   4. Compare hash against difficulty target
+//   5. If below target, atomically store nonce in result buffer
+//
+// cn_gpu outputs directly: no extra_hashes branch (blake/groestl/jh/skein).
+// ============================================================
+
 template <xmrstak_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_final(int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t* __restrict__ d_res_nonce, uint32_t* __restrict__ d_ctx_state, uint32_t* __restrict__ d_ctx_key2)
 {
@@ -200,11 +366,156 @@ __global__ void cryptonight_extra_gpu_final(int threads, uint64_t target, uint32
 	}
 }
 
+// ============================================================
+// Host: Launch all GPU kernels for CryptoNight-GPU hash
+//
+// Orchestrates phases 2-4 (phase 1 and 5 are launched separately
+// by cryptonight_extra_cpu_prepare and cryptonight_extra_cpu_final).
+// ============================================================
+
+template <xmrstak_algo_id ALGO, uint32_t MEM_MODE>
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo)
+{
+	const uint32_t MASK = algo.Mask();
+	const uint32_t ITERATIONS = algo.Iter();
+	const size_t MEM = algo.Mem();
+
+	dim3 grid(ctx->device_blocks);
+	dim3 block(ctx->device_threads);
+	dim3 block8(ctx->device_threads << 3);   // 8 threads per hash for phase 4
+
+	const size_t intensity = ctx->device_blocks * ctx->device_threads;
+
+	// ---- Phase 2: Expand scratchpad (keccak-based) ----
+	CUDA_CHECK_KERNEL(
+		ctx->device_id,
+		xmrstak::nvidia::kernel_expand_scratchpad<<<intensity, 128>>>(
+			MEM, (int*)ctx->d_ctx_state, (int*)ctx->d_long_state));
+
+	// ---- Phase 3: GPU floating-point computation loop ----
+	// 16 threads per hash, split across bfactor partitions
+	const int phase3_partitions = 1 << ctx->device_bfactor;
+	for(int i = 0; i < phase3_partitions; i++)
+	{
+		CUDA_CHECK_KERNEL(
+			ctx->device_id,
+			xmrstak::nvidia::kernel_gpu_compute<<<
+				ctx->device_blocks,
+				ctx->device_threads * 16,
+				sizeof(xmrstak::nvidia::SharedMemory) * ctx->device_threads>>>(
+				ITERATIONS, MEM, MASK,
+				(int*)ctx->d_ctx_state,
+				(int*)ctx->d_long_state,
+				ctx->device_bfactor, i,
+				ctx->d_ctx_a, ctx->d_ctx_b));
+	}
+
+	// ---- Phase 4: Implode scratchpad (AES + mix_and_propagate) ----
+	// Less work than phase 3, so only split at bfactor >= 8
+	int phase4_bfactor = ctx->device_bfactor - 8;
+	if(phase4_bfactor < 0)
+		phase4_bfactor = 0;
+
+	// cn_gpu: two full passes over scratchpad (HEAVY_MIX mode)
+	const int phase4_partitions = (1 << phase4_bfactor) * 2;
+
+	int phase4_block = block8.x;
+	int phase4_grid = grid.x;
+	// Double threads per block if hardware allows (improves occupancy)
+	if(phase4_block * 2 <= ctx->device_maxThreadsPerBlock)
+	{
+		phase4_block *= 2;
+		phase4_grid = (phase4_grid + 1) / 2;
+	}
+
+	for(int i = 0; i < phase4_partitions; i++)
+	{
+		CUDA_CHECK_KERNEL(ctx->device_id,
+			kernel_implode_scratchpad<ALGO><<<
+				phase4_grid,
+				phase4_block,
+				phase4_block * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+				ITERATIONS,
+				MEM / 4,
+				ctx->device_blocks * ctx->device_threads,
+				phase4_bfactor, i,
+				ctx->d_long_state,
+				ctx->d_ctx_state, ctx->d_ctx_key2));
+	}
+}
+
+// ============================================================
+// Entry point: called by CUDA mining thread
+// ============================================================
+
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height)
+{
+	if(miner_algo == invalid_algo)
+		return;
+
+	if(ctx->memMode == 1)
+		cryptonight_core_gpu_hash<cryptonight_gpu, 1>(ctx, startNonce, miner_algo);
+	else
+		cryptonight_core_gpu_hash<cryptonight_gpu, 0>(ctx, startNonce, miner_algo);
+}
+
+// ============================================================
+// Host: Phase 1 launch (prepare) and Phase 5 launch (finalize)
+// ============================================================
+
 extern "C" void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void* data, uint32_t len)
 {
 	ctx->inputlen = len;
 	CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_input, data, len, cudaMemcpyHostToDevice));
 }
+
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo)
+{
+	int threadsperblock = 128;
+	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
+
+	dim3 grid((wsize + threadsperblock - 1) / threadsperblock);
+	dim3 block(threadsperblock);
+
+	CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_gpu><<<grid, block>>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+										  ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+}
+
+extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo)
+{
+	int threadsperblock = 128;
+	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
+
+	dim3 grid((wsize + threadsperblock - 1) / threadsperblock);
+	dim3 block(threadsperblock);
+
+	CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0xFF, 10 * sizeof(uint32_t)));
+	CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_count, 0, sizeof(uint32_t)));
+
+	CUDA_CHECK_MSG_KERNEL(
+		ctx->device_id,
+		"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
+		cryptonight_extra_gpu_final<cryptonight_gpu><<<grid, block>>>(wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state, ctx->d_ctx_key2));
+
+	CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+	CUDA_CHECK_MSG(
+		ctx->device_id,
+		"\n**suggestion: Try to increase the attribute 'bfactor' in the NVIDIA config file.**",
+		cudaMemcpy(resnonce, ctx->d_result_nonce, 10 * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+
+	/* There is only a 32bit limit for the counter on the device side
+	 * therefore this value can be greater than 10, in that case limit rescount
+	 * to 10 entries.
+	 */
+	if(*rescount > 10)
+		*rescount = 10;
+	for(int i = 0; i < *rescount; i++)
+		resnonce[i] += startNonce;
+}
+
+// ============================================================
+// Device Management: Init, enumeration, capability checking
+// ============================================================
 
 extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 {
@@ -262,50 +573,6 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		"\n**suggestion: Try to reduce the value of the attribute 'threads' in the NVIDIA config file.**",
 		cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
 	return 1;
-}
-
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo)
-{
-	int threadsperblock = 128;
-	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
-
-	dim3 grid((wsize + threadsperblock - 1) / threadsperblock);
-	dim3 block(threadsperblock);
-
-	CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_gpu><<<grid, block>>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
-										  ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
-}
-
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo)
-{
-	int threadsperblock = 128;
-	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
-
-	dim3 grid((wsize + threadsperblock - 1) / threadsperblock);
-	dim3 block(threadsperblock);
-
-	CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0xFF, 10 * sizeof(uint32_t)));
-	CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_count, 0, sizeof(uint32_t)));
-
-	CUDA_CHECK_MSG_KERNEL(
-		ctx->device_id,
-		"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
-		cryptonight_extra_gpu_final<cryptonight_gpu><<<grid, block>>>(wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state, ctx->d_ctx_key2));
-
-	CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));
-	CUDA_CHECK_MSG(
-		ctx->device_id,
-		"\n**suggestion: Try to increase the attribute 'bfactor' in the NVIDIA config file.**",
-		cudaMemcpy(resnonce, ctx->d_result_nonce, 10 * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-
-	/* There is only a 32bit limit for the counter on the device side
-	 * therefore this value can be greater than 10, in that case limit rescount
-	 * to 10 entries.
-	 */
-	if(*rescount > 10)
-		*rescount = 10;
-	for(int i = 0; i < *rescount; i++)
-		resnonce[i] += startNonce;
 }
 
 extern "C" int cuda_get_devicecount(int* deviceCount)
@@ -516,25 +783,6 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 		const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 
-#ifdef WIN32
-		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
-		 * that windows is killing long running kernel.
-		 * In the case there is already memory used on the gpu than we
-		 * assume that other application are running between the split kernel,
-		 * this can result into TLB memory flushes and can strongly reduce the performance
-		 * and the result can be that windows is killing the miner.
-		 * Be reducing maxMemUsage we try to avoid this effect.
-		 */
-		size_t usedMem = totalMemory - freeMemory;
-		if(usedMem >= maxMemUsage)
-		{
-			printf("WARNING: skip device - already %s MiB memory in use\n", std::to_string(usedMem / byteToMiB).c_str());
-			return 4;
-		}
-		else
-			maxMemUsage -= usedMem;
-
-#endif
 		// keep 128MiB memory free (value is randomly chosen)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
