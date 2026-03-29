@@ -192,17 +192,19 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 
 	size_t intensity = ctx->device_blocks * ctx->device_threads;
 
+	// Phase 2: Expand scratchpad (keccak-based)
 	CUDA_CHECK_KERNEL(
 		ctx->device_id,
-		xmrstak::nvidia::cn_explode_gpu<<<intensity, 128>>>(MEM, (int*)ctx->d_ctx_state, (int*)ctx->d_long_state));
+		xmrstak::nvidia::kernel_expand_scratchpad<<<intensity, 128>>>(MEM, (int*)ctx->d_ctx_state, (int*)ctx->d_long_state));
 
+	// Phase 3: GPU floating-point computation loop
 	int partcount = 1 << ctx->device_bfactor;
 	for(int i = 0; i < partcount; i++)
 	{
 		CUDA_CHECK_KERNEL(
 			ctx->device_id,
-			// 36 x 16byte x numThreads
-			xmrstak::nvidia::cryptonight_core_gpu_phase2_gpu<<<ctx->device_blocks, ctx->device_threads * 16, 33 * 16 * ctx->device_threads>>>(
+			// Shared memory: 33 × 16 bytes × numThreadsPerBlock (SharedMemory struct per hash)
+			xmrstak::nvidia::kernel_gpu_compute<<<ctx->device_blocks, ctx->device_threads * 16, 33 * 16 * ctx->device_threads>>>(
 				ITERATIONS,
 				MEM,
 				MASK,
@@ -214,11 +216,8 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 				ctx->d_ctx_b));
 	}
 
-	/* bfactor for phase 3
-	 *
-	 * 3 consume less time than phase 2, therefore we begin with the
-	 * kernel splitting if the user defined a `bfactor >= 8`
-	 */
+	// Phase 4: Implode scratchpad (AES compression + mix_and_propagate)
+	// bfactor for phase 4: less work than phase 3, so only split at bfactor >= 8
 	int bfactorOneThree = ctx->device_bfactor - 8;
 	if(bfactorOneThree < 0)
 		bfactorOneThree = 0;
