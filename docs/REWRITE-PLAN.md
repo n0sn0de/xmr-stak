@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ Phase R4 ✅ (kernel + host renames) — Phase R5 (OpenCL) next*
+*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ Phase R4 ✅ Phase R5 ✅ — Phase R6 (pool/network) next*
 
 ---
 
@@ -295,11 +295,17 @@ R1 is the most critical — without the validation harness, we're flying blind. 
   - Added phase doc comments to cuda_extra.cu prepare/finalize kernels
   - All 3 GPUs: mining verified, golden hashes verified
 
+- ✅ **Phase R5: OpenCL Backend Cleanup** — `cryptonight_gpu.cl`
+  - Same rename pattern as CUDA: single_comupte→compute_fp_chain, look→SHUFFLE_PATTERN, etc.
+  - Added documentation throughout
+  - Kernel entry points unchanged (ABI: cn0_cn_gpu, cn00_cn_gpu, cn1_cn_gpu)
+  - OpenCL cache miss confirmed (new source hash) → fresh compile → shares accepted
+  - All 3 GPUs verified (nitro AMD = critical test)
+
 **Notes for next session:**
-- Phase R5 (OpenCL backend) is next — similar rename/document pass
+- Phase R6 (pool/network) and R7 (config/CLI) are independent cleanups
 - The xmr-stak-asm CMake target still exists but its code is never called — can remove
-- extra_hashes[] array still defined but never called — dead code
-- The xmrstak_algo struct and POW() function are used by all backends — don't touch yet
-- cuda_extra.cu extern "C" functions are ABI boundary — renamed cautiously (doc-only for now)
+- extra_hashes[] array still defined but never called — dead code  
+- cryptonight.cl (1164 lines) still has dead branch kernels (Skein/JH/Blake/Groestl) — cn_gpu doesn't use them
+- gpu.cpp (1142 lines) could use documentation pass
 - Could consolidate cuda_core.cu + cuda_extra.cu into fewer files in a future pass
-- cuda_device.hpp, cuda_compat.hpp are tiny and could be absorbed into cuda_extra.hpp
