@@ -702,22 +702,9 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		assign(sqrt_result, int_sqrt33_1_double_precision(cx_64 + division_result));                             \
 	}
 
-#define CN_R_RANDOM_MATH(n, al, ah, cl, bx0, bx1, cn_r_data)                                   \
-	if(ALGO == invalid_algo || ALGO == invalid_algo)                                     \
-	{                                                                                          \
-		cl ^= (cn_r_data[0] + cn_r_data[1]) | ((uint64_t)(cn_r_data[2] + cn_r_data[3]) << 32); \
-		cn_r_data[4] = static_cast<uint32_t>(al);                                              \
-		cn_r_data[5] = static_cast<uint32_t>(ah);                                              \
-		cn_r_data[6] = static_cast<uint32_t>(_mm_cvtsi128_si32(bx0));                          \
-		cn_r_data[7] = static_cast<uint32_t>(_mm_cvtsi128_si32(bx1));                          \
-		cn_r_data[8] = static_cast<uint32_t>(_mm_cvtsi128_si32(_mm_srli_si128(bx1, 8)));       \
-		v4_random_math(ctx[n]->cn_r_ctx.code, cn_r_data);                                      \
-	}                                                                                          \
-	if(ALGO == invalid_algo)                                                                  \
-	{                                                                                          \
-		al ^= cn_r_data[2] | ((uint64_t)(cn_r_data[3]) << 32);                                 \
-		ah ^= cn_r_data[0] | ((uint64_t)(cn_r_data[1]) << 32);                                 \
-	}
+// CN_R_RANDOM_MATH removed — CryptonightR support stripped (dead code, never called)
+#define CN_R_RANDOM_MATH(n, al, ah, cl, bx0, bx1, cn_r_data) \
+	do { (void)(n); (void)(al); (void)(ah); (void)(cl); (void)(bx0); (void)(bx1); (void)(cn_r_data); } while(0)
 
 #define CN_INIT_SINGLE                                                                                                                                                                                 \
 	if((ALGO == invalid_algo || ALGO == invalid_algo || ALGO == invalid_algo || ALGO == invalid_algo || ALGO == invalid_algo || ALGO == invalid_algo) && len < 43) \
@@ -1337,35 +1324,4 @@ struct Cryptonight_hash_gpu
 	}
 };
 
-template <size_t N>
-struct Cryptonight_R_generator
-{
-	template <xmrstak_algo_id ALGO>
-	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
-	{
-		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight &&
-			ctx[0]->last_algo == POW(invalid_algo) &&
-			reinterpret_cast<void*>(ctx[0]->hash_fn) == ctx[0]->fun_data)
-			return;
-
-		ctx[0]->last_algo = POW(invalid_algo);
-
-		ctx[0]->cn_r_ctx.height = work.iBlockHeight;
-		int code_size = v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
-		if(ctx[0]->asm_version != 0)
-		{
-			v4_compile_code(N, ctx[0], code_size);
-			if(N == 2)
-				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<invalid_algo>;
-			else
-				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<invalid_algo>;
-		}
-
-		for(size_t i = 1; i < N; i++)
-		{
-			ctx[i]->cn_r_ctx = ctx[0]->cn_r_ctx;
-			ctx[i]->loop_fn = ctx[0]->loop_fn;
-			ctx[i]->hash_fn = ctx[0]->hash_fn;
-		}
-	}
-};
+// Cryptonight_R_generator removed — CryptonightR support stripped (dead code)

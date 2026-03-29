@@ -246,7 +246,7 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
 
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, 0 /* cn_r_ctx removed */);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -328,7 +328,7 @@ void minethd::work_main()
 							bestIntensity);
 					}
 					// update gpu with new intensity
-					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
+					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, 0 /* cn_r_ctx removed */);
 				}
 				// use 3 rounds to warm up with the new intensity
 				else if(cntTestRounds == autoTune + 3)

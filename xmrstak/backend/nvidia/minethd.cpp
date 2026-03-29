@@ -278,7 +278,7 @@ void minethd::work_main()
 
 			cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
 
-			cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, cpu_ctx->cn_r_ctx.height);
+			cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, 0 /* cn_r_ctx removed */);
 
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
 

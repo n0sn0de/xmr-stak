@@ -275,10 +275,7 @@ inline uint getIdx()
 	return get_global_id(0) - get_global_offset(0);
 }
 
-//#include "opencl/fast_int_math_v2.cl"
-XMRSTAK_INCLUDE_FAST_INT_MATH_V2
-//#include "fast_div_heavy.cl"
-XMRSTAK_INCLUDE_FAST_DIV_HEAVY
+// fast_int_math_v2 and fast_div_heavy removed — dead kernels for stripped algorithms
 //#include "opencl/wolf-skein.cl"
 XMRSTAK_INCLUDE_WOLF_SKEIN
 //#include "opencl/jh.cl"

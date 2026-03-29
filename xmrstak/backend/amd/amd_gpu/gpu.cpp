@@ -13,7 +13,7 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-#include "xmrstak/backend/amd/OclCryptonightR_gen.hpp"
+// OclCryptonightR_gen removed — CryptonightR support stripped
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/net/msgstruct.hpp"
@@ -771,12 +771,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		return ERR_OCL_API;
 	}
 
-	const char* fastIntMathV2CL =
-#include "./opencl/fast_int_math_v2.cl"
-		;
-	const char* fastDivHeavyCL =
-#include "./opencl/fast_div_heavy.cl"
-		;
+	// fastIntMathV2CL and fastDivHeavyCL removed — dead kernels for removed algorithms
 	const char* cryptonightCL =
 #include "./opencl/cryptonight.cl"
 		;
@@ -800,8 +795,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		;
 
 	std::string source_code(cryptonightCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_INT_MATH_V2"), fastIntMathV2CL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_DIV_HEAVY"), fastDivHeavyCL);
+	// FAST_INT_MATH_V2 and FAST_DIV_HEAVY placeholders removed (dead kernels)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
