@@ -32,3 +32,8 @@ cmake-build-debug/
 ._*
 build/
 *.txt
+
+# Build artifacts
+build-*/
+*.o
+*.a
