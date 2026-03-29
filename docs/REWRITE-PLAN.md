@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ Phase R4 (in progress) — kernel renames done, host code next*
+*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ Phase R4 ✅ (kernel + host renames) — Phase R5 (OpenCL) next*
 
 ---
 
@@ -287,12 +287,19 @@ R1 is the most critical — without the validation harness, we're flying blind. 
   - Added extensive documentation throughout kernel code
   - Verified mining on all 3 GPUs: 0 rejections
 
+- ✅ **Phase R4 (complete): CUDA Host Code Cleanup** — `cuda_core.cu`, `cuda_extra.cu`
+  - cryptonight_core_gpu_phase3 → kernel_implode_scratchpad (it was NEVER phase 3!)
+  - cryptonight_core_gpu_hash_gpu → cryptonight_core_gpu_hash
+  - Used sizeof(SharedMemory) instead of magic 33*16 for shared memory size
+  - Full pipeline documented in cuda_core.cu header comments
+  - Added phase doc comments to cuda_extra.cu prepare/finalize kernels
+  - All 3 GPUs: mining verified, golden hashes verified
+
 **Notes for next session:**
-- Phase R4 continues: CUDA host code cleanup (cuda_extra.cu, device init, memory management)
-- Phase R5 (OpenCL backend) is next after R4
+- Phase R5 (OpenCL backend) is next — similar rename/document pass
 - The xmr-stak-asm CMake target still exists but its code is never called — can remove
 - extra_hashes[] array still defined but never called — dead code
 - The xmrstak_algo struct and POW() function are used by all backends — don't touch yet
-- Consider: replace `cryptonight_core_gpu_phase3` name in cuda_core.cu (it's the implode/compress kernel)
-- Windows-specific code in cryptonight_common.cpp is dead — Linux only
-- The debug `print`/`SHOW` macros were removed from cuda_cryptonight_gpu.hpp — could add proper debug ifdef
+- cuda_extra.cu extern "C" functions are ABI boundary — renamed cautiously (doc-only for now)
+- Could consolidate cuda_core.cu + cuda_extra.cu into fewer files in a future pass
+- cuda_device.hpp, cuda_compat.hpp are tiny and could be absorbed into cuda_extra.hpp
