@@ -159,13 +159,26 @@ Add a compat header `cuda_compat.hpp` with version-gated shims:
 
 ---
 
-## Phase 3.5: Build & Test Infrastructure
+## Phase 3.5: CUDA Forward Compat + Cleanup — ✅ COMPLETE
+
+### Results:
+- [x] Allow CUDA minor version forward compatibility (toolkit 12.6 on driver 12.2)
+- [x] Remove dead Fermi/Kepler/Maxwell arch code from cuda_extra.cu
+- [x] Minimum GPU: sm_60 (Pascal) with clear error messages
+- [x] Simplify auto-tuning (no pre-Pascal paths)
+- [x] nosnode test script working (scripts/test-nosnode.sh)
+
+**THREE-WAY TESTING ACHIEVED:**
+- AMD RX 9070 XT (ROCm, Ubuntu 24.04): 73 shares ✅
+- NVIDIA GTX 1070 Ti (CUDA 11.8, Pascal, nos2): 46 shares ✅
+- NVIDIA RTX 2070 (CUDA 12.6, Turing, nosnode): 63 shares ✅ 🎉
+
+## Phase 3.6: Build & Test Infrastructure (Future)
 
 ### Tasks:
-- [ ] 3.5.1: Create `scripts/build.sh` — unified build script with presets
-- [ ] 3.5.2: Create `scripts/test-cuda12.sh` — nosnode-specific test
-- [ ] 3.5.3: Update `test-mine-remote.sh` to support nosnode as REMOTE
-- [ ] 3.5.4: GitHub Actions CI (build matrix: CUDA 11.8, 12.6 × Ubuntu 22.04, 24.04)
+- [ ] 3.6.1: Update `test-mine-remote.sh` to auto-detect CUDA path per host
+- [ ] 3.6.2: Create `scripts/test-all.sh` — run all three platforms
+- [ ] 3.6.3: GitHub Actions CI (build matrix: CUDA 11.8, 12.6 × Ubuntu 22.04, 24.04)
 
 ---
 
