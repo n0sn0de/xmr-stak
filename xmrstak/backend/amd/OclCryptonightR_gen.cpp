@@ -314,18 +314,8 @@ cl_program CryptonightR_get_program(GpuContext* ctx, xmrstak_algo algo, uint64_t
 	{
 		V4_Instruction code[256];
 		int code_size;
-		switch(algo.Id())
-		{
-		case cryptonight_r_wow:
-			code_size = v4_random_math_init<cryptonight_r_wow>(code, height_offset + c);
-			break;
-		case cryptonight_r:
-			code_size = v4_random_math_init<cryptonight_r>(code, height_offset + c);
-			break;
-		default:
-			printer::inst()->print_msg(L0, "CryptonightR_get_program: invalid algo %d", algo);
-			return nullptr;
-		}
+		// Only cryptonight_gpu is supported; CryptonightR is dead code
+		code_size = v4_random_math_init<invalid_algo>(code, height_offset + c);
 
 		std::string kernel_code(source_code_template, offset);
 		kernel_code.append(get_code(code, code_size));
@@ -347,7 +337,7 @@ cl_program CryptonightR_get_program(GpuContext* ctx, xmrstak_algo algo, uint64_t
 	 * this is required if the dev pool is mining monero
 	 * but the user tuned there settings for another currency
 	 */
-	if(algo == cryptonight_r || algo == cryptonight_r_wow)
+	if(algo == invalid_algo || algo == invalid_algo)
 	{
 		if(ctx->memChunk < 2)
 			mem_chunk_exp = 1u << 2;

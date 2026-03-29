@@ -269,25 +269,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 * this is required if the dev pool is mining monero
 		 * but the user tuned there settings for another currency
 		 */
-		if(miner_algo == cryptonight_monero_v8 || miner_algo == cryptonight_v8_reversewaltz)
-		{
-			if(ctx->memChunk < 2)
-				mem_chunk_exp = 1u << 2;
-			if(strided_index == 1)
-				strided_index = 0;
-		}
-
 		if(miner_algo == cryptonight_gpu)
 		{
 			strided_index = 0;
-		}
-
-		if(miner_algo == cryptonight_r || miner_algo == cryptonight_r_wow)
-		{
-			if(ctx->memChunk < 2)
-				mem_chunk_exp = 1u << 2;
-			if(strided_index == 1)
-				strided_index = 0;
 		}
 
 		// if intensity is a multiple of worksize than comp mode is not needed
@@ -928,49 +912,6 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	// CN1 Kernel
 
-	if((miner_algo == cryptonight_r) || (miner_algo == cryptonight_r_wow))
-	{
-
-		uint32_t PRECOMPILATION_DEPTH = 1;
-		constexpr uint64_t height_chunk_size = 25;
-		uint64_t height_offset = (height / height_chunk_size) * height_chunk_size;
-
-		// Get new kernel
-		cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height_offset, height_chunk_size, PRECOMPILATION_DEPTH);
-
-		if(program != ctx->ProgramCryptonightR || ctx->last_block_height != height)
-		{
-			cl_int ret;
-			std::string kernel_name = "cn1_cryptonight_r_" + std::to_string(height);
-			cl_kernel kernel = clCreateKernel(program, kernel_name.c_str(), &ret);
-
-			if(ret != CL_SUCCESS)
-			{
-				printer::inst()->print_msg(LDEBUG, "CryptonightR: clCreateKernel returned error %s", err_to_str(ret));
-			}
-			else
-			{
-				cl_kernel old_kernel = Kernels[1];
-				if(old_kernel)
-					clReleaseKernel(old_kernel);
-				Kernels[1] = kernel;
-			}
-			ctx->ProgramCryptonightR = program;
-			ctx->last_block_height = height;
-			printer::inst()->print_msg(LDEBUG, "Set height %llu", height);
-
-			// Precompile next program in background
-			for(int i = 1; i <= PRECOMPILATION_DEPTH; ++i)
-				xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height_offset + i * height_chunk_size, height_chunk_size, PRECOMPILATION_DEPTH, true);
-
-			printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
-		}
-		else
-		{
-			printer::inst()->print_msg(LDEBUG, "Thread #%zu found CryptonightR", ctx->deviceIdx);
-		}
-	}
-
 	// Scratchpads
 	if((ret = clSetKernelArg(Kernels[1], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
 	{
@@ -990,16 +931,6 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
 		return (ERR_OCL_API);
-	}
-
-	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon || miner_algo == cryptonight_ipbc || miner_algo == cryptonight_stellite || miner_algo == cryptonight_masari || miner_algo == cryptonight_bittube2)
-	{
-		// Input
-		if((ret = clSetKernelArg(Kernels[1], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
-		{
-			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 4(input buffer).", err_to_str(ret));
-			return ERR_OCL_API;
-		}
 	}
 
 	// CN3 Kernel

@@ -110,18 +110,18 @@ class autoAdjust
 				}
 			}
 
-			// check if cryptonight_monero_v8 is selected for the user or dev pool
-			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end());
+			// check if invalid_algo is selected for the user or dev pool
+			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), invalid_algo) != neededAlgorithms.end());
 
-			// true for all cryptonight_heavy derivates since we check the user and dev pool
-			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
+			// true for all invalid_algo derivates since we check the user and dev pool
+			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), invalid_algo) != neededAlgorithms.end();
 
 			// true for cryptonight_gpu as main user pool algorithm
 			bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
 
-			bool useCryptonight_r = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r;
+			bool useCryptonight_r = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == invalid_algo;
 
-			bool useCryptonight_r_wow = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r_wow;
+			bool useCryptonight_r_wow = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == invalid_algo;
 
 			// 8 threads per block (this is a good value for the most gpus)
 			uint32_t default_workSize = 8;

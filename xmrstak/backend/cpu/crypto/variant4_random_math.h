@@ -211,10 +211,7 @@ static int v4_random_math_init(struct V4_Instruction* code, const uint64_t heigh
 	memset(data, 0, sizeof(data));
 	uint64_t tmp = SWAP64LE(height);
 	memcpy(data, &tmp, sizeof(uint64_t));
-	if(ALGO == cryptonight_r)
-	{
-		data[20] = -38;
-	}
+	// cryptonight_r tweak removed (dead algorithm)
 
 	// Set data_index past the last byte in data
 	// to trigger full data update with blake hash
@@ -257,7 +254,7 @@ static int v4_random_math_init(struct V4_Instruction* code, const uint64_t heigh
 		code_size = 0;
 
 		int total_iterations = 0;
-		r8_used = (ALGO == cryptonight_r_wow);
+		r8_used = false; // was cryptonight_r_wow only
 
 		// Generate random code to achieve minimal required latency for our abstract CPU
 		// Try to get this latency for all 4 registers
@@ -302,7 +299,7 @@ static int v4_random_math_init(struct V4_Instruction* code, const uint64_t heigh
 			if(((opcode == ADD) || (opcode == SUB) || (opcode == XOR)) && (a == b))
 			{
 				// a is always < 4, so we don't need to check bounds here
-				b = (ALGO == cryptonight_r_wow) ? (a + 4) : 8;
+				b = 8; // was cryptonight_r_wow ? (a + 4) : 8
 				src_index = b;
 			}
 

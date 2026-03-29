@@ -309,17 +309,8 @@ void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name,
 
 	V4_Instruction code[256];
 	int code_size;
-	switch(algo.Id())
-	{
-	case cryptonight_r_wow:
-		code_size = v4_random_math_init<cryptonight_r_wow>(code, height);
-		break;
-	case cryptonight_r:
-		code_size = v4_random_math_init<cryptonight_r>(code, height);
-		break;
-		printer::inst()->print_msg(LDEBUG, "CryptonightR_get_program: invalid algo %d", algo);
-		return;
-	}
+	// Only cryptonight_gpu is supported; CryptonightR is dead code
+	code_size = v4_random_math_init<invalid_algo>(code, height);
 
 	std::string source_code(source_code_template, offset);
 	source_code.append(get_code(code, code_size));
