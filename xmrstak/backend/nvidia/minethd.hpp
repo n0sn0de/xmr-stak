@@ -1,7 +1,7 @@
 #pragma once
 
 #include "jconf.hpp"
-#include "nvcc_code/cryptonight.hpp"
+#include "nvcc_code/cuda_context.hpp"
 #include "xmrstak/jconf.hpp"
 
 #include "xmrstak/backend/cpu/minethd.hpp"

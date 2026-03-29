@@ -4,7 +4,7 @@
 #include "autoAdjust.hpp"
 
 #include "jconf.hpp"
-#include "nvcc_code/cryptonight.hpp"
+#include "nvcc_code/cuda_context.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"

@@ -25,7 +25,7 @@
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
 
-#include "cryptonight.hpp"
+#include "cuda_context.hpp"
 #include "cuda_aes.hpp"
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"

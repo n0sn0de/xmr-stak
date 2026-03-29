@@ -64,7 +64,7 @@ extern "C" void compat_usleep(uint64_t waitTime)
 }
 #endif
 
-#include "cryptonight.hpp"
+#include "cuda_context.hpp"
 #include "cuda_aes.hpp"
 #include "cuda_extra.hpp"
 

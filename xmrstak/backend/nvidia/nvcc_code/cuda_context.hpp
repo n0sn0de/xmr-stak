@@ -1,5 +1,15 @@
 #pragma once
 
+/**
+ * cuda_context.hpp — CUDA device context and extern "C" ABI declarations
+ *
+ * Contains:
+ *   nvid_ctx        — Per-device state: GPU buffers, config, CUDA context
+ *   extern "C" API  — Functions exported by libxmrstak_cuda_backend.so
+ *
+ * Was: cryptonight.hpp (CUDA-side, easily confused with backend/cryptonight.hpp)
+ */
+
 #include <stdint.h>
 #include <string>
 
