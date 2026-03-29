@@ -54,8 +54,6 @@ class jconf
 
 	bool TlsSecureAlgos();
 
-	inline xmrstak::coin_selection GetCurrentCoinSelection() const { return currentCoin; }
-
 	// ---- Simplified accessors (cn_gpu is the only algorithm) ----
 
 	/// Get the mining algorithm — always returns POW(cryptonight_gpu)

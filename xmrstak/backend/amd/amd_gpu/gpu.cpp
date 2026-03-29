@@ -195,37 +195,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	// Blake-256 branches
-	ctx->ExtraBuffers[2] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
-	if(ret != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create Branch 0 buffer.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	// Groestl-256 branches
-	ctx->ExtraBuffers[3] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
-	if(ret != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create Branch 1 buffer.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	// JH-256 branches
-	ctx->ExtraBuffers[4] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
-	if(ret != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create Branch 2 buffer.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	// Skein-512 branches
-	ctx->ExtraBuffers[5] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
-	if(ret != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create Branch 3 buffer.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
+	// Branch buffers removed — cn_gpu doesn't use Blake/Groestl/JH/Skein branch dispatch
 
 	// Assume we may find up to 0xFF nonces in one run - it's reasonable
 	ctx->OutputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * 0x100, NULL, &ret);
@@ -440,26 +410,17 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 		}
 
-		std::vector<std::string> KernelNames = {"cn2", "Blake", "Groestl", "JH", "Skein"};
-		if(miner_algo == cryptonight_gpu)
-		{
-			KernelNames.insert(KernelNames.begin(), "cn1_cn_gpu");
-			KernelNames.insert(KernelNames.begin(), "cn0_cn_gpu");
-		}
-		else
-		{
-			KernelNames.insert(KernelNames.begin(), "cn1");
-			KernelNames.insert(KernelNames.begin(), "cn0");
-		}
-
-		// append algorithm number to kernel name
-		for(int k = 0; k < 3; k++)
-			KernelNames[k] += std::to_string(miner_algo);
-
-		if(miner_algo == cryptonight_gpu)
-		{
-			KernelNames.push_back(std::string("cn00_cn_gpu") + std::to_string(miner_algo));
-		}
+		// cn_gpu kernel names:
+		// [0] cn0_cn_gpu13  — Phase 1: Keccak hash of input
+		// [1] cn1_cn_gpu13  — Phase 3: GPU floating-point computation
+		// [2] cn213         — Phase 4+5: Implode + finalize
+		// [3] cn00_cn_gpu13 — Phase 2: Scratchpad expansion
+		std::vector<std::string> KernelNames = {
+			std::string("cn0_cn_gpu") + std::to_string(miner_algo),
+			std::string("cn1_cn_gpu") + std::to_string(miner_algo),
+			std::string("cn2") + std::to_string(miner_algo),
+			std::string("cn00_cn_gpu") + std::to_string(miner_algo),
+		};
 
 		for(int i = 0; i < KernelNames.size(); ++i)
 		{
@@ -768,32 +729,15 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	const char* cryptonightCL =
 #include "./opencl/cryptonight.cl"
 		;
-	const char* blake256CL =
-#include "./opencl/blake256.cl"
-		;
-	const char* groestl256CL =
-#include "./opencl/groestl256.cl"
-		;
-	const char* jhCL =
-#include "./opencl/jh.cl"
-		;
 	const char* wolfAesCL =
 #include "./opencl/wolf-aes.cl"
-		;
-	const char* wolfSkeinCL =
-#include "./opencl/wolf-skein.cl"
 		;
 	const char* cryptonight_gpu =
 #include "./opencl/cryptonight_gpu.cl"
 		;
 
 	std::string source_code(cryptonightCL);
-	// FAST_INT_MATH_V2 and FAST_DIV_HEAVY placeholders removed (dead kernels)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_BLAKE256"), blake256CL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_GROESTL256"), groestl256CL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_CN_GPU"), cryptonight_gpu);
 
 	// create a directory  for the OpenCL compile cache
@@ -880,13 +824,13 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	}
 
 	// cn_gpu additional scratchpad preparation kernel (Kernel 7)
-	if((ret = clSetKernelArg(Kernels[7], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(Kernels[3], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 7, argument 0.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	if((ret = clSetKernelArg(Kernels[7], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(Kernels[3], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 7, argument 1.", err_to_str(ret));
 		return ERR_OCL_API;
@@ -1050,8 +994,6 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner
 
 	cl_int ret;
 	cl_uint zero = 0;
-	size_t BranchNonces[4];
-	memset(BranchNonces, 0, sizeof(size_t) * 4);
 
 	size_t g_intensity = ctx->rawIntensity;
 	size_t w_size = ctx->workSize;
@@ -1061,18 +1003,10 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner
 	{
 		// round up to next multiple of w_size
 		g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
-		// number of global threads must be a multiple of the work group size (w_size)
 		assert(g_thd % w_size == 0);
 	}
 
-	for(int i = 2; i < 6; ++i)
-	{
-		if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->ExtraBuffers[i], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
-		{
-			printer::inst()->print_msg(L1, "Error %s when calling clEnqueueWriteBuffer to zero branch buffer counter %d.", err_to_str(ret), i - 2);
-			return ERR_OCL_API;
-		}
-	}
+	// Branch buffer zeroing removed — cn_gpu doesn't use branch dispatch
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_FALSE, sizeof(cl_uint) * 0xFF, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
 	{
@@ -1093,7 +1027,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner
 	{
 		size_t thd = 64;
 		size_t intens = g_intensity * thd;
-		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[7], 1, 0, &intens, &thd, 0, NULL, NULL)) != CL_SUCCESS)
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &thd, 0, NULL, NULL)) != CL_SUCCESS)
 		{
 			printer::inst()->print_msg(L1, "Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 7);
 			return ERR_OCL_API;
