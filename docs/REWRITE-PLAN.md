@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Phase R1 ✅ Phase R2 ✅ — Phase R3 next*
+*Status: Phase R1 ✅ Phase R2 ✅ Phase R3 ✅ — Phase R4 next*
 
 ---
 
@@ -272,9 +272,19 @@ R1 is the most critical — without the validation harness, we're flying blind. 
   - Verified bit-exact against original code via `tests/test_constants.cpp`
 - ✅ Verified full miner builds on nos2 (CUDA 11.8/GTX 1060) and nosnode (CUDA 12.6/RTX 2070)
 
+- ✅ **Phase R3: Shared Crypto Cleanup** — `cryptonight_aesni.h`
+  - Stripped 1327 → 391 lines (936 lines of dead multi-algo code removed)
+  - Removed: Cryptonight_hash<1..5>, CN_STEP macros, REPEAT macros, ASM variants, patchCode, etc.
+  - Kept only: AES keygen/round, mix_and_propagate, cn_explode_scratchpad_gpu, cn_implode_scratchpad (HEAVY_MIX), Cryptonight_hash_gpu
+  - Refactored implode with lambda to eliminate copy-paste of 2 identical scratchpad passes
+  - Removed dead CN_ITER/CN_MASK constants from cryptonight.hpp
+  - Added clear pipeline documentation and phase labels
+  - Golden hashes verified, all 3 machines build clean
+
 **Notes for next session:**
-- Phase R3 (shared crypto cleanup) is next — clean up Keccak/AES, remove multi-algo dispatch
-- The `Cryptonight_hash_gpu::hash()` path skips extra_hashes branch — outputs first 32 bytes of hash_state directly
-- The macro nightmare in `cryptonight_aesni.h` (CN_STEP1..5, REPEAT macros) is dead code for cn_gpu — only `Cryptonight_hash_gpu` is used
-- Consider: can we integrate `n0s/algorithm/cn_gpu.hpp` into the existing CUDA/OpenCL kernels progressively, or save that for Phase R4/R5?
-- The `xmrstak_algo` struct and `POW()` function are used everywhere — thin wrapper first, then migrate callers
+- Phase R4 (CUDA backend rewrite) is the big one — 16-24 hours estimated
+- The xmr-stak-asm CMake target still exists but its code is never called — can remove in a future cleanup
+- extra_hashes[] array still defined in cryptonight_common.cpp but never called — dead code, low priority
+- The xmrstak_algo struct and POW() function are used by all backends — don't touch yet
+- Consider integrating n0s/algorithm/cn_gpu.hpp into GPU kernels progressively during R4/R5
+- Windows-specific code in cryptonight_common.cpp is dead — Linux only, low priority cleanup
