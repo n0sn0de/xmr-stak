@@ -185,7 +185,7 @@ struct SharedMemory
  *   4. Reduce accumulators to compute next scratchpad address
  */
 __attribute__((reqd_work_group_size(WORKSIZE * 16, 1, 1)))
-__kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *scratchpad_in, __global int *state_buffer, uint numThreads)
+__kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *state_buffer, uint numThreads)
 {
 	const uint gIdx = getIdx();
 
@@ -303,7 +303,7 @@ inline void generate_512_bytes(uint idx, __local ulong* in, __global ulong* out)
  * Phase 1 Kernel (part 1): Keccak hash of input → 200-byte state
  */
 __attribute__((reqd_work_group_size(8, 8, 1)))
-__kernel void JOIN(cn0_cn_gpu,ALGO)(__global ulong *input, __global int *Scratchpad, __global ulong *states, uint Threads)
+__kernel void cn_gpu_phase1_keccak(__global ulong *input, __global int *Scratchpad, __global ulong *states, uint Threads)
 {
     const uint gIdx = getIdx();
     __local ulong State_buf[8 * 25];
@@ -362,7 +362,7 @@ __kernel void JOIN(cn0_cn_gpu,ALGO)(__global ulong *input, __global int *Scratch
  * Phase 2 Kernel: Expand 200-byte state into 2MB scratchpad (Keccak-based)
  */
 __attribute__((reqd_work_group_size(64, 1, 1)))
-__kernel void JOIN(cn00_cn_gpu,ALGO)(__global int *Scratchpad, __global ulong *states)
+__kernel void cn_gpu_phase2_expand(__global int *Scratchpad, __global ulong *states)
 {
     const uint gIdx = getIdx() / 64;
     __local ulong State[25];

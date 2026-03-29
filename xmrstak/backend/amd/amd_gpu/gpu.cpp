@@ -399,24 +399,24 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 		}
 
-		// cn_gpu kernel names:
-		// [0] cn0_cn_gpu13  — Phase 1: Keccak hash of input
-		// [1] cn1_cn_gpu13  — Phase 3: GPU floating-point computation
-		// [2] cn213         — Phase 4+5: Implode + finalize
-		// [3] cn00_cn_gpu13 — Phase 2: Scratchpad expansion
-		std::vector<std::string> KernelNames = {
-			std::string("cn0_cn_gpu") + std::to_string(miner_algo),
-			std::string("cn1_cn_gpu") + std::to_string(miner_algo),
-			std::string("cn2") + std::to_string(miner_algo),
-			std::string("cn00_cn_gpu") + std::to_string(miner_algo),
+		// cn_gpu kernel names — explicit, no more JOIN(name,ALGO) indirection
+		// [0] Phase 1: Keccak hash of input
+		// [1] Phase 3: GPU floating-point computation
+		// [2] Phase 4+5: Implode + finalize
+		// [3] Phase 2: Scratchpad expansion
+		static const char* KernelNames[4] = {
+			"cn_gpu_phase1_keccak",
+			"cn_gpu_phase3_compute",
+			"cn_gpu_phase4_finalize",
+			"cn_gpu_phase2_expand",
 		};
 
-		for(int i = 0; i < KernelNames.size(); ++i)
+		for(int i = 0; i < 4; ++i)
 		{
-			ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i].c_str(), &ret);
+			ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i], &ret);
 			if(ret != CL_SUCCESS)
 			{
-				printer::inst()->print_msg(L1, "Error %s when calling clCreateKernel for kernel_0 %s.", err_to_str(ret), KernelNames[i].c_str());
+				printer::inst()->print_msg(L1, "Error %s when calling clCreateKernel for %s.", err_to_str(ret), KernelNames[i]);
 				return ERR_OCL_API;
 			}
 		}

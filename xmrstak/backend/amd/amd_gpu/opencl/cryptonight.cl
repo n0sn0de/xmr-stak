@@ -329,7 +329,7 @@ R"===(
 #endif
 
 __attribute__((reqd_work_group_size(8, WORKSIZE, 1)))
-__kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states,
+__kernel void cn_gpu_phase4_finalize (__global uint4 *Scratchpad, __global ulong *states,
 	__global uint *output, ulong Target, uint Threads)
 {
     __local uint AES0[256], AES1[256], AES2[256], AES3[256];
