@@ -28,7 +28,6 @@ struct params
 	bool useAMD;
 	bool AMDCache;
 	bool useNVIDIA;
-	bool useCPU;
 	std::string amdGpus;
 	std::string nvidiaGpus;
 	// user selected OpenCL vendor
@@ -74,7 +73,6 @@ struct params
 		useAMD(true),
 		AMDCache(true),
 		useNVIDIA(true),
-		useCPU(true),
 		openCLVendor("AMD"),
 		configFile("config.txt"),
 		configFilePools("pools.txt"),

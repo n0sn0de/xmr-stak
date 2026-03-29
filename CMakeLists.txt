@@ -309,15 +309,10 @@ else()
 endif()
 
 ###############################################################################
-# CPU backend
+# CPU mining backend removed — shared crypto in cpu/crypto/ still compiled
+# for GPU hash verification
 ###############################################################################
-
-option(CPU_ENABLE "Enable or disable CPU support" ON)
-if(NOT CPU_ENABLE)
-    add_definitions("-DCONF_NO_CPU")
-else()
-    list(APPEND BACKEND_TYPES "cpu")
-endif()
+add_definitions("-DCONF_NO_CPU")
 
 ################################################################################
 # Explicit march setting for Clang

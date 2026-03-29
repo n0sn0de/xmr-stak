@@ -467,10 +467,6 @@ int main(int argc, char* argv[])
 			win_exit();
 			return 0;
 		}
-		else if(opName.compare("--noCPU") == 0)
-		{
-			params::inst().useCPU = false;
-		}
 		else if(opName.compare("--noAMD") == 0)
 		{
 			params::inst().useAMD = false;
@@ -522,17 +518,6 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 			params::inst().nvidiaGpus = argv[i];
-		}
-		else if(opName.compare("--cpu") == 0)
-		{
-			++i;
-			if(i >= argc)
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--cpu' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFileCPU = argv[i];
 		}
 		else if(opName.compare("--amd") == 0)
 		{

@@ -36,7 +36,7 @@ cd ..
 
 echo ""
 echo "Mining for ${TIMEOUT} seconds..."
-OUTPUT=$(timeout $TIMEOUT $BINARY --noCPU --noAMDCache \
+OUTPUT=$(timeout $TIMEOUT $BINARY --noAMDCache \
   -o $POOL \
   -u WALLET \
   -p x \

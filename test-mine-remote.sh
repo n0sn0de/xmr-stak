@@ -17,7 +17,8 @@ echo "====================================="
 
 # Deploy code
 echo "Deploying to $REMOTE..."
-ssh $REMOTE "rm -rf $REMOTE_DIR && git clone $REPO_URL $REMOTE_DIR 2>&1 | tail -3"
+BRANCH="${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
+ssh $REMOTE "rm -rf $REMOTE_DIR && git clone -b $BRANCH $REPO_URL $REMOTE_DIR 2>&1 | tail -3"
 
 # Build (NVIDIA only, no AMD)
 echo "Building on remote..."
@@ -37,7 +38,7 @@ echo "✅ Remote build successful"
 # Mine test
 echo ""
 echo "Mining for ${TIMEOUT} seconds on $REMOTE..."
-OUTPUT=$(ssh $REMOTE "cd $REMOTE_DIR && timeout $TIMEOUT ./build/bin/n0s-ryo-miner --noAMD --noCPU \
+OUTPUT=$(ssh $REMOTE "cd $REMOTE_DIR && timeout $TIMEOUT ./build/bin/n0s-ryo-miner --noAMD \
   -o $POOL -u WALLET -p x --currency cryptonight_gpu 2>&1" || true)
 
 # Check for errors
