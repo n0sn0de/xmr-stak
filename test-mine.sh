@@ -4,7 +4,7 @@ set -e
 
 POOL="${POOL:-192.168.50.186:3333}"
 TIMEOUT="${TIMEOUT:-30}"
-BINARY="${BINARY:-./build/bin/xmr-stak}"
+BINARY="${BINARY:-./build/bin/n0s-ryo-miner}"
 
 echo "====================================="
 echo "Mining Test"

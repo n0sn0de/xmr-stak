@@ -37,7 +37,7 @@ echo "✅ Remote build successful"
 # Mine test
 echo ""
 echo "Mining for ${TIMEOUT} seconds on $REMOTE..."
-OUTPUT=$(ssh $REMOTE "cd $REMOTE_DIR && timeout $TIMEOUT ./build/bin/xmr-stak --noAMD --noCPU \
+OUTPUT=$(ssh $REMOTE "cd $REMOTE_DIR && timeout $TIMEOUT ./build/bin/n0s-ryo-miner --noAMD --noCPU \
   -o $POOL -u WALLET -p x --currency cryptonight_gpu 2>&1" || true)
 
 # Check for errors
