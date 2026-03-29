@@ -7,13 +7,19 @@ POOL="${POOL:-192.168.50.186:3333}"
 TIMEOUT="${TIMEOUT:-40}"
 REPO_URL="https://github.com/n0sn0de/xmr-stak.git"
 
-# Resolve remote home directory (don't hardcode /home/nos2)
-REMOTE_HOME=$(ssh "$REMOTE" 'echo $HOME')
+# Resolve remote home directory dynamically
+# Use printf to avoid capturing ssh-agent noise
+REMOTE_HOME=$(ssh "$REMOTE" 'printf "%s" "$HOME"' 2>/dev/null | tail -1)
+if [ -z "$REMOTE_HOME" ]; then
+    echo "❌ Could not resolve remote HOME for $REMOTE"
+    exit 1
+fi
 REMOTE_DIR="${REMOTE_HOME}/xmr-stak-test"
 
 echo "====================================="
 echo "Remote NVIDIA Mining Test"
 echo "Remote: $REMOTE"
+echo "Remote dir: $REMOTE_DIR"
 echo "Pool: $POOL"
 echo "Timeout: ${TIMEOUT}s"
 echo "====================================="
@@ -21,13 +27,13 @@ echo "====================================="
 # Deploy code
 echo "Deploying to $REMOTE..."
 BRANCH="${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
-ssh $REMOTE "rm -rf $REMOTE_DIR && git clone -b $BRANCH $REPO_URL $REMOTE_DIR 2>&1 | tail -3"
+ssh "$REMOTE" "rm -rf '$REMOTE_DIR' && git clone -b '$BRANCH' '$REPO_URL' '$REMOTE_DIR' 2>&1 | tail -3"
 
 # Build (NVIDIA only, no AMD)
 echo "Building on remote..."
-ssh $REMOTE "set -e && export PATH=/usr/local/cuda-11.8/bin:\$PATH && \
+ssh "$REMOTE" "set -e && export PATH=/usr/local/cuda-11.8/bin:\$PATH && \
   export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:\$LD_LIBRARY_PATH && \
-  cd $REMOTE_DIR && rm -rf build && mkdir build && cd build && \
+  cd '$REMOTE_DIR' && rm -rf build && mkdir build && cd build && \
   cmake .. -DCUDA_ENABLE=ON -DOpenCL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF \
     -DCUDA_ARCH='61' -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1 && \
   cmake --build . -j\$(nproc) 2>&1 | tail -5 && \
@@ -42,7 +48,7 @@ echo "✅ Remote build successful"
 # Mine test
 echo ""
 echo "Mining for ${TIMEOUT} seconds on $REMOTE..."
-OUTPUT=$(ssh $REMOTE "cd $REMOTE_DIR && timeout $TIMEOUT ./build/bin/n0s-ryo-miner --noAMD \
+OUTPUT=$(ssh "$REMOTE" "cd '$REMOTE_DIR' && timeout $TIMEOUT ./build/bin/n0s-ryo-miner --noAMD \
   -o $POOL -u WALLET -p x 2>&1" || true)
 
 # Check for errors
