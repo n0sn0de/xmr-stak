@@ -127,12 +127,11 @@ struct xmrstak_algo
 	uint32_t mask = 0u;
 };
 
-// cryptonight_gpu constants
-constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
-constexpr uint32_t CN_ITER = 0x80000; // kept for ASM patching code compatibility
-constexpr uint32_t CN_MASK = ((CN_MEMORY - 1) / 16) * 16; // kept for ASM patching code compatibility
-constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
-constexpr uint32_t CN_GPU_ITER = 0xC000;
+// CryptoNight-GPU constants
+// See also: n0s/algorithm/cn_gpu.hpp for the clean standalone version
+constexpr size_t CN_MEMORY = 2 * 1024 * 1024;       // 2 MiB scratchpad
+constexpr uint32_t CN_GPU_ITER = 0xC000;             // 49,152 Phase 3 iterations
+constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;           // 64-byte aligned scratchpad address mask
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
