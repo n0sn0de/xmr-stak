@@ -56,6 +56,14 @@ class jconf
 
 	inline xmrstak::coin_selection GetCurrentCoinSelection() const { return currentCoin; }
 
+	// ---- Simplified accessors (cn_gpu is the only algorithm) ----
+
+	/// Get the mining algorithm — always returns POW(cryptonight_gpu)
+	inline xmrstak_algo GetMiningAlgo() const { return POW(cryptonight_gpu); }
+
+	/// Get the scratchpad memory size — always 2MB for cn_gpu
+	inline size_t GetMiningMemSize() const { return CN_MEMORY; }
+
 	std::string GetMiningCoin();
 
 	static void GetAlgoList(std::string& list);

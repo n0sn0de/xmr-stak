@@ -272,28 +272,21 @@ bool minethd::self_test()
 
 	unsigned char out[32 * MAX_N];
 
-	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
-	for(const auto algo : neededAlgorithms)
+	// Self-test: verify cn_gpu hash of empty string
+	const auto algo = ::jconf::inst()->GetMiningAlgo();
 	{
-		if(algo == POW(cryptonight_gpu))
-		{
-			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
-			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
+		func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
+		ctx[0]->hash_fn("", 0, out, ctx, algo);
+		bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 
-			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
-			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
-		}
-		else
-			printer::inst()->print_msg(L0,
-				"Cryptonight hash self-test NOT defined for POW %s", algo.Name().c_str());
-
-		if(!bResult)
-			printer::inst()->print_msg(L0,
-				"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+		func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
+		ctx[0]->hash_fn("", 0, out, ctx, algo);
+		bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 	}
+
+	if(!bResult)
+		printer::inst()->print_msg(L0,
+			"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
 	for(int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
@@ -490,7 +483,7 @@ void minethd::multiway_work_main()
 	globalStates::inst().iConsumeCnt++;
 
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 	cn_on_new_job on_new_job;
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
@@ -523,17 +516,9 @@ void minethd::multiway_work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
-			if(new_version >= coinDesc.GetMiningForkVersion())
-			{
-				miner_algo = coinDesc.GetMiningAlgo();
-				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-			}
-			else
-			{
-				miner_algo = coinDesc.GetMiningAlgoRoot();
-				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-			}
+			// cn_gpu: algorithm is always the same regardless of fork version
+			miner_algo = ::jconf::inst()->GetMiningAlgo();
+			func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}

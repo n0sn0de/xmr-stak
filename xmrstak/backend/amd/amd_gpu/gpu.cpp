@@ -123,17 +123,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-	bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
-
-	if(useCryptonight_gpu)
+	// cn_gpu uses 16 threads per hash
 	{
-		// work cn_1 we use 16x more threads than configured by the user
 		MaximumWorkSize /= 16;
 	}
-	else
+	if(false)
 	{
-		/* Some kernel spawn 8 times more threads than the user is configuring.
+		/* Dead code — only cn_gpu is supported. Left for reference.
+		 * Some kernel spawn 8 times more threads than the user is configuring.
 		 * To give the user the correct maximum work size we divide the hardware specific max by 8.
 		 */
 		MaximumWorkSize /= 8;
@@ -181,11 +178,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t scratchPadSize = 0;
-	for(const auto algo : neededAlgorithms)
-	{
-		scratchPadSize = std::max(scratchPadSize, algo.Mem());
-	}
+	const size_t scratchPadSize = ::jconf::inst()->GetMiningMemSize();
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, scratchPadSize * g_thd, NULL, &ret);
@@ -256,12 +249,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	for(const auto miner_algo : neededAlgorithms)
 	{
-		// scratchpad size for the selected mining algorithm
-		size_t hashMemSize = miner_algo.Mem();
-		int threadMemMask = miner_algo.Mask();
-		int hashIterations = miner_algo.Iter();
+		// Only one algorithm: cryptonight_gpu
+		const auto miner_algo = ::jconf::inst()->GetMiningAlgo();
+		const size_t hashMemSize = miner_algo.Mem();
+		const int threadMemMask = miner_algo.Mask();
+		const int hashIterations = miner_algo.Iter();
 
 		size_t mem_chunk_exp = 1u << ctx->memChunk;
 		size_t strided_index = ctx->stridedIndex;

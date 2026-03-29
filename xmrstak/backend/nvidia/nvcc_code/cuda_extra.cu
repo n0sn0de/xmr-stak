@@ -241,13 +241,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	// prefer shared memory over L1 cache
 	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferShared));
 
-	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
-	size_t hashMemSize = 0;
-	for(const auto algo : neededAlgorithms)
-	{
-		hashMemSize = std::max(hashMemSize, algo.Mem());
-	}
+	const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
@@ -451,8 +445,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		}
 	}
 
-	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-	bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
+	// Only cryptonight_gpu is supported
+	constexpr bool useCryptonight_gpu = true;
 
 	// set all device option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
@@ -525,11 +519,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		size_t hashMemSize = 0;
-		for(const auto algo : neededAlgorithms)
-		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
-		}
+		const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid

@@ -26,13 +26,7 @@ class autoAdjust
   public:
 	bool printConfig()
 	{
-		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
-		size_t hashMemSize = 0;
-		for(const auto algo : neededAlgorithms)
-		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
-		}
+		const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 		const size_t hashMemSizeKB = hashMemSize / 1024u;
 
 		const size_t halfHashMemSizeKB = hashMemSizeKB / 2u;
@@ -47,8 +41,8 @@ class autoAdjust
 
 		std::string conf;
 
-		// if cryptonight_gpu is used we will disable cpu mining but provide a inactive config
-		bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
+		// CPU mining disabled for cryptonight_gpu (not suitable for CPU)
+		constexpr bool useCryptonight_gpu = true;
 
 		if(useCryptonight_gpu)
 		{

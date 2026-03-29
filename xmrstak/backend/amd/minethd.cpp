@@ -182,7 +182,7 @@ void minethd::work_main()
 		win_exit(1);
 	}
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 
 	cpu::minethd::cn_on_new_job set_job;
 
@@ -223,17 +223,9 @@ void minethd::work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
-			if(new_version >= coinDesc.GetMiningForkVersion())
-			{
-				miner_algo = coinDesc.GetMiningAlgo();
-				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-			}
-			else
-			{
-				miner_algo = coinDesc.GetMiningAlgoRoot();
-				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-			}
+			// cn_gpu: algorithm is always the same regardless of fork version
+			miner_algo = ::jconf::inst()->GetMiningAlgo();
+			cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}

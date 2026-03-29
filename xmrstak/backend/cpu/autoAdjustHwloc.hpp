@@ -26,12 +26,7 @@ class autoAdjustHwloc
 public:
 	autoAdjustHwloc()
 	{
-		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
-		for(const auto algo : neededAlgorithms)
-		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
-		}
+		hashMemSize = ::jconf::inst()->GetMiningMemSize();
 		halfHashMemSize = hashMemSize / 2u;
 	}
 
@@ -51,8 +46,8 @@ public:
 			;
 		configTpl.set(std::string(tpl));
 
-		// if cryptonight_gpu is used we will disable cpu mining but provide a inactive config
-		bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
+		// CPU mining disabled for cryptonight_gpu (not suitable for CPU)
+		constexpr bool useCryptonight_gpu = true;
 
 		if(useCryptonight_gpu)
 		{

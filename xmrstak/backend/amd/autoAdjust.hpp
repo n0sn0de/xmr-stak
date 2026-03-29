@@ -78,13 +78,7 @@ class autoAdjust
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
-		size_t hashMemSize = 0;
-		for(const auto algo : neededAlgorithms)
-		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
-		}
+		const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 
 		std::string conf;
 		for(auto& ctx : devVec)

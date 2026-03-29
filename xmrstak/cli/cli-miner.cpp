@@ -853,7 +853,7 @@ int main(int argc, char* argv[])
 	printer::inst()->print_str("Privacy-focused cryptocurrency with GPU-friendly mining.\n");
 	printer::inst()->print_str("More info: https://github.com/ryo-currency\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_msg(L0, "Mining coin: %s", ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo().Name().c_str());
+	printer::inst()->print_msg(L0, "Mining coin: %s", ::jconf::inst()->GetMiningAlgo().Name().c_str());
 
 	if(params::inst().benchmark_block_version >= 0)
 	{
