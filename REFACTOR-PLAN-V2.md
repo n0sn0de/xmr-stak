@@ -147,35 +147,54 @@ enum xmrstak_algo_id {
 
 ---
 
-## Phase 2: Aggressive Cleanup (Deferred)
+## Phase 2: Aggressive Cleanup — ✅ COMPLETE
 
 **Objective:** Strip dead algorithm code from OpenCL/CUDA kernels.
 
-**Prerequisites:**
-- Phase 1 complete
-- All tests passing for 24+ hours
-- Fresh eyes after a break
+### 2.1: Strip Dead Kernel Code (One File at a Time) — ✅ COMPLETE
 
-### 2.1: Strip Dead Kernel Code (One File at a Time)
+**Results:**
+1. ✅ `cryptonight.cl` (OpenCL shared kernels) — 1448 → 1167 lines (-19%)
+   - Stripped: heavy, v8, reversewaltz, conceal, bittube2, monero, aeon, ipbc, stellite, masari
+   - Made cn_gpu code paths unconditional
+   - Kept Blake/JH/Skein/Groestl (host still creates kernel objects)
+   - AMD: 88 shares ✅
 
-**Order of operations:**
-1. Strip `cryptonight.cl` (OpenCL shared kernels)
-2. Strip `cuda_core.cu` (CUDA main kernels)  
-3. Strip `cuda_extra.cu` (CUDA helper kernels)
-4. Test after EACH file
+2. ✅ `cuda_core.cu` (CUDA main kernels) — 1089 → 263 lines (-76%)
+   - Removed: phase1, phase2_double, phase2_quad, cryptonight_core_gpu_hash
+   - Removed: CryptonightR codegen, func_table, dead helper code (cuda_mul128, shuffle64, u64)
+   - Removed: unused includes (CudaCryptonightR_gen, fast_div_heavy, fast_int_math_v2)
+   - Simplified phase3 and _hash_gpu: made cn_gpu conditionals unconditional
+   - Replaced func_table dispatch with direct cryptonight_gpu call
+   - NVIDIA: 60 shares ✅
 
-**Method:**
-- Remove `#if (ALGO == dead_algo)` blocks
-- Keep all `#if (ALGO == cryptonight_gpu)` blocks
-- Simplify `#if (... || cryptonight_gpu)` → unconditional if cn_gpu is the only survivor
+3. ✅ `cuda_extra.cu` (CUDA helper kernels) — 820 → 585 lines (-29%)
+   - Simplified prepare: removed heavy/v8/CryptonightR branches
+   - Simplified final: removed branch dispatcher, kept cn_gpu 16-round AES + mix_and_propagate
+   - Simplified init: removed heavy/v8/CryptonightR memory extensions
+   - Replaced dispatchers with direct cryptonight_gpu template calls
+   - NVIDIA: 53 shares ✅ (after fixing missing mix_and_propagate loop)
 
-### 2.2: Clean Up Enum (Final Step)
+**Test results (final integration):**
+- AMD RX 9070 XT: 85 shares ✅
+- NVIDIA GTX 1070 Ti: 53 shares ✅
+- Both GPUs verified together
+
+**Code reduction:**
+- OpenCL: 1448 → 1167 lines (-19%)
+- CUDA core: 1089 → 263 lines (-76%)
+- CUDA extra: 820 → 585 lines (-29%)
+- **Total kernel code: 3357 → 2015 lines (-40%)**
+
+### 2.2: Clean Up Enum (Deferred)
 
 **Only after all kernel code is stripped:**
 - Reduce enum to `{invalid_algo = 0, cryptonight_gpu = 13}`
 - Keep `= 13` explicit to maintain ABI
 - Update OpenCL `#define cryptonight_gpu 13`
 - Verify CUDA `-DALGO=13` still matches
+
+**Status:** Can proceed, but deferred to Phase 3 to minimize risk
 
 ---
 
