@@ -227,15 +227,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		const int hashIterations = miner_algo.Iter();
 
 		size_t mem_chunk_exp = 1u << ctx->memChunk;
-		size_t strided_index = ctx->stridedIndex;
-		/* Adjust the config settings to a valid combination
-		 * this is required if the dev pool is mining monero
-		 * but the user tuned there settings for another currency
-		 */
-		if(miner_algo == cryptonight_gpu)
-		{
-			strided_index = 0;
-		}
+		// cn_gpu always uses non-strided index
+		size_t strided_index = 0;
 
 		// if intensity is a multiple of worksize than comp mode is not needed
 		int needCompMode = ctx->compMode && ctx->rawIntensity % ctx->workSize != 0 ? 1 : 0;
@@ -256,14 +249,10 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 */
 		options += " -DOPENCL_DRIVER_MAJOR=" + std::to_string(std::stoi(openCLDriverVer.data()) / 100);
 
-		uint32_t isWindowsOs = 0;
-#ifdef _WIN32
-		isWindowsOs = 1;
-#endif
-		options += " -DIS_WINDOWS_OS=" + std::to_string(isWindowsOs);
+		options += " -DIS_WINDOWS_OS=0";
 
-		if(miner_algo == cryptonight_gpu)
-			options += " -cl-fp32-correctly-rounded-divide-sqrt";
+		// cn_gpu requires IEEE 754 compliant float math
+		options += " -cl-fp32-correctly-rounded-divide-sqrt";
 
 		/* create a hash for the compile time cache
 		 * used data:
@@ -288,20 +277,20 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		{
 			if(xmrstak::params::inst().AMDCache)
 				printer::inst()->print_msg(L1, "OpenCL device %u - Precompiled code %s not found. Compiling ...", ctx->deviceIdx, cache_file.c_str());
-			ctx->Program[miner_algo] = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
+			ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
 			if(ret != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1, "Error %s when calling clCreateProgramWithSource on the OpenCL miner code", err_to_str(ret));
 				return ERR_OCL_API;
 			}
 
-			ret = clBuildProgram(ctx->Program[miner_algo], 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
+			ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
 				size_t len;
 				printer::inst()->print_msg(L1, "Error %s when calling clBuildProgram.", err_to_str(ret));
 
-				if((ret = clGetProgramBuildInfo(ctx->Program[miner_algo], ctx->DeviceID, CL_PROGRAM_BUILD_LOG, 0, NULL, &len)) != CL_SUCCESS)
+				if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, 0, NULL, &len)) != CL_SUCCESS)
 				{
 					printer::inst()->print_msg(L1, "Error %s when calling clGetProgramBuildInfo for length of build log output.", err_to_str(ret));
 					return ERR_OCL_API;
@@ -310,7 +299,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				char* BuildLog = (char*)malloc(len + 1);
 				BuildLog[0] = '\0';
 
-				if((ret = clGetProgramBuildInfo(ctx->Program[miner_algo], ctx->DeviceID, CL_PROGRAM_BUILD_LOG, len, BuildLog, NULL)) != CL_SUCCESS)
+				if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, len, BuildLog, NULL)) != CL_SUCCESS)
 				{
 					free(BuildLog);
 					printer::inst()->print_msg(L1, "Error %s when calling clGetProgramBuildInfo for build log.", err_to_str(ret));
@@ -325,10 +314,10 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 
 			cl_uint num_devices;
-			clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint), &num_devices, NULL);
+			clGetProgramInfo(ctx->Program, CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint), &num_devices, NULL);
 
 			std::vector<cl_device_id> devices_ids(num_devices);
-			clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_DEVICES, sizeof(cl_device_id) * devices_ids.size(), devices_ids.data(), NULL);
+			clGetProgramInfo(ctx->Program, CL_PROGRAM_DEVICES, sizeof(cl_device_id) * devices_ids.size(), devices_ids.data(), NULL);
 			int dev_id = 0;
 			/* Search for the gpu within the program context.
 			 * The id can be different to  ctx->DeviceID.
@@ -343,7 +332,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			cl_build_status status;
 			do
 			{
-				if((ret = clGetProgramBuildInfo(ctx->Program[miner_algo], ctx->DeviceID, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL)) != CL_SUCCESS)
+				if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL)) != CL_SUCCESS)
 				{
 					printer::inst()->print_msg(L1, "Error %s when calling clGetProgramBuildInfo for status of build.", err_to_str(ret));
 					return ERR_OCL_API;
@@ -354,7 +343,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			if(xmrstak::params::inst().AMDCache)
 			{
 				std::vector<size_t> binary_sizes(num_devices);
-				clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
+				clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
 
 				std::vector<char*> all_programs(num_devices);
 				std::vector<std::vector<char>> program_storage;
@@ -370,7 +359,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 					p_id++;
 				}
 
-				if((ret = clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(), NULL)) != CL_SUCCESS)
+				if((ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(), NULL)) != CL_SUCCESS)
 				{
 					printer::inst()->print_msg(L1, "Error %s when calling clGetProgramInfo.", err_to_str(ret));
 					return ERR_OCL_API;
@@ -394,7 +383,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			auto data_ptr = s.data();
 
 			cl_int clStatus;
-			ctx->Program[miner_algo] = clCreateProgramWithBinary(
+			ctx->Program = clCreateProgramWithBinary(
 				opencl_ctx, 1, &ctx->DeviceID, &bin_size,
 				(const unsigned char**)&data_ptr, &clStatus, &ret);
 			if(ret != CL_SUCCESS)
@@ -402,7 +391,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				printer::inst()->print_msg(L1, "Error %s when calling clCreateProgramWithBinary. Try to delete file %s", err_to_str(ret), cache_file.c_str());
 				return ERR_OCL_API;
 			}
-			ret = clBuildProgram(ctx->Program[miner_algo], 1, &ctx->DeviceID, NULL, NULL, NULL);
+			ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, NULL, NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1, "Error %s when calling clBuildProgram. Try to delete file %s", err_to_str(ret), cache_file.c_str());
@@ -424,7 +413,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 		for(int i = 0; i < KernelNames.size(); ++i)
 		{
-			ctx->Kernels[miner_algo][i] = clCreateKernel(ctx->Program[miner_algo], KernelNames[i].c_str(), &ret);
+			ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i].c_str(), &ret);
 			if(ret != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1, "Error %s when calling clCreateKernel for kernel_0 %s.", err_to_str(ret), KernelNames[i].c_str());
@@ -775,10 +764,10 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, const xmrstak_algo& miner_algo, uint64_t height)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target)
 {
 
-	auto& Kernels = ctx->Kernels[miner_algo.Id()];
+	auto& Kernels = ctx->Kernels;
 
 	cl_int ret;
 
@@ -988,9 +977,9 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
 	return t0;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner_algo)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 {
-	const auto& Kernels = ctx->Kernels[miner_algo.Id()];
+	const auto& Kernels = ctx->Kernels;
 
 	cl_int ret;
 	cl_uint zero = 0;
