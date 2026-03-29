@@ -314,10 +314,16 @@ R1 is the most critical — without the validation harness, we're flying blind. 
   - cryptonight_common.cpp: 320 → 116 lines
   - All 3 GPUs: build + mining verified after removal
 
+- ✅ **Simplify coin_selection** — all 27 call sites migrated to jconf helpers
+  - Added jconf::GetMiningAlgo() and GetMiningMemSize()
+  - Eliminated all GetCurrentCoinSelection() callers (11 files, -126/+57 lines)
+  - Fork version checks simplified (always true for cn_gpu)
+  - coinDescription.hpp still exists but has zero external callers — ready for removal
+
 **Notes for next session:**
-- R6/R7 can continue: pool/network code is functional but could use docs
-- coinDescription/coin_selection is overkill but pervasive (20+ call sites)
-- cryptonight.cl (1164 lines) has dead branch kernels (Skein/JH/Blake/Groestl) — compiled but never launched
-- gpu.cpp (1142 lines) could use documentation pass
+- coinDescription.hpp can now be removed (zero external callers)
+- cryptonight.cl (1164 lines) has dead branch kernels (Skein/JH/Blake/Groestl)
 - C hash files (c_blake256.c etc.) still compiled but only c_keccak.c is actually used
+- gpu.cpp could use documentation pass
+- Pool/network code is functional, could use docs
 - Could consolidate cuda_core.cu + cuda_extra.cu in a future pass
