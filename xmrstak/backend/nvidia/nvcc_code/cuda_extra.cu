@@ -324,12 +324,26 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		return 1;
 	}
 
-	if(version < CUDART_VERSION)
+	// Check CUDA driver/runtime version compatibility
+	// Allow minor version forward compat within same major (e.g. driver 12.2 + toolkit 12.6)
+	// since we only use basic CUDA APIs (no 12.3+ features)
+	const int driverMajor = version / 1000;
+	const int runtimeMajor = CUDART_VERSION / 1000;
+
+	if(driverMajor < runtimeMajor)
 	{
-		printf("WARNING: Driver supports CUDA %d.%d but this was compiled for CUDA %d.%d API! Update your nVidia driver or compile with older CUDA!\n",
+		printf("ERROR: Driver CUDA major version %d.%d < compiled CUDA %d.%d. Update your NVIDIA driver!\n",
 			version / 1000, (version % 1000 / 10),
 			CUDART_VERSION / 1000, (CUDART_VERSION % 1000) / 10);
 		return 1;
+	}
+
+	if(version < CUDART_VERSION)
+	{
+		printf("NOTE: Driver CUDA %d.%d < compiled CUDA %d.%d (minor version forward compat mode)\n",
+			version / 1000, (version % 1000 / 10),
+			CUDART_VERSION / 1000, (CUDART_VERSION % 1000) / 10);
+		// Continue — minor version compat should work for basic CUDA APIs
 	}
 
 	int GPU_N;
@@ -381,32 +395,23 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	while(ss >> tmpArch)
 		arch.push_back(tmpArch);
 
-#define MSG_CUDA_NO_ARCH "WARNING: skip device - binary does not contain required device architecture\n"
-	if(gpuArch >= 20 && gpuArch < 30)
+	// Minimum supported architecture: Pascal (sm_60)
+	if(gpuArch < 60)
 	{
-		// compiled binary must support sm_20 for fermi
-		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
-		if(it == arch.end())
-		{
-			printf(MSG_CUDA_NO_ARCH);
-			return 5;
-		}
+		printf("WARNING: skip device — GPU architecture sm_%d is below minimum (sm_60 / Pascal)\n", gpuArch);
+		return 5;
 	}
-	if(gpuArch >= 30)
+
+	// Verify binary contains a compatible architecture
 	{
-		// search the minimum architecture greater than sm_20
 		int minSupportedArch = 0;
-		/* - for newer architecture than fermi we need at least sm_30
-		 * or a architecture >= gpuArch
-		 * - it is not possible to use a gpu with a architecture >= 30
-		 *   with a sm_20 only compiled binary
-		 */
-		for(int i = 0; i < arch.size(); ++i)
-			if(arch[i] >= 30 && (minSupportedArch == 0 || arch[i] < minSupportedArch))
-				minSupportedArch = arch[i];
-		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
+		for(const auto a : arch)
+			if(a >= 60 && (minSupportedArch == 0 || a < minSupportedArch))
+				minSupportedArch = a;
+		if(minSupportedArch == 0 || gpuArch < minSupportedArch)
 		{
-			printf(MSG_CUDA_NO_ARCH);
+			printf("WARNING: skip device — binary does not contain architecture for sm_%d (min compiled: sm_%d)\n",
+				gpuArch, minSupportedArch);
 			return 5;
 		}
 	}
@@ -417,15 +422,11 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	// set all device option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
 	{
-		/* good values based of my experience
-		 *   - 3 * SMX count for >=sm_30
-		 *   - 2 * SMX count for  <sm_30
-		 */
-		ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 2 : 3);
+		ctx->device_blocks = props.multiProcessorCount * 3;
 
-		// use 6 blocks per SM for sm_2X else 8 blocks
+		// use 8 blocks per SM for cryptonight_gpu (all supported GPUs are >= Pascal)
 		if(useCryptonight_gpu)
-			ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 6 : 8);
+			ctx->device_blocks = props.multiProcessorCount * 8;
 
 		// increase bfactor for low end devices to avoid that the miner is killed by the OS
 		if(props.multiProcessorCount <= 6)
@@ -437,11 +438,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 	if(ctx->device_threads == -1)
 	{
-		/* sm_20 devices can only run 512 threads per cuda block
-		 * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
-		 * `8 * ctx->device_threads` threads per block
-		 */
-		const uint32_t maxThreadsPerBlock = props.major < 3 ? 512 : 1024;
+		// All supported GPUs (>= Pascal) support 1024 threads per block
+		const uint32_t maxThreadsPerBlock = 1024;
 
 		// phase2_gpu uses 16 threads per hash
 		if(useCryptonight_gpu)
@@ -450,37 +448,18 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->device_threads = maxThreadsPerBlock / threadsPerHash;
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		// no limit by default 1TiB
-		size_t maxMemUsage = byteToMiB * byteToMiB;
+		// Memory limits by GPU class
+		size_t maxMemUsage = byteToMiB * byteToMiB; // default 1TiB (no limit)
 		if(props.major == 6)
 		{
+			// Pascal: limit based on SM count
 			if(props.multiProcessorCount < 15)
-			{
-				// limit memory usage for GPUs for pascal < GTX1070
-				maxMemUsage = size_t(2048u) * byteToMiB;
-			}
+				maxMemUsage = size_t(2048u) * byteToMiB;  // < GTX1070
 			else if(props.multiProcessorCount <= 20)
-			{
-				// limit memory usage for GPUs for pascal GTX1070, GTX1080
-				maxMemUsage = size_t(4096u) * byteToMiB;
-			}
+				maxMemUsage = size_t(4096u) * byteToMiB;  // GTX1070/1080
 		}
-		if(props.major < 6)
-		{
-			// limit memory usage for GPUs before pascal
-			maxMemUsage = size_t(2048u) * byteToMiB;
-		}
-		if(props.major == 2)
-		{
-			// limit memory usage for sm 20 GPUs
-			maxMemUsage = size_t(1024u) * byteToMiB;
-		}
-
 		if(props.multiProcessorCount <= 6)
-		{
-			// limit memory usage for low end devices to reduce the number of threads
-			maxMemUsage = size_t(1024u) * byteToMiB;
-		}
+			maxMemUsage = size_t(1024u) * byteToMiB;  // low-end GPUs
 
 		int* tmp;
 		cudaError_t err;
@@ -557,25 +536,18 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// cn_gpu specific optimizations
 		if(useCryptonight_gpu)
 		{
-			// 8 based on my profiling sessions maybe it must be adjusted later
-			size_t threads = 8;
-			// 8 is chosen by checking the occupancy calculator
-			size_t blockOptimal = 8 * ctx->device_mpcount;
-
-			if(gpuArch == 30)
-				blockOptimal = 8 * ctx->device_mpcount;
-			// the following values are calculated with CUDA10 and the occupancy calculator
-			if(gpuArch == 35 || gpuArch / 10 == 5 || gpuArch / 10 == 6)
+			constexpr size_t threads = 8;
+			// Optimal block count by architecture (from CUDA occupancy calculator)
+			size_t blockOptimal;
+			if(gpuArch / 10 == 6)       // Pascal (sm_6x)
 				blockOptimal = 7 * ctx->device_mpcount;
-			if(gpuArch == 37)
-				blockOptimal = 14 * ctx->device_mpcount;
-			if(gpuArch >= 70)
+			else                         // Turing+ (sm_7x and above)
 				blockOptimal = 6 * ctx->device_mpcount;
 
 			if(blockOptimal * threads * hashMemSize < limitedMemory)
 				ctx->device_blocks = blockOptimal;
 			else
-				ctx->device_blocks = limitedMemory / hashMemSize / threads; // round to a memory fitting value
+				ctx->device_blocks = limitedMemory / hashMemSize / threads;
 			ctx->device_threads = threads;
 		}
 	}
