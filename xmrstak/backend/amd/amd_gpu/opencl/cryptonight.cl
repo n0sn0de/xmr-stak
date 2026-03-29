@@ -53,53 +53,8 @@ static const __constant uchar sbox[256] =
 //#include "opencl/wolf-aes.cl"
 XMRSTAK_INCLUDE_WOLF_AES
 
-void keccakf1600(ulong *s)
-{
-	for(int i = 0; i < 24; ++i)
-	{
-		ulong bc[5], tmp1, tmp2;
-		bc[0] = s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20] ^ rotate(s[2] ^ s[7] ^ s[12] ^ s[17] ^ s[22], 1UL);
-		bc[1] = s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21] ^ rotate(s[3] ^ s[8] ^ s[13] ^ s[18] ^ s[23], 1UL);
-		bc[2] = s[2] ^ s[7] ^ s[12] ^ s[17] ^ s[22] ^ rotate(s[4] ^ s[9] ^ s[14] ^ s[19] ^ s[24], 1UL);
-		bc[3] = s[3] ^ s[8] ^ s[13] ^ s[18] ^ s[23] ^ rotate(s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20], 1UL);
-		bc[4] = s[4] ^ s[9] ^ s[14] ^ s[19] ^ s[24] ^ rotate(s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21], 1UL);
-
-		tmp1 = s[1] ^ bc[0];
-
-		s[0] ^= bc[4];
-		s[1] = rotate(s[6] ^ bc[0], 44UL);
-		s[6] = rotate(s[9] ^ bc[3], 20UL);
-		s[9] = rotate(s[22] ^ bc[1], 61UL);
-		s[22] = rotate(s[14] ^ bc[3], 39UL);
-		s[14] = rotate(s[20] ^ bc[4], 18UL);
-		s[20] = rotate(s[2] ^ bc[1], 62UL);
-		s[2] = rotate(s[12] ^ bc[1], 43UL);
-		s[12] = rotate(s[13] ^ bc[2], 25UL);
-		s[13] = rotate(s[19] ^ bc[3], 8UL);
-		s[19] = rotate(s[23] ^ bc[2], 56UL);
-		s[23] = rotate(s[15] ^ bc[4], 41UL);
-		s[15] = rotate(s[4] ^ bc[3], 27UL);
-		s[4] = rotate(s[24] ^ bc[3], 14UL);
-		s[24] = rotate(s[21] ^ bc[0], 2UL);
-		s[21] = rotate(s[8] ^ bc[2], 55UL);
-		s[8] = rotate(s[16] ^ bc[0], 35UL);
-		s[16] = rotate(s[5] ^ bc[4], 36UL);
-		s[5] = rotate(s[3] ^ bc[2], 28UL);
-		s[3] = rotate(s[18] ^ bc[2], 21UL);
-		s[18] = rotate(s[17] ^ bc[1], 15UL);
-		s[17] = rotate(s[11] ^ bc[0], 10UL);
-		s[11] = rotate(s[7] ^ bc[1], 6UL);
-		s[7] = rotate(s[10] ^ bc[4], 3UL);
-		s[10] = rotate(tmp1, 1UL);
-
-		tmp1 = s[0]; tmp2 = s[1]; s[0] = bitselect(s[0] ^ s[2], s[0], s[1]); s[1] = bitselect(s[1] ^ s[3], s[1], s[2]); s[2] = bitselect(s[2] ^ s[4], s[2], s[3]); s[3] = bitselect(s[3] ^ tmp1, s[3], s[4]); s[4] = bitselect(s[4] ^ tmp2, s[4], tmp1);
-		tmp1 = s[5]; tmp2 = s[6]; s[5] = bitselect(s[5] ^ s[7], s[5], s[6]); s[6] = bitselect(s[6] ^ s[8], s[6], s[7]); s[7] = bitselect(s[7] ^ s[9], s[7], s[8]); s[8] = bitselect(s[8] ^ tmp1, s[8], s[9]); s[9] = bitselect(s[9] ^ tmp2, s[9], tmp1);
-		tmp1 = s[10]; tmp2 = s[11]; s[10] = bitselect(s[10] ^ s[12], s[10], s[11]); s[11] = bitselect(s[11] ^ s[13], s[11], s[12]); s[12] = bitselect(s[12] ^ s[14], s[12], s[13]); s[13] = bitselect(s[13] ^ tmp1, s[13], s[14]); s[14] = bitselect(s[14] ^ tmp2, s[14], tmp1);
-		tmp1 = s[15]; tmp2 = s[16]; s[15] = bitselect(s[15] ^ s[17], s[15], s[16]); s[16] = bitselect(s[16] ^ s[18], s[16], s[17]); s[17] = bitselect(s[17] ^ s[19], s[17], s[18]); s[18] = bitselect(s[18] ^ tmp1, s[18], s[19]); s[19] = bitselect(s[19] ^ tmp2, s[19], tmp1);
-		tmp1 = s[20]; tmp2 = s[21]; s[20] = bitselect(s[20] ^ s[22], s[20], s[21]); s[21] = bitselect(s[21] ^ s[23], s[21], s[22]); s[22] = bitselect(s[22] ^ s[24], s[22], s[23]); s[23] = bitselect(s[23] ^ tmp1, s[23], s[24]); s[24] = bitselect(s[24] ^ tmp2, s[24], tmp1);
-		s[0] ^= keccakf_rndc[i];
-	}
-}
+// Dead code removed: keccakf1600 (private), keccakf1600_1 (private)
+// cn_gpu only uses keccakf1600_2 (local memory version)
 
 static const __constant uint keccakf_rotc[24] =
 {
@@ -113,6 +68,7 @@ static const __constant uint keccakf_piln[24] =
 	15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1
 };
 
+// keccakf1600_1: private memory version, used by cn0_cn_gpu kernel (Phase 1)
 inline void keccakf1600_1(ulong st[25])
 {
 	int i, round;
@@ -182,9 +138,8 @@ inline void keccakf1600_1(ulong st[25])
 		st[0] ^= keccakf_rndc[round];
 	}
 }
-)==="
-	R"===(
 
+// keccakf1600_2: local memory version, used by cn2 kernel (Phase 5: Finalize)
 void keccakf1600_2(__local ulong *st)
 {
 	int i, round;
@@ -255,6 +210,19 @@ void keccakf1600_2(__local ulong *st)
 	}
 }
 
+
+// Dead code removed: _mm_* float4 helpers (only used by cn1 AES loop)
+// Dead code removed: CNKeccak (only used by cn0 Keccak kernel)
+// Dead code removed: mix_and_propagate macro (only used by cn0)
+
+#define JOIN_DO(x,y) x##y
+#define JOIN(x,y) JOIN_DO(x,y)
+
+inline uint getIdx()
+{
+	return get_global_id(0) - get_global_offset(0);
+}
+
 #define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
 
 #if(STRIDED_INDEX==0)
@@ -266,89 +234,11 @@ void keccakf1600_2(__local ulong *st)
 #elif(STRIDED_INDEX==3)
 #	define IDX(x)   ((x) * WORKSIZE)
 #endif
-
-#define JOIN_DO(x,y) x##y
-#define JOIN(x,y) JOIN_DO(x,y)
-
-inline uint getIdx()
-{
-	return get_global_id(0) - get_global_offset(0);
-}
-
-// fast_int_math_v2 and fast_div_heavy removed — dead kernels for stripped algorithms
 //#include "opencl/wolf-skein.cl"
 //#include "opencl/jh.cl"
 //#include "opencl/blake256.cl"
 //#include "opencl/groestl256.cl"
 
-inline float4 _mm_add_ps(float4 a, float4 b)
-{
-	return a + b;
-}
-
-inline float4 _mm_sub_ps(float4 a, float4 b)
-{
-	return a - b;
-}
-
-inline float4 _mm_mul_ps(float4 a, float4 b)
-{
-
-	//#pragma OPENCL SELECT_ROUNDING_MODE rte
-	return a * b;
-}
-
-inline float4 _mm_div_ps(float4 a, float4 b)
-{
-	return a / b;
-}
-
-inline float4 _mm_and_ps(float4 a, int b)
-{
-	return as_float4(as_int4(a) & (int4)(b));
-}
-
-inline float4 _mm_or_ps(float4 a, int b)
-{
-	return as_float4(as_int4(a) | (int4)(b));
-}
-
-inline float4 _mm_fmod_ps(float4 v, float dc)
-{
-	float4 d = (float4)(dc);
-	float4 c = _mm_div_ps(v, d);
-	c = trunc(c);
-	c = _mm_mul_ps(c, d);
-	return _mm_sub_ps(v, c);
-}
-
-inline int4 _mm_xor_si128(int4 a, int4 b)
-{
-	return a ^ b;
-}
-
-inline float4 _mm_xor_ps(float4 a, int b)
-{
-	return as_float4(as_int4(a) ^ (int4)(b));
-}
-
-inline int4 _mm_alignr_epi8(int4 a, const uint rot)
-{
-	const uint right = 8 * rot;
-	const uint left = (32 - 8 * rot);
-	return (int4)(
-		((uint)a.x >> right) | ( a.y << left ),
-		((uint)a.y >> right) | ( a.z << left ),
-		((uint)a.z >> right) | ( a.w << left ),
-		((uint)a.w >> right) | ( a.x << left )
-	);
-}
-
-//#include "opencl/cryptonight_gpu.cl"
-XMRSTAK_INCLUDE_CN_GPU
-
-)==="
-	R"===(
 
 void CNKeccak(ulong *output, ulong *input)
 {
@@ -391,230 +281,44 @@ void AESExpandKey256(uint *keybuf)
 	}
 }
 
-)==="
-	R"===(
 
-#define mix_and_propagate(xin) (xin)[(get_local_id(1)) % 8][get_local_id(0)] ^ (xin)[(get_local_id(1) + 1) % 8][get_local_id(0)]
+// Float4 helper functions for cn_gpu FP computation kernel
+inline float4 _mm_add_ps(float4 a, float4 b) { return a + b; }
+inline float4 _mm_sub_ps(float4 a, float4 b) { return a - b; }
+inline float4 _mm_mul_ps(float4 a, float4 b) { return a * b; }
+inline float4 _mm_div_ps(float4 a, float4 b) { return a / b; }
+inline float4 _mm_and_ps(float4 a, int b) { return as_float4(as_int4(a) & (int4)(b)); }
+inline float4 _mm_or_ps(float4 a, int b) { return as_float4(as_int4(a) | (int4)(b)); }
 
-__attribute__((reqd_work_group_size(8, 8, 1)))
-__kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, uint Threads)
+inline float4 _mm_fmod_ps(float4 v, float dc)
 {
-	uint ExpandedKey1[40];
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
-	uint4 text;
-
-	const uint gIdx = getIdx();
-
-	for(int i = get_local_id(1) * 8 + get_local_id(0);
-		i < 256;
-		i += 8 * 8)
-	{
-		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
-	}
-
-	__local ulong State_buf[8 * 25];
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-#if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
-#endif
-	{
-		states += 25 * gIdx;
-
-#if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (MEMORY >> 4);
-#elif(STRIDED_INDEX==1)
-		Scratchpad += gIdx;
-#elif(STRIDED_INDEX==2)
-		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
-#elif(STRIDED_INDEX==3)
-		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
-#endif
-
-		if (get_local_id(1) == 0)
-		{
-			__local ulong* State = State_buf + get_local_id(0) * 25;
-// NVIDIA
-#ifdef __NV_CL_C_VERSION
-			for(uint i = 0; i < 8; ++i)
-				State[i] = input[i];
-#else
-			((__local ulong8 *)State)[0] = vload8(0, input);
-#endif
-			State[8]  = input[8];
-			State[9]  = input[9];
-			State[10] = input[10];
-			State[11] = input[11];
-			State[12] = input[12];
-			State[13] = input[13];
-			State[14] = input[14];
-			State[15] = input[15];
-
-			((__local uint *)State)[9]  &= 0x00FFFFFFU;
-			((__local uint *)State)[9]  |= (((uint)get_global_id(0)) & 0xFF) << 24;
-			((__local uint *)State)[10] &= 0xFF000000U;
-			/* explicit cast to `uint` is required because some OpenCL implementations (e.g. NVIDIA)
-			 * handle get_global_id and get_global_offset as signed long long int and add
-			 * 0xFFFFFFFF... to `get_global_id` if we set on host side a 32bit offset where the first bit is `1`
-			 * (even if it is correct casted to unsigned on the host)
-			 */
-			((__local uint *)State)[10] |= (((uint)get_global_id(0) >> 8));
-
-			// Last bit of padding
-			State[16] = 0x8000000000000000UL;
-
-			for (int i = 17; i < 25; ++i) {
-			    State[i] = 0x00UL;
-			}
-
-			keccakf1600_2(State);
-
-			#pragma unroll
-			for (int i = 0; i < 25; ++i) {
-			    states[i] = State[i];
-			}
-		}
-	}
-
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-#   if (COMP_MODE == 1)
-	// do not use early return here
-	if (gIdx < Threads)
-#   endif
-	{
-		text = vload4(get_local_id(1) + 4, (__global uint *)(states));
-
-		#pragma unroll
-		for (int i = 0; i < 4; ++i) {
-			((ulong *)ExpandedKey1)[i] = states[i];
-		}
-
-		AESExpandKey256(ExpandedKey1);
-	}
-
-	mem_fence(CLK_LOCAL_MEM_FENCE);
-
-
-
-#if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
-#endif
-	{
-
-		#pragma unroll 2
-		for(int i = 0; i < (MEMORY >> 4); i += 8) {
-			#pragma unroll 10
-			for (int j = 0; j < 10; ++j) {
-			    uint4 t = ((uint4 *)ExpandedKey1)[j];
-			    t.s0 ^= AES0[BYTE(text.s0, 0)] ^ AES1[BYTE(text.s1, 1)] ^ AES2[BYTE(text.s2, 2)] ^ AES3[BYTE(text.s3, 3)];
-			    t.s1 ^= AES0[BYTE(text.s1, 0)] ^ AES1[BYTE(text.s2, 1)] ^ AES2[BYTE(text.s3, 2)] ^ AES3[BYTE(text.s0, 3)];
-			    t.s2 ^= AES0[BYTE(text.s2, 0)] ^ AES1[BYTE(text.s3, 1)] ^ AES2[BYTE(text.s0, 2)] ^ AES3[BYTE(text.s1, 3)];
-			    t.s3 ^= AES0[BYTE(text.s3, 0)] ^ AES1[BYTE(text.s0, 1)] ^ AES2[BYTE(text.s1, 2)] ^ AES3[BYTE(text.s2, 3)];
-			    text = t;
-			}
-
-			Scratchpad[IDX(i + get_local_id(1))] = text;
-		}
-	}
-	mem_fence(CLK_GLOBAL_MEM_FENCE);
+	float4 d = (float4)(dc);
+	float4 c = _mm_div_ps(v, d);
+	c = trunc(c);
+	c = _mm_mul_ps(c, d);
+	return _mm_sub_ps(v, c);
 }
 
-)==="
-	R"===(
+inline int4 _mm_xor_si128(int4 a, int4 b) { return a ^ b; }
+inline float4 _mm_xor_ps(float4 a, int b) { return as_float4(as_int4(a) ^ (int4)(b)); }
 
-#define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
-
-__attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, uint Threads
-)
+inline int4 _mm_alignr_epi8(int4 a, const uint rot)
 {
-	ulong a[2];
-	ulong b[2];
-	uint4 b_x[1];
-	__local uint AES0[256], AES1[256];
-	const uint gIdx = getIdx();
-
-	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
-	{
-		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-#if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
-#endif
-	{
-		states += 25 * gIdx;
-#if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (MEMORY >> 4);
-#elif(STRIDED_INDEX==1)
-		Scratchpad += gIdx;
-#elif(STRIDED_INDEX==2)
-		Scratchpad += get_group_id(0) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * get_local_id(0);
-#elif(STRIDED_INDEX==3)
-		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
-#endif
-
-		a[0] = states[0] ^ states[4];
-		b[0] = states[2] ^ states[6];
-		a[1] = states[1] ^ states[5];
-		b[1] = states[3] ^ states[7];
-
-		b_x[0] = ((uint4 *)b)[0];
-	}
-
-	mem_fence(CLK_LOCAL_MEM_FENCE);
-
-#if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
-#endif
-	{
-		uint idx0 = as_uint2(a[0]).s0 & MASK;
-
-		#pragma unroll CN_UNROLL
-	for(int i = 0; i < ITERATIONS; ++i)
-	{
-			ulong c[2];
-
-			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
-
-			((uint4 *)c)[0] = AES_Round2(AES0, AES1, ((uint4 *)c)[0], ((uint4 *)a)[0]);
-
-
-
-			b_x[0] ^= ((uint4 *)c)[0];
-			SCRATCHPAD_CHUNK(0) = b_x[0];
-			idx0 = as_uint2(c[0]).s0 & MASK;
-			uint4 tmp;
-			tmp = SCRATCHPAD_CHUNK(0);
-
-			a[1] += c[0] * as_ulong2(tmp).s0;
-			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
-
-			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
-
-		((uint4 *)a)[0] ^= tmp;
-
-			b_x[0] = ((uint4 *)c)[0];
-			idx0 = as_uint2(a[0]).s0 & MASK;
-
-	}
-	}
-	mem_fence(CLK_GLOBAL_MEM_FENCE);
+	const uint right = 8 * rot;
+	const uint left = (32 - 8 * rot);
+	return (int4)(
+		((uint)a.x >> right) | ( a.y << left ),
+		((uint)a.y >> right) | ( a.z << left ),
+		((uint)a.z >> right) | ( a.w << left ),
+		((uint)a.w >> right) | ( a.x << left )
+	);
 }
+
+// cn_gpu-specific kernels (Phase 1: Keccak, Phase 2: Expand, Phase 3: FP compute)
+XMRSTAK_INCLUDE_CN_GPU
+
+// Dead kernels removed: cn0 (generic Keccak — cn_gpu uses cn0_cn_gpu from above)
+// Dead kernels removed: cn1 (generic AES main loop — cn_gpu uses cn1_cn_gpu from above)
 
 )==="
 R"===(
