@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation phase complete. Structural transformation phase next.*
+*Status: Foundation + dead code removal complete. Structural transformation phase next.*
 
 ---
 
@@ -46,6 +46,21 @@ Take the inherited xmr-stak CryptoNight-GPU implementation and transform it into
 | nos2 | GTX 1070 Ti (Pascal) | CUDA 11.8 | ✅ Zero rejections |
 | nosnode | RTX 2070 (Turing) | CUDA 12.6 | ✅ Zero rejections |
 
+### Session 2 (2026-03-29, continued)
+
+**3 branches merged. +46 / -1,888 lines.**
+
+| Phase | What | Impact |
+|-------|------|--------|
+| **S1** | CUDA dead hash removal | Removed cuda_blake/groestl/jh/skein.hpp (-1,244 lines) |
+| **S1** | ASM variant removal | Removed cpuType, asm_version_str plumbing, UAC (-259 lines) |
+| **S1** | OpenCL context simplification | Program map→single, Kernels map→array[4], ExtraBuffers[6]→[2] |
+| **S1** | OpenCL dead kernel strip | cryptonight.cl: 817→521 (-36%): removed cn0, cn1, dead helpers |
+
+### Cumulative Total (Both Sessions)
+
+**64 files changed. +2,021 / -11,758 = net -9,737 lines deleted (27% smaller)**
+
 ---
 
 ## Current Codebase State
@@ -62,7 +77,7 @@ xmrstak/                         ← CLEANED but still old structure
 │   │   │   ├── gpu.cpp          ← Host: device init, kernel compile, mining loop
 │   │   │   ├── gpu.hpp          ← Host: context struct
 │   │   │   └── opencl/
-│   │   │       ├── cryptonight.cl      ← Phases 1,2,4,5 kernels (817 lines, was 1164)
+│   │   │       ├── cryptonight.cl      ← Phase 4+5 kernel + shared helpers (521 lines, was 1164)
 │   │   │       ├── cryptonight_gpu.cl  ← Phase 3 FP kernel (RENAMED + DOCUMENTED)
 │   │   │       └── wolf-aes.cl         ← AES tables for OpenCL
 │   │   ├── autoAdjust.hpp       ← Auto-config (SIMPLIFIED)
@@ -76,10 +91,6 @@ xmrstak/                         ← CLEANED but still old structure
 │   │   │   ├── cuda_extra.cu           ← Phases 1,5 kernels + device init (DOCUMENTED)
 │   │   │   ├── cuda_aes.hpp            ← AES for CUDA (needed)
 │   │   │   ├── cuda_keccak.hpp         ← Keccak for CUDA (needed)
-│   │   │   ├── cuda_blake.hpp          ← ⚠️ DEAD (included but unused)
-│   │   │   ├── cuda_groestl.hpp        ← ⚠️ DEAD (included but unused)
-│   │   │   ├── cuda_jh.hpp             ← ⚠️ DEAD (included but unused)
-│   │   │   ├── cuda_skein.hpp          ← ⚠️ DEAD (included but unused)
 │   │   │   ├── cuda_device.hpp         ← Tiny (64 lines)
 │   │   │   ├── cuda_compat.hpp         ← Tiny (23 lines)
 │   │   │   ├── cuda_extra.hpp          ← Context struct (127 lines)
@@ -99,7 +110,7 @@ xmrstak/                         ← CLEANED but still old structure
 │   │   │   ├── cryptonight.h          ← Context struct
 │   │   │   └── soft_aes.hpp           ← Software AES fallback
 │   │   ├── autoAdjust*.hpp      ← CPU auto-config (dead — CPU mining disabled)
-│   │   ├── cpuType.cpp/hpp      ← ⚠️ Dead (ASM variant detection, removed ASM)
+
 │   │   ├── hwlocMemory.cpp/hpp  ← NUMA memory (only used if hwloc enabled)
 │   │   ├── jconf.cpp/hpp        ← CPU config
 │   │   └── minethd.cpp/hpp      ← CPU mining thread (hash verification only)
@@ -123,8 +134,7 @@ xmrstak/                         ← CLEANED but still old structure
 │   ├── executor.cpp/hpp   ← Main coordinator (1,272+192 lines)
 │   ├── console.cpp/hpp    ← Console output
 │   ├── telemetry.cpp/hpp  ← Hashrate tracking
-│   ├── coinDescription.hpp ← ⚠️ DEAD (zero external callers)
-│   ├── uac.cpp/hpp        ← ⚠️ Windows UAC (dead on Linux)
+│   ├── coinDescription.hpp ← Internal to jconf (keep for now)
 │   └── [other utilities]
 │
 ├── cli/cli-miner.cpp     ← Entry point (947 lines)
@@ -135,28 +145,27 @@ xmrstak/                         ← CLEANED but still old structure
 └── picosha2/              ← SHA-256 for OpenCL cache (vendored — don't touch)
 ```
 
-**Codebase: ~35K lines (down from ~43K). Our code: ~21K lines (excluding vendored rapidjson/picosha2)**
+**Codebase: ~33K lines (down from ~43K). Our code: ~19K lines (excluding vendored rapidjson/picosha2)**
 
 ---
 
 ## Remaining Work — Future Phases
 
-### Phase S1: Final Dead Code Removal (~1,200 lines)
-
-Low-risk, high-reward — remove files that are included but never used.
+### Phase S1: Final Dead Code Removal ✅ COMPLETE
 
 | Target | Lines | Status |
 |--------|-------|--------|
-| `cuda_blake.hpp` | 208 | Included in cuda_extra.cu but no functions called |
-| `cuda_groestl.hpp` | 326 | Same |
-| `cuda_jh.hpp` | 318 | Same |
-| `cuda_skein.hpp` | 392 | Same |
-| `coinDescription.hpp` | 89 | Zero external callers (jconf uses internally only) |
-| `uac.cpp/hpp` | 91 | Windows-only, dead on Linux |
-| `cpuType.cpp/hpp` | 108 | ASM variant detection for removed ASM code |
-| `read_write_lock.h` | 96 | Zero references |
-
-**Estimated: ~1,628 lines removable. ~2 hours.**
+| `cuda_blake.hpp` | 208 | ✅ Removed |
+| `cuda_groestl.hpp` | 326 | ✅ Removed |
+| `cuda_jh.hpp` | 318 | ✅ Removed |
+| `cuda_skein.hpp` | 392 | ✅ Removed |
+| `uac.cpp/hpp` | 91 | ✅ Removed |
+| `cpuType.cpp/hpp` | 108 | ✅ Removed (CPUID check inlined in autoAdjust) |
+| `asm_version_str` | ~50 | ✅ Removed from entire call chain |
+| OpenCL cn0/cn1 kernels | 296 | ✅ Stripped from cryptonight.cl |
+| GpuContext maps | ~30 | ✅ Simplified to direct types |
+| `coinDescription.hpp` | 89 | Deferred — used internally by jconf coin lookup |
+| `read_write_lock.h` | 96 | Kept — used by globalStates::jobLock (replace with std::shared_mutex later) |
 
 ### Phase S2: CUDA File Consolidation
 
