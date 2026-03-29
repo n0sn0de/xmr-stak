@@ -14,23 +14,8 @@ R"===(
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-// defines to translate algorithm names int a same number used within cryptonight.h
-#define invalid_algo 0
-#define cryptonight 1
-#define cryptonight_lite 2
-#define cryptonight_monero 3
-#define cryptonight_heavy 4
-#define cryptonight_aeon 5
-#define cryptonight_ipbc 6
-#define cryptonight_stellite 7
-#define cryptonight_masari 8
-#define cryptonight_haven 9
-#define cryptonight_bittube2 10
-#define cryptonight_monero_v8 11
-#define cryptonight_superfast 12
+// Algorithm ID — must match enum in cryptonight.hpp and CUDA -DALGO= value
 #define cryptonight_gpu 13
-#define cryptonight_conceal 14
-#define cryptonight_v8_reversewaltz 17
 
 
 static const __constant ulong keccakf_rndc[24] =
@@ -366,10 +351,8 @@ inline int4 _mm_alignr_epi8(int4 a, const uint rot)
 	);
 }
 
-#if (ALGO == cryptonight_gpu)
-	//#include "opencl/cryptonight_gpu.cl"
-	XMRSTAK_INCLUDE_CN_GPU
-#endif
+//#include "opencl/cryptonight_gpu.cl"
+XMRSTAK_INCLUDE_CN_GPU
 
 )==="
 	R"===(
@@ -525,32 +508,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
 	mem_fence(CLK_LOCAL_MEM_FENCE);
 
-#if (ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
-	__local uint4 xin[8][8];
-	{
 
-		/* Also left over threads perform this loop.
-		 * The left over thread results will be ignored
-		 */
-		#pragma unroll 16
-		for (size_t i = 0; i < 16; i++) {
-			#pragma unroll 10
-			for (int j = 0; j < 10; ++j) {
-			    uint4 t = ((uint4 *)ExpandedKey1)[j];
-			    t.s0 ^= AES0[BYTE(text.s0, 0)] ^ AES1[BYTE(text.s1, 1)] ^ AES2[BYTE(text.s2, 2)] ^ AES3[BYTE(text.s3, 3)];
-			    t.s1 ^= AES0[BYTE(text.s1, 0)] ^ AES1[BYTE(text.s2, 1)] ^ AES2[BYTE(text.s3, 2)] ^ AES3[BYTE(text.s0, 3)];
-			    t.s2 ^= AES0[BYTE(text.s2, 0)] ^ AES1[BYTE(text.s3, 1)] ^ AES2[BYTE(text.s0, 2)] ^ AES3[BYTE(text.s1, 3)];
-			    t.s3 ^= AES0[BYTE(text.s3, 0)] ^ AES1[BYTE(text.s0, 1)] ^ AES2[BYTE(text.s1, 2)] ^ AES3[BYTE(text.s2, 3)];
-			    text = t;
-			}
-
-			barrier(CLK_LOCAL_MEM_FENCE);
-			xin[get_local_id(1)][get_local_id(0)] = text;
-			barrier(CLK_LOCAL_MEM_FENCE);
-			text = mix_and_propagate(xin);
-		}
-	}
-#endif
 
 #if(COMP_MODE==1)
 	// do not use early return here
@@ -579,49 +537,16 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 )==="
 	R"===(
 
-// __NV_CL_C_VERSION checks if NVIDIA opencl is used
-#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && defined(__NV_CL_C_VERSION))
-#	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idxS ^ (N << 4))))
-#	define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
-#else
-#	define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
-#endif
+#define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, uint Threads
-
-#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
-, __global ulong *input
-#endif
 )
 {
 	ulong a[2];
-#if(ALGO == cryptonight_conceal)
-	float4 conc_var = (float4)(0.0f);
-#endif
-
-#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-	ulong b[4];
-	uint4 b_x[2];
-// NVIDIA
-#	ifdef __NV_CL_C_VERSION
-	__local uint16 scratchpad_line_buf[WORKSIZE];
- 	__local uint16* scratchpad_line = scratchpad_line_buf + get_local_id(0);
-#	endif
-#else
 	ulong b[2];
 	uint4 b_x[1];
-#endif
 	__local uint AES0[256], AES1[256];
-
-#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
-	__local uint RCP[256];
-#	endif
-
-	uint2 division_result;
-	uint sqrt_result;
-#endif
 	const uint gIdx = getIdx();
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
@@ -629,17 +554,9 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		const uint tmp = AES0_C[i];
 		AES0[i] = tmp;
 		AES1[i] = rotate(tmp, 8U);
-
-#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
-		RCP[i] = RCP_C[i];
-#endif
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-
-#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
-	uint2 tweak1_2;
-#endif
 
 #if(COMP_MODE==1)
 	// do not use early return here
@@ -663,23 +580,6 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		b[1] = states[3] ^ states[7];
 
 		b_x[0] = ((uint4 *)b)[0];
-
-#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-		a[1] = states[1] ^ states[5];
-		b[2] = states[8] ^ states[10];
-		b[3] = states[9] ^ states[11];
-		b_x[1] = ((uint4 *)b)[1];
-		division_result = as_uint2(states[12]);
-		sqrt_result = as_uint2(states[13]).s0;
-#endif
-
-#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
-		tweak1_2 = as_uint2(input[4]);
-		tweak1_2.s0 >>= 24;
-		tweak1_2.s0 |= tweak1_2.s1 << 8;
-		tweak1_2.s1 = (uint)get_global_id(0);
-		tweak1_2 ^= as_uint2(states[24]);
-#endif
 	}
 
 	mem_fence(CLK_LOCAL_MEM_FENCE);
@@ -696,170 +596,27 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	{
 			ulong c[2];
 
-#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && defined(__NV_CL_C_VERSION))
-			uint idxS = idx0 & 0x30U;
- 			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
-#endif
-
 			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
 
-#if(ALGO == cryptonight_conceal)
-			float4 r  = convert_float4_rte(((int4 *)c)[0]);
-			float4 c_old = conc_var;
-			r = _mm_add_ps(r, conc_var);
-			r = _mm_mul_ps(r, _mm_mul_ps(r, r));
-			r = _mm_and_ps(r, 0x807FFFFF);
-			r = _mm_or_ps(r, 0x40000000);
-			conc_var = _mm_add_ps(conc_var, r);
-
-			c_old = _mm_and_ps(c_old, 0x807FFFFF);
-			c_old = _mm_or_ps(c_old, 0x40000000);
-			float4 nc = _mm_mul_ps(c_old, (float4)(536870880.0f));
-			((int4 *)c)[0] ^= convert_int4_rte(nc);
-#endif
-
-#if(ALGO == cryptonight_bittube2)
-			((uint4 *)c)[0] = AES_Round2_bittube2(AES0, AES1, ~((uint4 *)c)[0], ((uint4 *)a)[0]);
-#else
 			((uint4 *)c)[0] = AES_Round2(AES0, AES1, ((uint4 *)c)[0], ((uint4 *)a)[0]);
-#endif
 
-#if(ALGO == cryptonight_monero_v8)
-		{
-			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
-			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
-			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
-			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
-			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
-			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
-		}
-#elif(ALGO == cryptonight_v8_reversewaltz)
-		{
-			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(1));
-			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
-			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(3));
-			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
-			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
-			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
-		}
-#endif
 
-#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
-			uint table = 0x75310U;
-			b_x[0] ^= ((uint4 *)c)[0];
 
-#	if(ALGO == cryptonight_stellite)
-			uint index = ((b_x[0].s2 >> 27) & 12) | ((b_x[0].s2 >> 23) & 2);
-#	else
-			uint index = ((b_x[0].s2 >> 26) & 12) | ((b_x[0].s2 >> 23) & 2);
-#	endif
-			b_x[0].s2 ^= ((table >> index) & 0x30U) << 24;
-			SCRATCHPAD_CHUNK(0) = b_x[0];
-			idx0 = as_uint2(c[0]).s0 & MASK;
-
-#elif(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
-#	ifdef __NV_CL_C_VERSION
-			// flush shuffled data
-			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
- 			idx0 = as_uint2(c[0]).s0 & MASK;
- 			idxS = idx0 & 0x30;
- 			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
-#	else
-			idx0 = as_uint2(c[0]).s0 & MASK;
-#	endif
-#else
 			b_x[0] ^= ((uint4 *)c)[0];
 			SCRATCHPAD_CHUNK(0) = b_x[0];
 			idx0 = as_uint2(c[0]).s0 & MASK;
-#endif
 			uint4 tmp;
 			tmp = SCRATCHPAD_CHUNK(0);
 
-#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-			// Use division and square root results from the _previous_ iteration to hide the latency
-			tmp.s0 ^= division_result.s0;
-			tmp.s1 ^= division_result.s1 ^ sqrt_result;
- 			// Most and least significant bits in the divisor are set to 1
-			// to make sure we don't divide by a small or even number,
-			// so there are no shortcuts for such cases
-			const uint d = (((uint *)c)[0] + (sqrt_result << 1)) | 0x80000001UL;
- 			// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
-			// We drop the highest bit to fit both quotient and remainder in 32 bits
-
-#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
-			division_result = fast_div_v2(RCP, c[1], d);
-#	else
-			division_result = fast_div_v2(c[1], d);
-#	endif
-
- 			// Use division_result as an input for the square root to prevent parallel implementation in hardware
-			sqrt_result = fast_sqrt_v2(c[0] + as_ulong(division_result));
-
-			ulong2 result_mul;
-			result_mul.s0 = mul_hi(c[0], as_ulong2(tmp).s0);
-			result_mul.s1 = c[0] * as_ulong2(tmp).s0;
-			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1)) ^ result_mul;
-			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
-			result_mul ^= chunk2;
-			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
-#if(ALGO == cryptonight_v8_reversewaltz)
-			SCRATCHPAD_CHUNK(1) = as_uint4(chunk1 + ((ulong2 *)(b_x + 1))[0]);
-			SCRATCHPAD_CHUNK(2) = as_uint4(chunk3 + ((ulong2 *)b_x)[0]);
-#else
-			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
-			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
-#endif
-			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
-			a[0] += result_mul.s0;
-			a[1] += result_mul.s1;
-#else
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
-#endif
 
-#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
-
-#	if(ALGO == cryptonight_ipbc || ALGO == cryptonight_bittube2)
-			uint2 ipbc_tmp = tweak1_2 ^ ((uint2 *)&(a[0]))[0];
-			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
 			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
-			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
-#	else
-			((uint2 *)&(a[1]))[0] ^= tweak1_2;
-			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
-			((uint2 *)&(a[1]))[0] ^= tweak1_2;
-#	endif
-
-#else
-			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
-#endif
 
 		((uint4 *)a)[0] ^= tmp;
 
-#if (ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
-#	if defined(__NV_CL_C_VERSION)
-			// flush shuffled data
-			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
-#	endif
-			b_x[1] = b_x[0];
-#endif
 			b_x[0] = ((uint4 *)c)[0];
 			idx0 = as_uint2(a[0]).s0 & MASK;
-
-#if (ALGO == cryptonight_heavy || ALGO == cryptonight_bittube2)
-			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
-			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
-			long q = fast_div_heavy(n, d | 0x5);
-			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
-			idx0 = (d ^ as_int2(q).s0) & MASK;
-#elif (ALGO == cryptonight_haven || ALGO == cryptonight_superfast)
-			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
-			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
-			long q = fast_div_heavy(n, d | 0x5);
-			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
-			idx0 = ((~d) ^ as_int2(q).s0) & MASK;
-#endif
 
 	}
 	}
@@ -876,12 +633,7 @@ R"===(
 
 __attribute__((reqd_work_group_size(8, WORKSIZE, 1)))
 __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states,
-
-#if (ALGO == cryptonight_gpu)
 	__global uint *output, ulong Target, uint Threads)
-#else
-	__global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, uint Threads)
-#endif
 {
     __local uint AES0[256], AES1[256], AES2[256], AES3[256];
     uint ExpandedKey2[40];
@@ -901,10 +653,8 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2  || ALGO == cryptonight_superfast)
     __local uint4 xin1[WORKSIZE][8];
     __local uint4 xin2[WORKSIZE][8];
-#endif
 
 #if(COMP_MODE==1)
     // do not use early return here
@@ -938,17 +688,15 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
-#	if (HAS_AMD_BPERMUTE == 1)
+#if (HAS_AMD_BPERMUTE == 1)
 	int lane = (groupIdx * 8 + ((lIdx + 1) % 8)) << 2;
 	uint4 tmp = (uint4)(0, 0, 0, 0);
-#	else
+#else
     __local uint4* xin1_store = &xin1[groupIdx][lIdx];
     __local uint4* xin1_load = &xin1[groupIdx][(lIdx + 1) % 8];
     __local uint4* xin2_store = &xin2[groupIdx][lIdx];
     __local uint4* xin2_load = &xin2[groupIdx][(lIdx + 1) % 8];
     *xin2_store = (uint4)(0, 0, 0, 0);
-#	endif
 #endif
 
 #if(COMP_MODE == 1)
@@ -957,9 +705,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
     {
 
-#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
-
-#	if	(HAS_AMD_BPERMUTE == 1)
+#if (HAS_AMD_BPERMUTE == 1)
         #pragma unroll 2
         for(int i = 0, i1 = lIdx; i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
         {
@@ -974,7 +720,6 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
             text.s1 ^= __builtin_amdgcn_ds_bpermute(lane, text.s1);
             text.s2 ^= __builtin_amdgcn_ds_bpermute(lane, text.s2);
             text.s3 ^= __builtin_amdgcn_ds_bpermute(lane, text.s3);
-			//__builtin_amdgcn_s_waitcnt(0);
             text ^= Scratchpad[IDX((uint)i1 + 8u)];
 
             #pragma unroll 10
@@ -984,11 +729,10 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
             tmp.s1 = __builtin_amdgcn_ds_bpermute(lane, text.s1);
             tmp.s2 = __builtin_amdgcn_ds_bpermute(lane, text.s2);
             tmp.s3 = __builtin_amdgcn_ds_bpermute(lane, text.s3);
-			//__builtin_amdgcn_s_waitcnt(0);
         }
 
         text ^= tmp;
-#	else
+#else
 
 		#pragma unroll 2
 		for(int i = 0, i1 = lIdx; i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
@@ -1013,22 +757,9 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
         barrier(CLK_LOCAL_MEM_FENCE);
         text ^= *xin2_load;
-#	endif
-
-#else
-        #pragma unroll 2
-        for (int i = 0; i < (MEMORY >> 7); ++i)
-        {
-            text ^= Scratchpad[IDX((uint)((i << 3) + lIdx))];
-
-            #pragma unroll 10
-            for(int j = 0; j < 10; ++j)
-                text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
-        }
 #endif
     }
 
-#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
     /* Also left over threads performe this loop.
      * The left over thread results will be ignored
      */
@@ -1044,7 +775,6 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         text.s1 ^= __builtin_amdgcn_ds_bpermute(lane, text.s1);
         text.s2 ^= __builtin_amdgcn_ds_bpermute(lane, text.s2);
         text.s3 ^= __builtin_amdgcn_ds_bpermute(lane, text.s3);
-		//__builtin_amdgcn_s_waitcnt(0);
 #else
         barrier(CLK_LOCAL_MEM_FENCE);
         *xin1_store = text;
@@ -1052,7 +782,6 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         text ^= *xin1_load;
 #endif
     }
-#endif
 
     __local ulong State_buf[8 * 25];
 #if(COMP_MODE==1)
@@ -1078,22 +807,12 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
             keccakf1600_2(State);
 
-#if (ALGO == cryptonight_gpu)
 			if(State[3] <= Target)
 			{
 				ulong outIdx = atomic_inc(output + 0xFF);
 				if(outIdx < 0xFF)
 					output[outIdx] = get_global_id(1);
 			}
-#else
-            for(int i = 0; i < 25; ++i) states[i] = State[i];
-
-            uint StateSwitch = State[0] & 3;
-            __global uint *destinationBranch1 = StateSwitch == 0 ? Branch0 : Branch1;
-            __global uint *destinationBranch2 = StateSwitch == 2 ? Branch2 : Branch3;
-            __global uint *destinationBranch = StateSwitch < 2 ? destinationBranch1 : destinationBranch2;
-            destinationBranch[atomic_inc(destinationBranch + Threads)] = gIdx;
-#endif
         }
     }
     mem_fence(CLK_GLOBAL_MEM_FENCE);
