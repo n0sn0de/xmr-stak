@@ -1,6 +1,86 @@
 #pragma once
 
+/**
+ * cuda_extra.hpp — CUDA utility macros, compatibility shims, and error checking
+ *
+ * Consolidated header containing:
+ *   - CUDA version compatibility shims (was cuda_compat.hpp)
+ *   - CUDA error checking macros (was cuda_device.hpp)
+ *   - Bit manipulation macros (ROTL/ROTR, BYTE_x)
+ *   - Memory operation macros (MEMSET/MEMCPY/XOR_BLOCKS)
+ *   - Algorithm constants (AES_BLOCK_SIZE, etc.)
+ */
+
+#include <cuda_runtime.h>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
 #include "xmrstak/backend/cryptonight.hpp"
+
+// ============================================================
+// CUDA Version Compatibility Shims (was cuda_compat.hpp)
+//
+// CUDA 12.x removed legacy shorthand intrinsics that were
+// available in CUDA 7-11. These provide version-gated fallbacks.
+// ============================================================
+
+#if CUDART_VERSION >= 12000
+#ifndef int2float
+#define int2float(x) __int2float_rn(x)
+#endif
+#ifndef float_as_int
+#define float_as_int(x) __float_as_int(x)
+#endif
+#ifndef int_as_float
+#define int_as_float(x) __int_as_float(x)
+#endif
+#endif // CUDART_VERSION >= 12000
+
+// ============================================================
+// CUDA Error Checking Macros (was cuda_device.hpp)
+// ============================================================
+
+/** Execute and check a CUDA API command */
+#define CUDA_CHECK_MSG(id, msg, ...)                                                                          \
+	{                                                                                                         \
+		cudaError_t error = __VA_ARGS__;                                                                      \
+		if(error != cudaSuccess)                                                                              \
+		{                                                                                                     \
+			std::cerr << "[CUDA] Error gpu " << id << ": <" << __FILE__ << ">:" << __LINE__;                  \
+			std::cerr << msg << std::endl;                                                                    \
+			throw std::runtime_error(std::string("[CUDA] Error: ") + std::string(cudaGetErrorString(error))); \
+		}                                                                                                     \
+	}                                                                                                         \
+	((void)0)
+
+#define CU_CHECK(id, ...)                                                                                                                                   \
+	{                                                                                                                                                       \
+		CUresult result = __VA_ARGS__;                                                                                                                      \
+		if(result != CUDA_SUCCESS)                                                                                                                          \
+		{                                                                                                                                                   \
+			const char* s;                                                                                                                                  \
+			cuGetErrorString(result, &s);                                                                                                                   \
+			std::cerr << "[CUDA] Error gpu " << id << ": <" << __FUNCTION__ << ">:" << __LINE__ << " \"" << (s ? s : "unknown error") << "\"" << std::endl; \
+			throw std::runtime_error(std::string("[CUDA] Error: ") + std::string(s ? s : "unknown error"));                                                 \
+		}                                                                                                                                                   \
+	}                                                                                                                                                       \
+	((void)0)
+
+#define CUDA_CHECK(id, ...) CUDA_CHECK_MSG(id, "", __VA_ARGS__)
+
+/** Execute and check a CUDA kernel launch */
+#define CUDA_CHECK_KERNEL(id, ...) \
+	__VA_ARGS__;                   \
+	CUDA_CHECK(id, cudaGetLastError())
+
+#define CUDA_CHECK_MSG_KERNEL(id, msg, ...) \
+	__VA_ARGS__;                            \
+	CUDA_CHECK_MSG(id, msg, cudaGetLastError())
+
+// ============================================================
+// Algorithm Constants
+// ============================================================
 
 #define AES_BLOCK_SIZE 16
 #define AES_KEY_SIZE 32

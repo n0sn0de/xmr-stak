@@ -22,7 +22,6 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
-#include "cuda_compat.hpp"
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"
 
