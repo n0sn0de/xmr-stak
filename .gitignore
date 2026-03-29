@@ -38,3 +38,5 @@ build-*/
 *.o
 *.a
 dist/
+tests/*.o
+tests/cn_gpu_harness
