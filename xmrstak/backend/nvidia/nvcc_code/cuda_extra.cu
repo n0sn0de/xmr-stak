@@ -27,7 +27,6 @@ typedef unsigned long long DataLength;
 
 #include "cryptonight.hpp"
 #include "cuda_aes.hpp"
-#include "cuda_device.hpp"
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"
 #include "xmrstak/backend/cryptonight.hpp"

@@ -66,7 +66,6 @@ extern "C" void compat_usleep(uint64_t waitTime)
 
 #include "cryptonight.hpp"
 #include "cuda_aes.hpp"
-#include "cuda_device.hpp"
 #include "cuda_extra.hpp"
 
 // Index type: 64-bit for large grids on sm_30+
