@@ -24,7 +24,7 @@
 #include "crypto/cryptonight_aesni.h"
 
 #include "jconf.hpp"
-#include "xmrstak/backend/cpu/cpuType.hpp"
+
 #include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/misc/configEditor.hpp"
@@ -107,7 +107,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
@@ -116,7 +116,6 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 	iJobNo = 0;
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
-	asm_version_str = asm_version;
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
@@ -164,7 +163,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
+			
 			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
@@ -178,7 +177,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
+			
 			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
@@ -195,7 +194,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
+			
 			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
@@ -206,7 +205,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 		ctx->hash_fn = nullptr;
 		ctx->loop_fn = nullptr;
 		ctx->fun_data = nullptr;
-		ctx->asm_version = 0;
+		
 		ctx->last_algo = invalid_algo;
 
 		return ctx;
@@ -345,7 +344,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
 
@@ -357,27 +356,9 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
  * @return asm type based on the number of hashes per thread the internal
  *             evaluated cpu type
  */
-static std::string getAsmName(const uint32_t num_hashes)
-{
-	std::string asm_type = "off";
-	if(num_hashes != 0)
-	{
-		auto cpu_model = getModel();
-
-		if(cpu_model.avx && cpu_model.aes)
-		{
-			if(cpu_model.type_name.find("Intel") != std::string::npos)
-				asm_type = "intel_avx";
-			else if(cpu_model.type_name.find("AMD") != std::string::npos)
-				asm_type = "amd_avx";
-		}
-	}
-	return asm_type;
-}
-
 template <size_t N>
 void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job& on_new_job,
-	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
+	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
 {
 	static_assert(N >= 1, "number of threads must be >= 1");
 
@@ -488,7 +469,7 @@ void minethd::multiway_work_main()
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
-	func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+	func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 	while(bQuit == 0)
 	{
 		if(oWork.bStall)
@@ -518,7 +499,7 @@ void minethd::multiway_work_main()
 		{
 			// cn_gpu: algorithm is always the same regardless of fork version
 			miner_algo = ::jconf::inst()->GetMiningAlgo();
-			func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+			func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
@@ -571,11 +552,11 @@ void minethd::multiway_work_main()
 }
 
 // Explicit template instantiations required by OpenCL/CUDA .so plugins (loaded via dlopen)
-template void minethd::func_multi_selector<1>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&, const std::string&);
-template void minethd::func_multi_selector<2>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&, const std::string&);
-template void minethd::func_multi_selector<3>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&, const std::string&);
-template void minethd::func_multi_selector<4>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&, const std::string&);
-template void minethd::func_multi_selector<5>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&, const std::string&);
+template void minethd::func_multi_selector<1>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
+template void minethd::func_multi_selector<2>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
+template void minethd::func_multi_selector<3>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
+template void minethd::func_multi_selector<4>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
+template void minethd::func_multi_selector<5>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
 
 } // namespace cpu
 } // namespace xmrstak

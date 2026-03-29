@@ -2,8 +2,15 @@
 
 #include "jconf.hpp"
 
-#include "xmrstak/backend/cpu/cpuType.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
+
+namespace {
+// Extract bits [h:l] from val (inclusive)
+inline int32_t get_masked(int32_t val, int32_t h, int32_t l)
+{
+	return (val >> l) & ((1 << (h - l + 1)) - 1);
+}
+}
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/misc/console.hpp"
@@ -144,7 +151,11 @@ class autoAdjust
 
 			::jconf::cpuid(1, 0, cpu_info);
 
-			if(getModel().family < 0x17) //0x17h is Zen
+			// Detect pre-Zen AMD (family < 0x17) via CPUID
+			uint32_t family = ((cpu_info[0] >> 8) & 0xF);
+			uint32_t ext_family = ((cpu_info[0] >> 20) & 0xFF);
+			if(family == 0xF) family += ext_family;
+			if(family < 0x17)
 				old_amd = true;
 
 			return true;

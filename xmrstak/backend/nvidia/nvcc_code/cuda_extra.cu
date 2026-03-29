@@ -27,13 +27,9 @@ typedef unsigned long long DataLength;
 
 #include "cryptonight.hpp"
 #include "cuda_aes.hpp"
-#include "cuda_blake.hpp"
 #include "cuda_device.hpp"
 #include "cuda_extra.hpp"
-#include "cuda_groestl.hpp"
-#include "cuda_jh.hpp"
 #include "cuda_keccak.hpp"
-#include "cuda_skein.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
 
 __constant__ uint8_t d_sub_byte[16][16] = {

@@ -26,7 +26,6 @@ class jconf
 	{
 		int iMultiway;
 		bool bNoPrefetch;
-		std::string asm_version_str;
 		long long iCpuAff;
 	};
 

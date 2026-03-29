@@ -31,10 +31,10 @@ class minethd : public iBackend
 
 	template <size_t N>
 	static void func_multi_selector(cryptonight_ctx**, minethd::cn_on_new_job& on_new_job,
-		bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str = "off");
+		bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo);
 
   private:
-	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version);
+	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
 
 	template <uint32_t N>
 	void multiway_work_main();
@@ -60,7 +60,6 @@ class minethd : public iBackend
 
 	bool bQuit;
 	bool bNoPrefetch;
-	std::string asm_version_str = "off";
 };
 
 } // namespace cpu

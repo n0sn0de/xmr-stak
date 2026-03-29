@@ -49,7 +49,7 @@
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
-#include "xmrstak/misc/uac.hpp"
+
 #include <windows.h>
 #endif // _WIN32
 
@@ -789,14 +789,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-#ifdef _WIN32
-	/* For Windows 7 and 8 request elevation at all times unless we are using slow memory */
-	if(jconf::inst()->GetSlowMemSetting() != jconf::slow_mem_cfg::always_use && !IsWindows10OrNewer())
-	{
-		printer::inst()->print_msg(L0, "Elevating due to Windows 7 or 8. You need Windows 10 to use fast memory without UAC elevation.");
-		RequestElevation();
-	}
-#endif
+	// Windows UAC elevation removed — Linux-only build
 
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());

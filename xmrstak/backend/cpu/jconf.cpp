@@ -111,13 +111,12 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg& cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *mode, *no_prefetch, *aff, *asm_version;
+	const Value *mode, *no_prefetch, *aff;
 	mode = GetObjectMember(oThdConf, "low_power_mode");
 	no_prefetch = GetObjectMember(oThdConf, "no_prefetch");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
-	asm_version = GetObjectMember(oThdConf, "asm");
 
-	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr || asm_version == nullptr)
+	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr)
 		return false;
 
 	if(!mode->IsBool() && !mode->IsNumber())
@@ -144,9 +143,7 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg& cfg)
 	else
 		cfg.iCpuAff = -1;
 
-	if(!asm_version->IsString())
-		return false;
-	cfg.asm_version_str = asm_version->GetString();
+	// "asm" field ignored — ASM optimizations removed, only intrinsics used
 
 	return true;
 }
