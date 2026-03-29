@@ -10,9 +10,16 @@
 
 ---
 
-## Phase 1: Moderate Cleanup (Foundation)
+## Phase 1: Moderate Cleanup (Foundation) — ✅ COMPLETE
 
 **Objective:** Rebrand, remove CPU backend, clean up configs — but keep algorithm enum intact.
+
+**Status:**
+- ✅ 1.1: Project Rename (binary + banners)
+- ✅ 1.2: Remove CPU Mining Backend
+- ✅ 1.3: HTTP Daemon Decision (keep it)
+- ✅ 1.4: Hardcode Algorithm to CryptoNight-GPU
+- ✅ 1.5: Keep Algorithm Enum Intact (no changes needed)
 
 ### 1.1: Project Rename (Test After Each File)
 
