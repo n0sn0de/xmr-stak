@@ -1,6 +1,6 @@
 project(n0s-ryo-miner)
 
-cmake_minimum_required(VERSION 3.4.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 # enforce C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -67,7 +67,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 
 option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
 if(CUDA_ENABLE)
-    find_package(CUDA 7.5)
+    find_package(CUDA 11.0)
 
     if(CUDA_FOUND)
         # required for monero's cryptonight_r
@@ -125,29 +125,33 @@ if(CUDA_ENABLE)
 
         set(XMR-STAK_THREADS 0 CACHE STRING "Set maximum number of threads (for compile time optimization)")
         if(NOT XMR-STAK_THREADS EQUAL 0)
-            message(STATUS "xmr-stak-nvidia: set max threads per block to ${XMR-STAK_THREADS}")
+            message(STATUS "n0s-ryo-miner: set max threads per block to ${XMR-STAK_THREADS}")
             add_definitions("-DXMR_STAK_THREADS=${XMR-STAK_THREADS}")
         endif()
-        set(DEFAULT_CUDA_ARCH "30;35;37;50;52")
-        # Fermi GPUs are only supported with CUDA < 9.0
-        if(CUDA_VERSION VERSION_LESS 9.0)
-            list(APPEND DEFAULT_CUDA_ARCH "20")
+
+        # Modern architecture defaults — minimum Pascal (sm_60)
+        # Pre-Pascal (Kepler/Maxwell) dropped: too old, removed from modern CUDA
+        set(DEFAULT_CUDA_ARCH "61")  # Pascal (GTX 1060/1070/1080)
+
+        # Turing (CUDA >= 10.0, but we require >= 11.0)
+        list(APPEND DEFAULT_CUDA_ARCH "75")  # RTX 2060/2070/2080
+
+        # Ampere (CUDA >= 11.0)
+        list(APPEND DEFAULT_CUDA_ARCH "80" "86")  # A100, RTX 3060/3070/3080/3090
+
+        # Ada Lovelace (CUDA >= 11.8)
+        if(NOT CUDA_VERSION VERSION_LESS 11.8)
+            list(APPEND DEFAULT_CUDA_ARCH "89")  # RTX 4060/4070/4080/4090
         endif()
-        # add Pascal support for CUDA >= 8.0
-        if(NOT CUDA_VERSION VERSION_LESS 8.0)
-            list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
+
+        # Hopper (CUDA >= 12.0)
+        if(NOT CUDA_VERSION VERSION_LESS 12.0)
+            list(APPEND DEFAULT_CUDA_ARCH "90")  # H100, H200
         endif()
-        # add Volta support for CUDA >= 9.0
-        if(NOT CUDA_VERSION VERSION_LESS 9.0)
-            # Volta GPUs are currently not supported on MACOSX
-            # https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-general-known-issues
-            if(NOT APPLE)
-                list(APPEND DEFAULT_CUDA_ARCH "70")
-            endif()
-        endif()
-        # add Turing support for CUDA >= 10.0
-        if(NOT CUDA_VERSION VERSION_LESS 10.0)
-            list(APPEND DEFAULT_CUDA_ARCH "75")
+
+        # Blackwell (CUDA >= 12.8)
+        if(NOT CUDA_VERSION VERSION_LESS 12.8)
+            list(APPEND DEFAULT_CUDA_ARCH "100" "120")  # B100/B200, RTX 5090
         endif()
 
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
@@ -165,9 +169,9 @@ if(CUDA_ENABLE)
             endif()
             unset(IS_NUMBER)
 
-            if(${CUDA_ARCH_ELEM} LESS 20)
+            if(${CUDA_ARCH_ELEM} LESS 60)
                 message(FATAL_ERROR "Unsupported CUDA architecture '${CUDA_ARCH_ELEM}' specified. "
-                                    "Use '20' (for compute architecture 2.0) or higher.")
+                                    "Minimum is '60' (Pascal). Pre-Pascal GPUs are not supported.")
             endif()
         endforeach()
 
@@ -192,23 +196,15 @@ if(CUDA_ENABLE)
                 set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
             endforeach()
         elseif(CUDA_COMPILER STREQUAL "nvcc")
-            # add c++11 for cuda
-            if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+            # add c++11 for cuda (matches CMAKE_CXX_STANDARD)
+            if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+1[147z]")
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
             endif()
 
             # required for cryptonight_gpu (fast floating point operations are not allowed)
             set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --fmad=false --prec-div=true --ftz=false")
 
-            # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
-            if(CUDA_VERSION VERSION_EQUAL 8.0)
-                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
-            endif()
-
-            # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
-            if(CUDA_VERSION VERSION_LESS 8.0)
-                add_definitions(-D_FORCE_INLINES)
-            endif()
+            # Note: Legacy CUDA <9 workarounds removed (minimum CUDA 11.0 required)
             foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
                 # set flags to create device code for the given architecture
                 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
@@ -233,10 +229,7 @@ if(CUDA_ENABLE)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
             endif(CUDA_KEEP_FILES)
 
-            if(CUDA_VERSION VERSION_LESS 8.0)
-                # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
-                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
-            endif()
+            # Legacy CUDA 7.5 MWAITXINTRIN workaround removed (minimum CUDA 11.0)
 
             # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
             # overwrite the CUDA host compiler variable with the used CXX MSVC
