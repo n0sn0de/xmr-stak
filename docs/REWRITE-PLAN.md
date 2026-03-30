@@ -22,13 +22,6 @@ Take the inherited xmr-stak CryptoNight-GPU implementation and transform it into
 
 ---
 
-### Cumulative Total (All Sessions)
-
-The `xmrstak/` directory is **GONE**. All source code now lives under `n0s/`.
-
-**~300 files changed. Net -10,500+ lines removed. Namespace migrated. Directory restructured. Protocol documented. Zero-warning build. Config simplified. Modern C++17. Linux-only. Zero C files.**
-
----
 
 ## Current Codebase State
 
