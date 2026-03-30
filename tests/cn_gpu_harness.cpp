@@ -17,7 +17,7 @@
  *       n0s/backend/cpu/crypto/c_blake256.c \
  *       n0s/backend/cpu/crypto/c_groestl.c \
  *       n0s/backend/cpu/crypto/c_jh.c \
- *       n0s/backend/cpu/crypto/c_keccak.c \
+ *       n0s/backend/cpu/crypto/keccak.cpp \
  *       n0s/backend/cpu/crypto/c_skein.c \
  *       -o tests/cn_gpu_harness -lpthread
  */

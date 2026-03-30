@@ -3,12 +3,10 @@
 set -e
 cd "$(dirname "$0")/.."
 
-echo "Compiling C crypto sources..."
-gcc -c -O2 -march=native -msse2 -I. \
-    n0s/backend/cpu/crypto/c_keccak.c \
-    -o tests/c_keccak.o
-
 echo "Compiling C++ sources..."
+g++ -std=c++17 -O2 -march=native -msse2 -maes -mavx2 \
+    -I. -c n0s/backend/cpu/crypto/keccak.cpp -o tests/keccak.o
+
 g++ -std=c++17 -O2 -march=native -msse2 -maes -mavx2 \
     -I. -c tests/cn_gpu_harness.cpp -o tests/cn_gpu_harness.o
 
@@ -23,7 +21,7 @@ g++ -O2 -march=native \
     tests/cn_gpu_harness.o \
     tests/cn_gpu_avx.o \
     tests/cn_gpu_ssse3.o \
-    tests/c_keccak.o \
+    tests/keccak.o \
     -o tests/cn_gpu_harness -lpthread
 
 echo "✅ Built tests/cn_gpu_harness"

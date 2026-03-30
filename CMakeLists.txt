@@ -281,15 +281,6 @@ endif()
 
 # ASM library removed — cryptonight_v8 mainloop was only used by removed algorithms
 
-# C crypto library
-file(GLOB SRCFILES_C "n0s/backend/cpu/crypto/*.c")
-add_library(n0s-c STATIC ${SRCFILES_C})
-set_property(TARGET n0s-c PROPERTY C_STANDARD 99)
-if(MICROHTTPD_ENABLE)
-    target_link_libraries(n0s-c ${MHTD})
-endif()
-target_link_libraries(n0s-c ${LIBS})
-
 # Core backend library
 file(GLOB BACKEND_CPP
     "n0s/*.cpp"
@@ -300,7 +291,10 @@ file(GLOB BACKEND_CPP
     "n0s/misc/*.cpp"
     "n0s/net/*.cpp")
 add_library(n0s-backend STATIC ${BACKEND_CPP})
-target_link_libraries(n0s-backend n0s-c ${CMAKE_DL_LIBS})
+if(MICROHTTPD_ENABLE)
+    target_link_libraries(n0s-backend ${MHTD})
+endif()
+target_link_libraries(n0s-backend ${CMAKE_DL_LIBS} ${LIBS})
 
 # CUDA backend (shared library, loaded via dlopen)
 if(CUDA_FOUND)
@@ -333,7 +327,7 @@ add_executable(n0s-ryo-miner ${SRCFILES_CPP})
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(n0s-ryo-miner ${LIBS} n0s-c n0s-backend)
+target_link_libraries(n0s-ryo-miner ${LIBS} n0s-backend)
 
 ################################################################################
 # Install
