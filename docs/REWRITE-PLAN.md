@@ -238,15 +238,36 @@ Only after structural work is complete (check the Remaining things in succes cri
 - CMake glob patterns (`*.cpp`) automatically pick up new files — no manual listing needed
 - Cross-namespace `using` declarations keep client code clean without polluting every file
 
+---
+
+## Session 19 Notes (2026-03-30 04:20 AM)
+
+**What we accomplished:**
+- Split monolithic NVIDIA `cuda_kernels.cu` (832 lines) into 4 focused modules:
+  - `cuda_device.cu/hpp` (322 lines): Device management (init, enumeration, capability checking)
+  - `cuda_phase1.cu/hpp` (127 lines): Phase 1 kernel (Keccak + AES key expansion)
+  - `cuda_phase4_5.cu/hpp` (248 lines): Phase 4 + 5 kernels (implode + finalize)
+  - `cuda_dispatch.cu/hpp` (180 lines): Host-side kernel dispatch
+- `cuda_kernels.cu` now a 21-line compatibility shim that includes the new headers
+- Total: 877 lines across 4 files (net +45 lines for headers), zero behavior changes
+- OpenCL build verified (zero warnings), CUDA compilation warnings only (deprecated CUDA intrinsics in existing code)
+- Fixed container-build.sh: added `HWLOC_ENABLE=OFF` flag for containerized builds
+
+**Key insights:**
+- Mirrored Session 18's AMD refactor pattern: single-responsibility modules, namespace-clean
+- Explicit template instantiations needed at bottom of .cu files for NVCC separate compilation
+- CUDA deprecation warnings exist in `cuda_cryptonight_gpu.hpp` (int2float → __int2float_rn, etc.) — future cleanup target
+- Container builds need explicit feature disables when deps aren't needed (hwloc for generic builds)
+
 **Next session priorities:**
-1. **More constexpr** — Expand to remaining compile-time constants (lookup tables, simple getters)
-2. **NVIDIA gpu code consolidation** — Similar split for CUDA backend (currently ~4500 lines in cuda_kernels.cu)
-3. **Documentation pass** — Add function-level comments to complex GPU kernels
+1. **More constexpr** (~2 hours) — Expand to remaining compile-time constants (lookup tables, simple getters, config values)
+2. **Documentation pass** (~2 hours) — Add function-level comments to complex GPU kernels (Phase 2, Phase 3, etc.)
+3. **Fix CUDA deprecation warnings** (~1 hour) — Replace deprecated intrinsics in cuda_cryptonight_gpu.hpp
 
 **Lessons learned:**
-- Extract early, extract often — waiting until a file is 2000+ lines makes it painful
-- Test-driven refactoring gives confidence — every structural change verified bit-exact
-- Namespace hygiene matters — wrap everything, `using` only what you need
+- Refactoring patterns transfer cleanly between backends (AMD OpenCL → NVIDIA CUDA)
+- Modular code compiles faster (parallel nvcc invocations on separate .cu files)
+- Container builds expose missing flags that local builds hide (hwloc present on host but not in container)
 
 ---
 
