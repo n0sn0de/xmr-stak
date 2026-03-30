@@ -140,7 +140,7 @@ class jpsock
 	pool_job oCurrentJob;
 
 	opaque_private* prv;
-	base_socket* sck;
+	std::unique_ptr<base_socket> sck;
 
 	uint64_t iMessageCnt = 0;
 	uint64_t iLastMessageId = 0;

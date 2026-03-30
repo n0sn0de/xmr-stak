@@ -142,11 +142,11 @@ jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRi
 
 #ifndef CONF_NO_TLS
 	if(tls)
-		sck = new tls_socket(this);
+		sck = std::make_unique<tls_socket>(this);
 	else
-		sck = new plain_socket(this);
+		sck = std::make_unique<plain_socket>(this);
 #else
-	sck = new plain_socket(this);
+	sck = std::make_unique<plain_socket>(this);
 #endif
 
 	bRunning = false;
