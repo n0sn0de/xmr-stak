@@ -36,10 +36,8 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 set(N0S_COMPILE "native" CACHE STRING "Select CPU compile mode (native or generic)")
 set_property(CACHE N0S_COMPILE PROPERTY STRINGS "native;generic")
 if(N0S_COMPILE STREQUAL "native")
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        set(CMAKE_CXX_FLAGS "-march=native -mtune=native ${CMAKE_CXX_FLAGS}")
-        set(CMAKE_C_FLAGS "-march=native -mtune=native ${CMAKE_C_FLAGS}")
-    endif()
+    set(CMAKE_CXX_FLAGS "-march=native -mtune=native ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS "-march=native -mtune=native ${CMAKE_C_FLAGS}")
 elseif(N0S_COMPILE STREQUAL "generic")
     add_definitions("-DCONF_ENFORCE_OpenCL_1_2=1")
 else()
@@ -184,10 +182,8 @@ endif()
 ################################################################################
 
 # PThreads
-if(NOT WIN32)
-    find_package(Threads REQUIRED)
-    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-endif()
+find_package(Threads REQUIRED)
+set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 # microhttpd (HTTP monitoring API)
 option(MICROHTTPD_ENABLE "Enable HTTP monitoring daemon" ON)
@@ -233,11 +229,6 @@ else()
     add_definitions("-DCONF_NO_HWLOC")
 endif()
 
-# Windows Sockets
-if(WIN32)
-    set(LIBS ${LIBS} wsock32 ws2_32)
-endif()
-
 ################################################################################
 # Versioning
 ################################################################################
@@ -266,12 +257,8 @@ add_definitions("-DBACKEND_TYPE=${STR_BACKEND_TYPES}")
 include_directories(BEFORE .)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_definitions(-D_CRT_SECURE_NO_DEPRECATE -DNOMINMAX)
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
