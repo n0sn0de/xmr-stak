@@ -51,26 +51,26 @@ class jpsock
 	}
 
 	inline size_t can_connect() { return get_timestamp() != connect_time; }
-	inline bool is_running() { return bRunning; }
-	inline bool is_logged_in() { return bLoggedIn; }
-	inline size_t get_pool_id() { return pool_id; }
+	bool is_running() const { return bRunning; }
+	bool is_logged_in() const { return bLoggedIn; }
+	size_t get_pool_id() const { return pool_id; }
 	inline bool get_disconnects(size_t& att, size_t& time)
 	{
 		att = connect_attempts;
 		time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0;
 		return usr_login[0];
 	}
-	inline const char* get_pool_addr() { return net_addr.c_str(); }
-	inline const char* get_tls_fp() { return tls_fp.c_str(); }
-	inline const char* get_rigid() { return usr_rigid.c_str(); }
-	inline bool is_nicehash() { return nicehash; }
+	const char* get_pool_addr() const { return net_addr.c_str(); }
+	const char* get_tls_fp() const { return tls_fp.c_str(); }
+	const char* get_rigid() const { return usr_rigid.c_str(); }
+	constexpr bool is_nicehash() const { return nicehash; }
 
 	[[nodiscard]] bool get_pool_motd(std::string& strin);
 
 	std::string&& get_call_error();
 	[[nodiscard]] bool have_call_error() { return call_error; }
 	[[nodiscard]] bool have_sock_error() { return bHaveSocketError; }
-	inline uint64_t get_current_diff() { return iJobDiff; }
+	uint64_t get_current_diff() const { return iJobDiff; }
 
 	void save_nonce(uint32_t nonce);
 	[[nodiscard]] bool get_current_job(pool_job& job);

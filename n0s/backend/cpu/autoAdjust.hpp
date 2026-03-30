@@ -6,7 +6,7 @@
 
 namespace {
 // Extract bits [h:l] from val (inclusive)
-inline int32_t get_masked(int32_t val, int32_t h, int32_t l)
+constexpr int32_t get_masked(int32_t val, int32_t h, int32_t l)
 {
 	return (val >> l) & ((1 << (h - l + 1)) - 1);
 }

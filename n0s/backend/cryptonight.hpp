@@ -32,13 +32,13 @@ struct n0s_algo
 	uint32_t mask = 0u;
 
 	/// Default: invalid algorithm
-	n0s_algo() = default;
+	constexpr n0s_algo() = default;
 
 	/// Construct from an algo id (invalid or cryptonight_gpu)
-	n0s_algo(n0s_algo_id algo) : id(algo) {}
+	constexpr n0s_algo(n0s_algo_id algo) : id(algo) {}
 
 	/// Full constructor with all parameters
-	n0s_algo(n0s_algo_id algo, uint32_t iterations, size_t memory, uint32_t mem_mask)
+	constexpr n0s_algo(n0s_algo_id algo, uint32_t iterations, size_t memory, uint32_t mem_mask)
 		: id(algo), iter(iterations), mem(memory), mask(mem_mask) {}
 
 	// ── Accessors ─────────────────────────────────────────────────
@@ -82,7 +82,7 @@ struct n0s_algo
 };
 
 // ─── The one algorithm we support ─────────────────────────────────────
-inline n0s_algo POW(n0s_algo_id algo_id)
+constexpr n0s_algo POW(n0s_algo_id algo_id)
 {
 	if(algo_id == cryptonight_gpu)
 		return {cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK};

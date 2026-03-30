@@ -58,10 +58,10 @@ class jconf
 	// ---- Simplified accessors (cn_gpu is the only algorithm) ----
 
 	/// Get the mining algorithm — always returns POW(cryptonight_gpu)
-	inline n0s_algo GetMiningAlgo() const { return POW(cryptonight_gpu); }
+	constexpr n0s_algo GetMiningAlgo() const { return POW(cryptonight_gpu); }
 
 	/// Get the scratchpad memory size — always 2MB for cn_gpu
-	inline size_t GetMiningMemSize() const { return CN_MEMORY; }
+	constexpr size_t GetMiningMemSize() const { return CN_MEMORY; }
 
 	std::string GetMiningCoin();
 
@@ -87,7 +87,7 @@ class jconf
 
 	bool PreferIpv4();
 
-	inline bool HaveHardwareAes() { return bHaveAes; }
+	constexpr bool HaveHardwareAes() const { return bHaveAes; }
 
 	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
 
