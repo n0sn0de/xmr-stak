@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded.*
+*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded. Windows/macOS/BSD code stripped. Pure C++17 (zero C files). Linux-only.*
 
 ---
 
@@ -26,7 +26,7 @@ Take the inherited xmr-stak CryptoNight-GPU implementation and transform it into
 
 The `xmrstak/` directory is **GONE**. All source code now lives under `n0s/`.
 
-**~245 files changed. Net -10,000+ lines removed. Namespace migrated. Directory restructured. Protocol documented. Zero-warning build. Config simplified. Modern C++17.**
+**~300 files changed. Net -10,500+ lines removed. Namespace migrated. Directory restructured. Protocol documented. Zero-warning build. Config simplified. Modern C++17. Linux-only. Zero C files.**
 
 ---
 
@@ -64,7 +64,7 @@ n0s/
 │   │
 │   ├── cpu/                     ← CPU hash reference + shared crypto (2,839 lines)
 │   │   ├── crypto/
-│   │   │   ├── c_keccak.c/h           ← Keccak-1600 (only C file remaining)
+│   │   │   ├── keccak.cpp/hpp         ← Keccak-1600 (converted to C++ in Session 8)
 │   │   │   ├── cn_gpu_avx.cpp         ← Phase 3 CPU AVX2 impl
 │   │   │   ├── cn_gpu_ssse3.cpp       ← Phase 3 CPU SSSE3 impl
 │   │   │   ├── cn_gpu.hpp             ← CPU cn_gpu interface
@@ -116,8 +116,8 @@ tests/
 └── build_harness.sh       ← Build script
 ```
 
-**Codebase: ~30K lines (down from ~43K). Our code: ~16.5K lines (excluding vendored rapidjson/picosha2)**
-**The `xmrstak/` directory is GONE. Everything is `n0s/` now.**
+**Codebase: ~30K lines (down from ~43K). Our code: ~16.1K lines (excluding vendored rapidjson/picosha2)**
+**The `xmrstak/` directory is GONE. Everything is `n0s/` now. Zero C files remain.**
 
 ---
 
@@ -268,7 +268,46 @@ Fixed ~80 compiler warnings across 18 files to achieve clean `-Wall -Wextra`:
 - Removed dead `if(false)` block in `gpu.cpp` (MaximumWorkSize /= 8)
 - Cleaned up keccak function comments to reflect actual usage
 
-### Phase S10: Performance Optimization (Future)
+### Phase S10: Strip Windows/macOS/BSD Platform Code ✅ COMPLETE (Session 8)
+
+**S10.0: Strip Platform Code ✅ (-466 lines)**
+- Removed all `#ifdef _WIN32`, `__APPLE__`, `__FreeBSD__`, `__OpenBSD__`, `_MSC_VER` blocks
+- Linux-only: POSIX sockets, termios, dlopen, pthread — no Windows alternatives
+- Renamed `win_exit()` → `n0s_exit()` across entire codebase
+- Simplified 26 files: console, socks, plugin, home_dir, configEditor, jext, etc.
+
+**S10.1: Remove int_port() MSVC Workaround ✅ (-6 lines)**
+- `int_port()` was a `sizeof(long)` workaround for MSVC `%llu` format strings
+- Replaced all `%llu` → `%zu` for `size_t` format specifiers
+- Updated JSON API format strings in webdesign.cpp
+- Fixed `duration_cast` parenthesization in executor.cpp
+
+**S10.2: CMakeLists.txt Linux-Only ✅ (-13 lines)**
+- Removed MSVC compiler guards, Windows socket libs, WIN32 pthread guards
+
+**S10.3: Dead Params + CLI Cleanup ✅ (-15 lines)**
+- Removed `allowUAC` (Windows UAC — dead), `configFileCPU` (CPU mining disabled)
+- Removed `--noUAC` CLI handler, `--noCPU`/`--cpu` help text
+- Removed `N0S_DEV_RELEASE` guard from CUDA library loading
+
+### Phase S11: Convert c_keccak.c → keccak.cpp ✅ COMPLETE (Session 8)
+
+- Renamed c_keccak.c/h → keccak.cpp/hpp (last C file eliminated)
+- Modernized: `constexpr` for constants, `reinterpret_cast`, C++ headers
+- Simplified Chi step with loop instead of manually unrolled blocks
+- Added `extern "C"` linkage for compatibility with cryptonight_aesni.h
+- Eliminated `n0s-c` static library build target (was only for c_keccak.c)
+- Build targets: 4 → 3 (n0s-backend, n0s-ryo-miner, n0s_{cuda,opencl}_backend)
+- **Zero C files remain — pure C++17 codebase**
+
+### Phase S12: Modernize C Headers ✅ COMPLETE (Session 8)
+
+- Replaced all C-style `#include` with C++ equivalents across 34 files:
+  `assert.h` → `cassert`, `stdlib.h` → `cstdlib`, `string.h` → `cstring`,
+  `stdio.h` → `cstdio`, `stdint.h` → `cstdint`, etc.
+- Zero functional change, pure idiom modernization
+
+### Phase P1: Performance Optimization (Future)
 
 Only after all structural work is complete:
 - Profile on each GPU architecture
@@ -293,6 +332,9 @@ Only after all structural work is complete:
 - [x] `xmrstak` namespace fully replaced → `n0s::` (S5, Session 4)
 - [x] Config/algo system simplified — single-algorithm focus (S8, Session 7)
 - [x] OpenCL dead kernel branches removed (S3.2, Session 7)
+- [x] Linux-only — all Windows/macOS/BSD platform code removed (S10, Session 8)
+- [x] Pure C++17 — zero C files remain (S11, Session 8)
+- [x] Modern C++ headers everywhere (S12, Session 8)
 
 ---
 
@@ -306,7 +348,7 @@ n0s/
 │   └── cn_gpu.hpp              ← Constants + types (DONE)
 │
 ├── crypto/
-│   ├── keccak.c/h              ← Keccak-1600 (from c_keccak)
+│   ├── keccak.cpp/hpp           ← Keccak-1600 (DONE — converted from c_keccak.c)
 │   ├── aes.hpp                 ← AES keygen + rounds (from cryptonight_aesni.h)
 │   ├── cn_gpu_cpu.cpp/hpp      ← CPU reference impl (from cn_gpu_avx/ssse3)
 │   └── hash_pipeline.hpp       ← Full CPU hash function (from Cryptonight_hash_gpu)
