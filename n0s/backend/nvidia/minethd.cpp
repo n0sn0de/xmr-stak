@@ -35,6 +35,7 @@
 #include "n0s/misc/executor.hpp"
 #include "n0s/misc/utility.hpp"
 #include "n0s/params.hpp"
+#include "n0s/backend/kernel_profile.hpp"
 
 #include <cassert>
 #include <bitset>
@@ -251,7 +252,24 @@ void minethd::work_main()
 
 			cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
 
-			cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, 0 /* cn_r_ctx removed */);
+			// Kernel profiling: collect per-phase timing for first 50 dispatches
+			static thread_local n0s::KernelProfile cudaProfile;
+			static thread_local bool profileDone = false;
+			const bool profiling = n0s::params::inst().profileKernels && !profileDone;
+
+			if(profiling)
+			{
+				cryptonight_core_cpu_hash_profile(&ctx, miner_algo, iNonce, 0, cudaProfile);
+				if(cudaProfile.iterations >= 50)
+				{
+					cudaProfile.print_summary("CUDA", ctx.device_blocks * ctx.device_threads);
+					profileDone = true;
+				}
+			}
+			else
+			{
+				cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, 0 /* cn_r_ctx removed */);
+			}
 
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
 
