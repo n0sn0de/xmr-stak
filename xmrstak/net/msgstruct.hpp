@@ -1,3 +1,27 @@
+/**
+ * msgstruct.hpp — Message types and event system for inter-thread communication
+ *
+ * Defines the discriminated union (ex_event) used to pass events between:
+ *   - Pool socket threads → executor (jobs, errors)
+ *   - GPU mining threads → executor (share results, GPU errors)
+ *   - Clock thread → executor (timed events like hashrate printing)
+ *   - HTTP API → executor (report requests)
+ *
+ * Key types:
+ *   pool_job    — Mining job received from pool (job_id, blob, target)
+ *   job_result  — Share found by GPU (job_id, nonce, hash)
+ *   sock_err    — Socket/connection error (move-only string)
+ *   gpu_res_err — GPU computation error (read-only string)
+ *   ex_event    — Discriminated union of the above, with move semantics
+ *
+ * Helper functions:
+ *   t32_to_t64()  — Convert 32-bit pool target to 64-bit internal target
+ *   t64_to_diff()  — Convert 64-bit target to human-readable difficulty
+ *   get_timestamp() / get_timestamp_ms() — Steady clock timestamps
+ *
+ * See docs/POOL-NETWORK.md for the full protocol documentation.
+ */
+
 #pragma once
 
 #include "xmrstak/backend/cryptonight.hpp"
@@ -6,8 +30,8 @@
 #include <string.h>
 #include <string>
 
-// Structures that we use to pass info between threads constructors are here just to make
-// the stack allocation take up less space, heap is a shared resource that needs locks too of course
+// Structures passed between threads via the event queue.
+// Uses stack allocation + move semantics to avoid heap contention.
 
 struct pool_job
 {

@@ -21,6 +21,25 @@
   *
   */
 
+/**
+ * socket.cpp — TCP and TLS transport for pool connections
+ *
+ * Two implementations of base_socket:
+ *   plain_socket — Raw TCP via POSIX sockets (getaddrinfo + connect)
+ *   tls_socket   — TLS via OpenSSL BIO (optional, compile with CONF_NO_TLS to disable)
+ *
+ * Features:
+ *   - IPv4/IPv6 dual-stack with configurable preference
+ *   - Random address selection from DNS results (load distribution)
+ *   - TCP_NODELAY for low-latency stratum communication
+ *   - TLS certificate fingerprint pinning (SHA-256)
+ *   - Secure cipher suite enforcement (optional via tls_secure_algo config)
+ *
+ * All errors are reported back to jpsock via set_socket_error() callbacks.
+ *
+ * See docs/POOL-NETWORK.md for the full protocol documentation.
+ */
+
 #include "socket.hpp"
 #include "jpsock.hpp"
 #include "xmrstak/jconf.hpp"

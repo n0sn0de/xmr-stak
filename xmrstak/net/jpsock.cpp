@@ -21,6 +21,28 @@
   *
   */
 
+/**
+ * jpsock.cpp — Stratum JSON-RPC pool client
+ *
+ * Implements the mining pool stratum protocol:
+ *   - login (authenticate with wallet address)
+ *   - job (receive new mining work from pool — server-push)
+ *   - submit (send found shares back to pool)
+ *
+ * Threading model:
+ *   - A dedicated receive thread (jpsock_thread) reads from the socket,
+ *     parses JSON-RPC messages, and routes them as events.
+ *   - The calling thread (executor) sends commands and waits for responses
+ *     via a condition variable (cmd_ret_wait).
+ *   - Only ONE calling thread is supported (the executor). This is a
+ *     design constraint, not a bug.
+ *
+ * Memory: Uses pre-allocated rapidjson memory pools (3x 4KB) to avoid
+ * heap allocation on the hot path (every incoming message).
+ *
+ * See docs/POOL-NETWORK.md for the full protocol documentation.
+ */
+
 #include <algorithm>
 #include <assert.h>
 #include <chrono>

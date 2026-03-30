@@ -21,6 +21,30 @@
   *
   */
 
+/**
+ * executor.cpp — Central event loop and pool manager
+ *
+ * The executor is a singleton that coordinates all mining activity:
+ *
+ *   1. Starts GPU backend threads (CUDA / OpenCL)
+ *   2. Connects to configured pools (multi-pool with weighted failover)
+ *   3. Runs a blocking event loop processing events from:
+ *      - Pool connections (job notifications, socket errors)
+ *      - Mining threads (share results, GPU errors)
+ *      - Timed events (hashrate printing, pool re-evaluation)
+ *      - User input (hashrate/results/connection status)
+ *      - HTTP API requests
+ *
+ * Event flow: GPU threads and pool sockets push events into a thread-safe
+ * queue (thdq). The executor pops events one at a time and handles them
+ * sequentially — no concurrent access to pool state.
+ *
+ * A separate clock thread (ex_clock_thd) ticks every 500ms, managing
+ * timed events like periodic hashrate reporting and reconnect delays.
+ *
+ * See docs/POOL-NETWORK.md for the full protocol and architecture docs.
+ */
+
 #include "executor.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/net/jpsock.hpp"
