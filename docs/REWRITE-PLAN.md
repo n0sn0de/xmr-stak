@@ -326,6 +326,65 @@ After: ZERO warnings (except container "NVIDIA Driver not detected" — expected
 
 ---
 
+## Session 35 Notes (2026-03-30 01:33 PM) — Check-in & Next Phase Planning 🧘
+
+**Context:** Hourly n0s-ryo-miner cron check-in post-release
+
+**Status Check:**
+- ✅ **Foundation rewrite: COMPLETE** — v3.0.0 shipped with 8 artifacts
+- ✅ **Zero warnings** — OpenCL + CUDA 11.8/12.6/12.8 all build cleanly
+- ✅ **Container build matrix** — Production-ready infrastructure
+- ✅ **Production validated** — Runs cleanly on AMD RDNA4
+- ✅ **Documentation current** — Session notes 28-34 captured
+
+**Next Phase: OPTIMIZATION**
+
+With foundation rock-solid, focus shifts to:
+
+1. **Live Mining Validation** (~1 hour when pool/wallet available)
+   - Verify accepted shares on real pool
+   - Establish that refactored code mines successfully
+   - Capture baseline hashrate on AMD RDNA4 (current hardware)
+
+2. **Performance Profiling** (~2-3 hours)
+   - Profile with `rocprof` (AMD) or `nsys` (NVIDIA) when hardware available
+   - Identify hotspots: memory bandwidth, occupancy, kernel execution time
+   - Measure Phase 1-5 individual kernel times
+   - Document baseline performance in `docs/benchmarks/`
+
+3. **Kernel Documentation** (~2 hours)
+   - Add function-level comments to Phase 2 (scratchpad expansion)
+   - Add function-level comments to Phase 3 (memory-hard loop)
+   - Document memory access patterns and optimization opportunities
+   - Make kernel code approachable for future optimization work
+
+4. **Autotuning Implementation** (~1 week — see PRD_01-AUTOTUNING.md)
+   - Implement grid search for intensity/worksize combinations
+   - Measure hashrate for each configuration
+   - Store optimal params per GPU model
+   - Replace hardcoded defaults with learned values
+
+**Branch Strategy:**
+- Keep master stable (release-ready at all times)
+- Create focused optimization branches:
+  - `optimize/profiling-baseline`
+  - `optimize/kernel-docs`
+  - `optimize/autotuning-phase1`
+- Test with harness (`tests/cn_gpu_harness`) + container builds + live mining
+- Merge only when validated (golden hashes pass, shares accepted)
+
+**Guiding Principles for Optimization:**
+1. **Measure before changing** — No blind optimizations
+2. **One change at a time** — Isolate performance impact
+3. **Validate bit-exactness** — Golden hashes must always pass
+4. **Document findings** — Future-you will thank present-you
+5. **Keep it clean** — No hacks, no magic numbers without comments
+
+**Session accomplishment summary:**
+Memory updated (Session 28-35 notes), REWRITE-PLAN updated with optimization roadmap. **Foundation complete. Optimization phase begins.** Ready to profile, document, and tune for maximum hashrate. 🧘⚡🔥
+
+---
+
 ## Session 32 Notes (2026-03-30 12:26 PM) — FULL BUILD MATRIX COMPLETE 🚀
 
 **What we accomplished:**
