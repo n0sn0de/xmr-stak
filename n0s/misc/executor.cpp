@@ -419,7 +419,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 
 	if(bResult)
 	{
-		uint64_t* targets = (uint64_t*)oResult.bResult;
+		uint64_t* targets = reinterpret_cast<uint64_t*>(oResult.bResult);
 		log_result_ok(t64_to_diff(targets[3]));
 
 		if (pvThreads->at(oResult.iThreadId)->backendType == n0s::iBackend::BackendType::CPU)

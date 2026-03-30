@@ -38,12 +38,12 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 {
 	const size_t hashMemSize = ::jconf::inst()->GetMiningMemSize();
 
-	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
+	cryptonight_ctx* ptr = static_cast<cryptonight_ctx*>(_mm_malloc(sizeof(cryptonight_ctx), 4096));
 
 	if(use_fast_mem == 0)
 	{
 		// Fallback: standard aligned allocation (no huge pages)
-		ptr->long_state = (uint8_t*)_mm_malloc(hashMemSize, hashMemSize);
+		ptr->long_state = static_cast<uint8_t*>(_mm_malloc(hashMemSize, hashMemSize));
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
 		if(ptr->long_state == NULL)
@@ -53,15 +53,15 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 	}
 
 	// Preferred: mmap with huge pages (MAP_HUGETLB)
-	ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
+	ptr->long_state = static_cast<uint8_t*>(mmap(nullptr, hashMemSize, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0));
 
 	if(ptr->long_state == MAP_FAILED)
 	{
 		// Fallback: mmap without huge pages
 		msg->warning = "mmap with HUGETLB failed, attempting without it (you should fix your kernel)";
-		ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
-			MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+		ptr->long_state = static_cast<uint8_t*>(mmap(nullptr, hashMemSize, PROT_READ | PROT_WRITE,
+			MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
 	}
 
 	if(ptr->long_state == MAP_FAILED)

@@ -379,7 +379,7 @@ struct Cryptonight_hash_gpu
 		cn_implode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state, algo);
 
 		// Phase 5: Final Keccak-f permutation
-		keccakf((uint64_t*)ctx[0]->hash_state, 24);
+		keccakf(reinterpret_cast<uint64_t*>(ctx[0]->hash_state), 24);
 
 		// cn_gpu outputs first 32 bytes directly (no extra_hashes dispatch)
 		memcpy(output, ctx[0]->hash_state, 32);

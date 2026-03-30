@@ -370,7 +370,7 @@ void minethd::prep_multiway_work(uint8_t* bWorkBlob, uint32_t** piNonce)
 	{
 		memcpy(bWorkBlob + oWork.iWorkSize * i, oWork.bWorkBlob, oWork.iWorkSize);
 		if(i > 0)
-			piNonce[i] = (uint32_t*)(bWorkBlob + oWork.iWorkSize * i + 39);
+			piNonce[i] = reinterpret_cast<uint32_t*>(bWorkBlob + oWork.iWorkSize * i + 39);
 	}
 }
 
@@ -405,8 +405,8 @@ void minethd::multiway_work_main()
 				cryptonight_free_ctx(ctx[j]);
 			n0s_exit(1);
 		}
-		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
-		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
+		piHashVal[i] = reinterpret_cast<uint64_t*>(bHashOut + 32 * i + 24);
+		piNonce[i] = (i == 0) ? reinterpret_cast<uint32_t*>(bWorkBlob + 39) : nullptr;
 	}
 
 	if(!oWork.bStall)

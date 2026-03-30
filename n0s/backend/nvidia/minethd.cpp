@@ -58,15 +58,15 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	this->backendType = iBackend::NVIDIA;
 	oWork = pWork;
 	bQuit = 0;
-	iThreadNo = (uint8_t)iNo;
+	iThreadNo = static_cast<uint8_t>(iNo);
 	this->iGpuIndex = cfg.id;
 	iJobNo = 0;
 
-	ctx.device_id = (int)cfg.id;
-	ctx.device_blocks = (int)cfg.blocks;
-	ctx.device_threads = (int)cfg.threads;
-	ctx.device_bfactor = (int)cfg.bfactor;
-	ctx.device_bsleep = (int)cfg.bsleep;
+	ctx.device_id = static_cast<int>(cfg.id);
+	ctx.device_blocks = static_cast<int>(cfg.blocks);
+	ctx.device_threads = static_cast<int>(cfg.threads);
+	ctx.device_bfactor = static_cast<int>(cfg.bfactor);
+	ctx.device_bsleep = static_cast<int>(cfg.bsleep);
 	ctx.syncMode = cfg.syncMode;
 	ctx.memMode = cfg.memMode;
 	this->affinity = cfg.cpu_aff;
@@ -148,7 +148,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 		if(cfg.cpu_aff >= 0)
 		{
-			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, affinity: %d.", i, static_cast<int>(cfg.cpu_aff));
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, no affinity.", i);
@@ -172,7 +172,7 @@ void minethd::work_main()
 
 	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 	{
-		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exiting.\n", (int)iThreadNo);
+		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exiting.\n", static_cast<int>(iThreadNo));
 		std::exit(0);
 	}
 
@@ -234,7 +234,7 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
 		if(oWork.bNiceHash)
-			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
+			iNonce = *reinterpret_cast<uint32_t*>(oWork.bWorkBlob + 39);
 
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
@@ -265,7 +265,7 @@ void minethd::work_main()
 				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
 				memset(bResult, 0, sizeof(job_result::bResult));
 
-				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
+				*reinterpret_cast<uint32_t*>(bWorkBlob + 39) = foundNonce[i];
 
 				cpu_ctx->hash_fn(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
 				if((*((uint64_t*)(bResult + 24))) < oWork.iTarget)
