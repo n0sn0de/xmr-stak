@@ -44,9 +44,9 @@
  */
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <chrono>
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "jpsock.hpp"
 #include "socket.hpp"

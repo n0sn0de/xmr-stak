@@ -26,8 +26,8 @@
 
 #include "n0s/backend/cryptonight.hpp"
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 #include <string>
 
 // Structures passed between threads via the event queue.

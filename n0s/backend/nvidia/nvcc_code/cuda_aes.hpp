@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "cuda_extra.hpp"
 

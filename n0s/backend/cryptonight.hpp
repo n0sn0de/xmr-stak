@@ -1,6 +1,6 @@
 #pragma once
-#include <inttypes.h>
-#include <stddef.h>
+#include <cinttypes>
+#include <cstddef>
 #include <string>
 
 // ─── Algorithm identifier ─────────────────────────────────────────────

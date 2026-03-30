@@ -24,11 +24,11 @@
 #include "n0s/misc/console.hpp"
 
 #include <cstdlib>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <termios.h>
-#include <time.h>
+#include <ctime>
 #include <unistd.h>
 
 int get_key()

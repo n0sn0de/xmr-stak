@@ -36,7 +36,7 @@
 #include "n0s/misc/executor.hpp"
 #include "n0s/params.hpp"
 
-#include <assert.h>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <thread>

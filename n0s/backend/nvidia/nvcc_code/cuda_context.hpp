@@ -10,7 +10,7 @@
  * Was: cryptonight.hpp (CUDA-side, easily confused with backend/cryptonight.hpp)
  */
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 #include "n0s/backend/cryptonight.hpp"

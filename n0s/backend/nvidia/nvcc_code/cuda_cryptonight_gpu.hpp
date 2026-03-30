@@ -20,7 +20,7 @@
 
 #include <cstdint>
 #include <cuda_runtime.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"

@@ -2,7 +2,7 @@
 
 #include "n0s/backend/cryptonight.hpp"
 #include <cpuid.h>
-#include <stdint.h>
+#include <cstdint>
 #include <x86intrin.h>
 
 inline void cngpu_cpuid(uint32_t eax, int32_t ecx, int32_t val[4])

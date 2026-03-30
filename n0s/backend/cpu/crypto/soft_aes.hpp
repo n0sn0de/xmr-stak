@@ -32,7 +32,7 @@
 #include <intrin.h>
 #endif // __GNUC__
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #define saes_data(w)                                                                \
 	{                                                                               \

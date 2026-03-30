@@ -4,7 +4,7 @@
 #include "n0s/backend/cryptonight.hpp"
 #include "n0s/misc/environment.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 
 class jconf

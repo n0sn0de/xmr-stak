@@ -37,10 +37,10 @@
 #endif
 
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
-#include <time.h>
+#include <ctime>
 
 #ifndef CONF_NO_TLS
 #include <openssl/err.h>

@@ -35,7 +35,7 @@
 #include "n0s/misc/utility.hpp"
 #include "n0s/params.hpp"
 
-#include <assert.h>
+#include <cassert>
 #include <bitset>
 #include <chrono>
 #include <cmath>
