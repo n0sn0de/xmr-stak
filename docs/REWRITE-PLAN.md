@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented.*
+*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/).*
 
 ---
 
@@ -89,9 +89,28 @@ Live mining tested on all 3 GPUs after every change — zero rejections.
 Live mining tested on all 3 GPUs — zero rejections.
 Include paths (`#include "xmrstak/..."`) preserved — those change with directory restructuring (S4).
 
+### Session 5 (2026-03-29, continued)
+
+**1 branch merged. 133 files changed. +205 / -205 = net 0 lines (pure rename).**
+
+| Phase | What | Impact |
+|-------|------|--------|
+| **S4** | Directory restructure | `xmrstak/` → `n0s/` — THE BIG RENAME |
+| **S4** | Include path migration | All 161 `#include "xmrstak/..."` → `#include "n0s/..."` |
+| **S4** | Vendor separation | `xmrstak/rapidjson/` → `n0s/vendor/rapidjson/`, `picosha2/` → `n0s/vendor/picosha2/` |
+| **S4** | CMake path updates | All file globs updated to `n0s/` prefix |
+| **S4** | Script updates | test-remote-binary.sh, container-build.sh, build_harness.sh updated |
+
+Live mining tested on all 3 GPUs — zero rejections:
+- nitro (AMD RX 9070 XT, OpenCL): all shares accepted
+- nos2 (GTX 1070 Ti, CUDA 11.8): 61 shares accepted
+- nosnode (RTX 2070, CUDA 12.6): 73 shares accepted
+
+The `xmrstak/` directory is **GONE**. All source code now lives under `n0s/`.
+
 ### Cumulative Total (All Sessions)
 
-**~72 files changed. +3,319 / -12,578 = net -9,259 lines. Namespace fully migrated. Protocol documented.**
+**~200 files changed. +3,524 / -12,783 = net -9,259 lines. Namespace migrated. Directory restructured. Protocol documented.**
 
 ---
 
@@ -99,34 +118,33 @@ Include paths (`#include "xmrstak/..."`) preserved — those change with directo
 
 ```
 n0s/
-└── algorithm/
-    └── cn_gpu.hpp              ← NEW: Clean algorithm constants (202 lines)
-
-xmrstak/                         ← CLEANED, CUDA consolidated, OpenCL partially cleaned
+├── algorithm/
+│   └── cn_gpu.hpp              ← Clean algorithm constants (202 lines)
+│
 ├── backend/
 │   ├── amd/                     ← OpenCL backend (~3,650 lines)
 │   │   ├── amd_gpu/
-│   │   │   ├── gpu.cpp          ← Host: device init, kernel compile, mining loop (CLEANED: Windows code removed)
+│   │   │   ├── gpu.cpp          ← Host: device init, kernel compile, mining loop
 │   │   │   ├── gpu.hpp          ← Host: context struct
 │   │   │   └── opencl/
-│   │   │       ├── cryptonight.cl      ← Phase 4+5 kernel + shared helpers (CLEANED: JOIN macro removed)
-│   │   │       ├── cryptonight_gpu.cl  ← Phase 1,2,3 kernels (RENAMED: cn_gpu_phase* names)
+│   │   │       ├── cryptonight.cl      ← Phase 4+5 kernel + shared helpers
+│   │   │       ├── cryptonight_gpu.cl  ← Phase 1,2,3 kernels (cn_gpu_phase*)
 │   │   │       └── wolf-aes.cl         ← AES tables for OpenCL
-│   │   ├── autoAdjust.hpp       ← Auto-config (SIMPLIFIED)
+│   │   ├── autoAdjust.hpp       ← Auto-config
 │   │   ├── jconf.cpp/hpp        ← AMD config parsing
-│   │   └── minethd.cpp/hpp      ← AMD mining thread (SIMPLIFIED)
+│   │   └── minethd.cpp/hpp      ← AMD mining thread
 │   │
 │   ├── nvidia/                  ← CUDA backend (~4,500 lines, CONSOLIDATED)
 │   │   ├── nvcc_code/
-│   │   │   ├── cuda_cryptonight_gpu.hpp ← Phases 2,3 kernels (RENAMED + DOCUMENTED)
-│   │   │   ├── cuda_kernels.cu         ← Phases 1,4,5 + host dispatch + device mgmt (CONSOLIDATED from cuda_core.cu + cuda_extra.cu)
-│   │   │   ├── cuda_aes.hpp            ← AES for CUDA (needed)
-│   │   │   ├── cuda_keccak.hpp         ← Keccak for CUDA (needed)
-│   │   │   ├── cuda_extra.hpp          ← Utility macros + compat shims + error checking (CONSOLIDATED from cuda_device.hpp + cuda_compat.hpp)
-│   │   │   └── cuda_context.hpp        ← nvid_ctx struct + extern "C" ABI (RENAMED from cryptonight.hpp)
+│   │   │   ├── cuda_cryptonight_gpu.hpp ← Phases 2,3 kernels
+│   │   │   ├── cuda_kernels.cu         ← Phases 1,4,5 + host dispatch + device mgmt
+│   │   │   ├── cuda_aes.hpp            ← AES for CUDA
+│   │   │   ├── cuda_keccak.hpp         ← Keccak for CUDA
+│   │   │   ├── cuda_extra.hpp          ← Utility macros + compat shims + error checking
+│   │   │   └── cuda_context.hpp        ← nvid_ctx struct + extern "C" ABI
 │   │   ├── autoAdjust.hpp       ← CUDA auto-config
 │   │   ├── jconf.cpp/hpp        ← NVIDIA config parsing
-│   │   └── minethd.cpp/hpp      ← NVIDIA mining thread (SIMPLIFIED)
+│   │   └── minethd.cpp/hpp      ← NVIDIA mining thread
 │   │
 │   ├── cpu/                     ← CPU hash reference + shared crypto (2,839 lines)
 │   │   ├── crypto/
@@ -134,12 +152,11 @@ xmrstak/                         ← CLEANED, CUDA consolidated, OpenCL partiall
 │   │   │   ├── cn_gpu_avx.cpp         ← Phase 3 CPU AVX2 impl
 │   │   │   ├── cn_gpu_ssse3.cpp       ← Phase 3 CPU SSSE3 impl
 │   │   │   ├── cn_gpu.hpp             ← CPU cn_gpu interface
-│   │   │   ├── cryptonight_aesni.h    ← CPU hash pipeline (391 lines, was 1327)
-│   │   │   ├── cryptonight_common.cpp ← Memory alloc (116 lines, was 320)
+│   │   │   ├── cryptonight_aesni.h    ← CPU hash pipeline (391 lines)
+│   │   │   ├── cryptonight_common.cpp ← Memory alloc (116 lines)
 │   │   │   ├── cryptonight.h          ← Context struct
 │   │   │   └── soft_aes.hpp           ← Software AES fallback
 │   │   ├── autoAdjust*.hpp      ← CPU auto-config (dead — CPU mining disabled)
-
 │   │   ├── hwlocMemory.cpp/hpp  ← NUMA memory (only used if hwloc enabled)
 │   │   ├── jconf.cpp/hpp        ← CPU config
 │   │   └── minethd.cpp/hpp      ← CPU mining thread (hash verification only)
@@ -153,28 +170,39 @@ xmrstak/                         ← CLEANED, CUDA consolidated, OpenCL partiall
 │   └── pool_data.hpp      ← Pool metadata
 │
 ├── net/                   ← Pool connection (1,732 lines)
-│   ├── jpsock.cpp/hpp     ← Stratum JSON-RPC (788+146 lines)
-│   ├── socket.cpp/hpp     ← TCP/TLS socket (393+63 lines)
-│   ├── msgstruct.hpp      ← Message types (243 lines)
-│   └── socks.hpp          ← SOCKS proxy (99 lines)
+│   ├── jpsock.cpp/hpp     ← Stratum JSON-RPC
+│   ├── socket.cpp/hpp     ← TCP/TLS socket
+│   ├── msgstruct.hpp      ← Message types
+│   └── socks.hpp          ← SOCKS proxy
 │
 ├── http/                  ← HTTP monitoring API (492 lines)
 ├── misc/                  ← Utilities (2,410 lines)
-│   ├── executor.cpp/hpp   ← Main coordinator (1,272+192 lines)
+│   ├── executor.cpp/hpp   ← Main coordinator
 │   ├── console.cpp/hpp    ← Console output
 │   ├── telemetry.cpp/hpp  ← Hashrate tracking
-│   ├── coinDescription.hpp ← Internal to jconf (keep for now)
+│   ├── coinDescription.hpp ← Internal to jconf
 │   └── [other utilities]
 │
 ├── cli/cli-miner.cpp     ← Entry point (947 lines)
 ├── jconf.cpp/hpp          ← Main config (727 lines)
 ├── params.hpp             ← CLI parameters
 ├── version.cpp/hpp        ← Version info
-├── rapidjson/             ← JSON library (vendored, ~14K lines — don't touch)
-└── picosha2/              ← SHA-256 for OpenCL cache (vendored — don't touch)
+│
+├── vendor/
+│   ├── rapidjson/         ← JSON library (vendored, ~14K lines — don't touch)
+│   └── picosha2/          ← SHA-256 for OpenCL cache (vendored — don't touch)
+│
+└── cpputil/
+    └── read_write_lock.h  ← Read-write lock (replace with std::shared_mutex later)
+
+tests/
+├── cn_gpu_harness.cpp     ← Golden test vectors
+├── test_constants.cpp     ← Constants verification
+└── build_harness.sh       ← Build script
 ```
 
 **Codebase: ~31K lines (down from ~43K). Our code: ~17K lines (excluding vendored rapidjson/picosha2)**
+**The `xmrstak/` directory is GONE. Everything is `n0s/` now.**
 
 ---
 
@@ -219,14 +247,14 @@ CUDA files reduced from 9 → 5. Live-tested on nos2 (GTX 1070 Ti) and nosnode (
 
 **Remaining: gpu.cpp split (~4 hours). Deferred — risk/reward not favorable yet.**
 
-### Phase S4: Directory Restructuring
+### Phase S4: Directory Restructuring ✅ COMPLETE
 
-Move from `xmrstak/` structure to `n0s/` target layout:
-- This is a large rename-only refactor affecting every `#include`
-- Should be done as ONE atomic commit to keep git blame useful
-- All CMakeLists.txt paths change
-
-**Estimated: ~4 hours. Low risk but high churn. Next major phase.**
+Moved from `xmrstak/` structure to `n0s/` layout:
+- 133 files renamed via `git mv` (git tracks full rename history)
+- All 161 `#include "xmrstak/..."` → `#include "n0s/..."`
+- Vendored libraries moved to `n0s/vendor/` (rapidjson, picosha2)
+- CMakeLists.txt glob paths, scripts, and tests all updated
+- ONE atomic commit — git blame preserved
 
 ### Phase S5: Namespace Migration ✅ COMPLETE
 
@@ -285,7 +313,7 @@ Only after all structural work is complete:
 - [ ] No global mutable state outside `main()`
 - [ ] All `constexpr` where possible
 - [ ] Clean compiler output (zero warnings at `-Wall -Wextra`)
-- [ ] Directory restructured to `n0s/` layout
+- [x] Directory restructured to `n0s/` layout (S4, Session 5)
 - [x] `xmrstak` namespace fully replaced → `n0s::` (S5, Session 4)
 
 ---
