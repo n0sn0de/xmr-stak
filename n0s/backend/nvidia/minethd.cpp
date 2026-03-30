@@ -38,7 +38,6 @@
 #include <cassert>
 #include <bitset>
 #include <chrono>
-#include <cmath>
 #include <thread>
 #include <vector>
 

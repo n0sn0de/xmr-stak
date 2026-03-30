@@ -24,9 +24,7 @@
 #include "globalStates.hpp"
 #include "miner_work.hpp"
 
-#include <cassert>
 #include <chrono>
-#include <cmath>
 #include <cstring>
 
 namespace n0s

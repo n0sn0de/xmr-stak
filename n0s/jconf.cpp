@@ -29,7 +29,6 @@
 #include "n0s/misc/utility.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <numeric>
 #include <cstdio>
 #include <cstdlib>

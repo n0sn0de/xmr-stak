@@ -38,11 +38,8 @@
 #include "amd/minethd.hpp"
 #endif
 
-#include <cassert>
 #include <bitset>
 #include <chrono>
-#include <cmath>
-#include <cstdlib>
 #include <cstring>
 #include <thread>
 

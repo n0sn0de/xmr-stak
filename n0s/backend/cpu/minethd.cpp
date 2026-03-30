@@ -46,7 +46,6 @@
 #include <cassert>
 #include <bitset>
 #include <chrono>
-#include <cmath>
 #include <cstring>
 #include <thread>
 #include <unordered_map>

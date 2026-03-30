@@ -15,7 +15,6 @@
 #include "n0s/backend/cryptonight.hpp"
 #include "n0s/jconf.hpp"
 #include "n0s/misc/console.hpp"
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
