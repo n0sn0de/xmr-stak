@@ -351,4 +351,37 @@ Only after structural work is complete (check the Remaining things in succes cri
 
 ---
 
+## Session 22 Notes (2026-03-30 07:31 AM)
+
+**What we accomplished:**
+- ✅ Fixed CUDA kernel linkage blocker — moved Phase 2+3 kernels to dedicated `cuda_phase2_3.cu`
+- Created `cuda_phase2_3.cu` with `kernel_expand_scratchpad` and `kernel_gpu_compute` implementations
+- Replaced kernel definitions in `cuda_cryptonight_gpu.hpp` with forward declarations
+- Kept helpers, types, and constants in header (safe for multi-include: `__device__`, `__constant__`)
+- Only `__global__` kernels moved to .cu (prevent duplicate symbols at link time)
+- Replaced `interleaveData[devIdx].reset(new InterleaveData{})` with `make_unique<InterleaveData>()`
+- OpenCL build verified: zero warnings, 3/3 golden hashes pass
+- CUDA build not tested (no toolkit on this machine) but structure is correct
+
+**Key insights:**
+- `__global__` kernel definitions in headers → duplicate symbols when included by multiple .cu files
+- `__device__` and `__constant__` functions/data are safe for multi-include (inline semantics)
+- Solution: forward declarations in header, implementations in dedicated .cu file
+- Test harness critical for verifying no behavior changes during refactoring
+- One more raw `new` → `make_unique` eliminated (AMD InterleaveData)
+
+**Remaining raw `new` usage:** 7 intentional singletons (environment, executor, console, jconf, etc.)
+
+**Next session priorities:**
+1. **Documentation pass** (~2 hours) — Add function-level comments to complex kernels
+2. **More smart pointer conversions** (~1 hour) — Review any remaining RAII opportunities
+3. **Benchmark harness** (~2-3 hours) — Create controlled hashrate testing that stops cleanly
+
+**Lessons learned:**
+- CUDA linker errors can be cryptic — understanding symbol visibility (global vs device) is key
+- Modular .cu files prevent monolithic compilation, enable parallel builds
+- Golden hash test harness catches any functional regressions immediately
+
+---
+
 The code is ours now. The dead weight is gone, the names make sense, and the path forward is clear. We're not rewriting for elegance — we're rewriting for ownership, understanding, and the ability to confidently modify any part of the system.*
