@@ -160,7 +160,7 @@ tests/
 - Net: -10 raw new/delete pairs, 6 memory leaks fixed
 - Remaining raw `new`: 13 (8 singletons, 3 minethd thread objects, 2 backend singletons)
 
-~335 files changed. Net -10,300+ lines removed. Our code: ~16,350 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management. [[nodiscard]] on critical functions. AMD + NVIDIA backends modular. constexpr on compile-time functions.
+~340 files changed. Net -10,315+ lines removed. Our code: ~16,550 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management. [[nodiscard]] on critical functions. AMD + NVIDIA backends modular. constexpr on compile-time functions. CUDA kernel linkage fixed.
 
 ---
 
@@ -170,15 +170,16 @@ tests/
 
 **Next Session Targets:**
 1. **Documentation pass** (~2 hours) — Add function-level comments to complex GPU kernels (Phase 2, Phase 3, etc.)
-2. **More constexpr expansion** (~1-2 hours) — Look for more lookup tables, accessor functions
-3. **Fix CUDA deprecation warnings** (~1 hour) — Replace deprecated intrinsics in cuda_cryptonight_gpu.hpp
+2. **Benchmark harness** (~2-3 hours) — Create controlled hashrate testing that stops cleanly
+3. **More smart pointer conversions** (~1 hour) — Review any remaining RAII opportunities
 
 **Completed Modernizations:**
+- ✅ **CUDA kernel linkage fixed** — Phase 2+3 kernels moved to dedicated cuda_phase2_3.cu (S22)
 - ✅ **AMD GPU modularization** — Monolithic 1003-line gpu.cpp split into 4 focused modules (S18)
 - ✅ **NVIDIA backend modularization** — Monolithic 832-line cuda_kernels.cu split into 4 focused modules (S19)
 - ✅ **[[nodiscard]]** — 40+ critical error-returning functions (S17)
 - ✅ **constexpr** — Core algorithm functions (S17: getName, sec_to_ticks). Algorithm constants (S15). Expanded to constructors, getters, converters (S20)
-- ✅ **Smart pointers** — Thread vectors, socket, PIMPL (S16). Telemetry, jpsock buffers/thread, executor telem (S9). 13 raw `new` remain (singletons + minethd — intentional)
+- ✅ **Smart pointers** — Thread vectors, socket, PIMPL (S16). Telemetry, jpsock buffers/thread, executor telem (S9). InterleaveData (S22). 7 raw `new` remain (intentional singletons)
 - ✅ **Modern casts** — Host code done (S9). Only CUDA device code + soft_aes macro retain C-style casts
 - ✅ **NULL → nullptr** — Host code done (S9, 68 replacements)
 - ✅ **std::regex removal** — gpu.cpp done (S9). configEditor.hpp still uses regex (genuine pattern matching — keep it)
