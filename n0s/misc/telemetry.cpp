@@ -26,25 +26,15 @@
 
 #include <chrono>
 #include <cmath>
-#include <cstring>
 
 namespace n0s
 {
 
 telemetry::telemetry(size_t iThd)
+	: iBucketTop(iThd, 0)
+	, ppHashCounts(iThd, std::vector<uint64_t>(iBucketSize, 0))
+	, ppTimestamps(iThd, std::vector<uint64_t>(iBucketSize, 0))
 {
-	ppHashCounts = new uint64_t*[iThd];
-	ppTimestamps = new uint64_t*[iThd];
-	iBucketTop = new uint32_t[iThd];
-
-	for(size_t i = 0; i < iThd; i++)
-	{
-		ppHashCounts[i] = new uint64_t[iBucketSize];
-		ppTimestamps[i] = new uint64_t[iBucketSize];
-		iBucketTop[i] = 0;
-		memset(ppHashCounts[i], 0, sizeof(uint64_t) * iBucketSize);
-		memset(ppTimestamps[i], 0, sizeof(uint64_t) * iBucketSize);
-	}
 }
 
 double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
