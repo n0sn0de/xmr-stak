@@ -245,7 +245,7 @@ __forceinline__ __device__ __m128i _mm_alignr_epi8(__m128i a, const uint32_t rot
 // ============================================================
 
 /// Get pointer to 16-byte chunk within 64-byte aligned scratchpad slot
-__device__ __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int* scratchpad, const uint32_t MASK)
+__device__ inline __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int* scratchpad, const uint32_t MASK)
 {
 	return (__m128i*)((uint8_t*)scratchpad + (idx & MASK) + n * 16);
 }

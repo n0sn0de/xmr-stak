@@ -194,6 +194,11 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 		return;
 #endif
 
+	// Minimal printf to act as memory barrier / synchronization point
+	if (gIdx == 0) {
+		printf(".");
+	}
+
 	uint chunk = get_local_id(0) / 16;
 
 	__global int* scratchpad = (__global int*)((__global char*)scratchpad_in + MEMORY * (gIdx/16));
