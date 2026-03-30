@@ -709,7 +709,7 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", backend_name);
 
 	if(ext_hashcount)
-		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu,\"hashcount_total\":%llu", int_port(backend_hashcount), int_port(total_hashcount));
+		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu,\"hashcount_total\":%llu", static_cast<unsigned long long>(backend_hashcount), static_cast<unsigned long long>(total_hashcount));
 
 	if(ext_algo)
 	{

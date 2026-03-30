@@ -24,12 +24,6 @@ int get_key();
 void set_colour(out_colours cl);
 void reset_colour();
 
-// Safe size_t → unsigned long long cast for printf %llu format
-inline long long unsigned int int_port(size_t i)
-{
-	return i;
-}
-
 enum verbosity : size_t
 {
 	L0 = 0,

@@ -372,7 +372,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 	if(iPoolDiff != pool->get_current_diff())
 	{
 		iPoolDiff = pool->get_current_diff();
-		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
+		printer::inst()->print_msg(L2, "Difficulty changed. Now: %zu.", iPoolDiff);
 	}
 
 	if(dat.pool_id != pool_id)
@@ -856,8 +856,8 @@ void executor::result_report(std::string& out)
 
 	for(size_t i = 0; i < 10; i += 2)
 	{
-		snprintf(num, sizeof(num), "| %2llu | %16llu | %2llu | %16llu |\n",
-			int_port(i), int_port(iTopDiff[i]), int_port(i + 1), int_port(iTopDiff[i + 1]));
+		snprintf(num, sizeof(num), "| %2zu | %16zu | %2zu | %16zu |\n",
+			i, iTopDiff[i], i + 1, iTopDiff[i + 1]);
 		out.append(num);
 	}
 
@@ -867,7 +867,7 @@ void executor::result_report(std::string& out)
 		out.append("| Count | Error text                       | Last seen           |\n");
 		for(size_t i = 1; i < ln; i++)
 		{
-			snprintf(num, sizeof(num), "| %5llu | %-32.32s | %s |\n", int_port(vMineResults[i].count),
+			snprintf(num, sizeof(num), "| %5zu | %-32.32s | %s |\n", vMineResults[i].count,
 				vMineResults[i].msg.c_str(), time_format(date, sizeof(date), vMineResults[i].time));
 			out.append(num);
 		}
@@ -1060,16 +1060,16 @@ void executor::http_result_report(std::string& out)
 	snprintf(buffer, sizeof(buffer), sHtmlResultBodyHigh,
 		jconf::inst()->GetMiningCoin().c_str(),
 		iPoolDiff, iGoodRes, iTotalRes, fGoodResPrc, fAvgResTime, iPoolHashes,
-		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]),
-		int_port(iTopDiff[4]), int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]),
-		int_port(iTopDiff[8]), int_port(iTopDiff[9]));
+		iTopDiff[0], iTopDiff[1], iTopDiff[2], iTopDiff[3],
+		iTopDiff[4], iTopDiff[5], iTopDiff[6], iTopDiff[7],
+		iTopDiff[8], iTopDiff[9]);
 
 	out.append(buffer);
 
 	for(size_t i = 1; i < vMineResults.size(); i++)
 	{
 		snprintf(buffer, sizeof(buffer), sHtmlResultTableRow, vMineResults[i].msg.c_str(),
-			int_port(vMineResults[i].count), time_format(date, sizeof(date), vMineResults[i].time));
+			vMineResults[i].count, time_format(date, sizeof(date), vMineResults[i].time));
 		out.append(buffer);
 	}
 
@@ -1194,8 +1194,8 @@ void executor::http_json_report(std::string& out)
 		if(i != 1)
 			res_error.append(1, ',');
 
-		snprintf(buffer, sizeof(buffer), sJsonApiResultError, int_port(vMineResults[i].count),
-			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
+		snprintf(buffer, sizeof(buffer), sJsonApiResultError, vMineResults[i].count,
+			duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count(),
 			vMineResults[i].msg.c_str());
 		res_error.append(buffer);
 	}
@@ -1217,7 +1217,7 @@ void executor::http_json_report(std::string& out)
 			cn_error.append(1, ',');
 
 		snprintf(buffer, sizeof(buffer), sJsonApiConnectionError,
-			int_port(duration_cast<seconds>(vSocketLog[i].time.time_since_epoch()).count()),
+			duration_cast<seconds>(vSocketLog[i].time.time_since_epoch()).count(),
 			vSocketLog[i].msg.c_str());
 		cn_error.append(buffer);
 	}
@@ -1227,10 +1227,10 @@ void executor::http_json_report(std::string& out)
 
 	int bb_len = snprintf(bigbuf.get(), bb_size, sJsonApiFormat,
 		get_version_str().c_str(), hr_thds.c_str(), hr_buffer, a,
-		int_port(iPoolDiff), int_port(iGoodRes), int_port(iTotalRes), fAvgResTime, int_port(iPoolHashes),
-		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]), int_port(iTopDiff[4]),
-		int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]), int_port(iTopDiff[8]), int_port(iTopDiff[9]),
-		res_error.c_str(), pool != nullptr ? pool->get_pool_addr() : "not connected", int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
+		iPoolDiff, iGoodRes, iTotalRes, fAvgResTime, iPoolHashes,
+		iTopDiff[0], iTopDiff[1], iTopDiff[2], iTopDiff[3], iTopDiff[4],
+		iTopDiff[5], iTopDiff[6], iTopDiff[7], iTopDiff[8], iTopDiff[9],
+		res_error.c_str(), pool != nullptr ? pool->get_pool_addr() : "not connected", iConnSec, iPoolPing, cn_error.c_str());
 
 	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
 }

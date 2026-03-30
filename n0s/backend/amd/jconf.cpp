@@ -264,7 +264,7 @@ bool jconf::parse_config(const char* sFilename)
 	if(prv->jsonDoc.HasParseError())
 	{
 		printer::inst()->print_msg(L0, "JSON config parse error in '%s' (offset %llu): %s",
-			sFilename, int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
+			sFilename, prv->jsonDoc.GetErrorOffset(), GetParseError_En(prv->jsonDoc.GetParseError()));
 		return false;
 	}
 
@@ -303,7 +303,7 @@ bool jconf::parse_config(const char* sFilename)
 	{
 		if(!GetThreadConfig(i, c))
 		{
-			printer::inst()->print_msg(L0, "Thread %llu has invalid config.", int_port(i));
+			printer::inst()->print_msg(L0, "Thread %zu has invalid config.", i);
 			return false;
 		}
 	}

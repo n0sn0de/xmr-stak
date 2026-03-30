@@ -194,11 +194,11 @@ extern const char sHtmlResultBodyHigh[] =
 	"</table>"
 	"<h4>Top 10 best results found</h4>"
 	"<table>"
-	"<tr><th style='width: 2em;'>1</th><td>%llu</td><th style='width: 2em;'>2</th><td>%llu</td></tr>"
-	"<tr><th>3</th><td>%llu</td><th>4</th><td>%llu</td></tr>"
-	"<tr><th>5</th><td>%llu</td><th>6</th><td>%llu</td></tr>"
-	"<tr><th>7</th><td>%llu</td><th>8</th><td>%llu</td></tr>"
-	"<tr><th>9</th><td>%llu</td><th>10</th><td>%llu</td></tr>"
+	"<tr><th style='width: 2em;'>1</th><td>%zu</td><th style='width: 2em;'>2</th><td>%zu</td></tr>"
+	"<tr><th>3</th><td>%zu</td><th>4</th><td>%zu</td></tr>"
+	"<tr><th>5</th><td>%zu</td><th>6</th><td>%zu</td></tr>"
+	"<tr><th>7</th><td>%zu</td><th>8</th><td>%zu</td></tr>"
+	"<tr><th>9</th><td>%zu</td><th>10</th><td>%zu</td></tr>"
 	"</table>"
 	"<h4>Error details</h4>"
 	"<table>"
@@ -206,7 +206,7 @@ extern const char sHtmlResultBodyHigh[] =
 	"<tr><th style='width: 5em;'>Count</th><th>Last seen</th></tr>";
 
 extern const char sHtmlResultTableRow[] =
-	"<tr><td colspan='2'>%s</td></tr><tr><td>%llu</td><td>%s</td></tr>";
+	"<tr><td colspan='2'>%s</td></tr><tr><td>%zu</td><td>%s</td></tr>";
 
 extern const char sHtmlResultBodyLow[] =
 	"</table></div></div></body></html>";
@@ -215,10 +215,10 @@ extern const char sJsonApiThdHashrate[] =
 	"[%s,%s,%s]";
 
 extern const char sJsonApiResultError[] =
-	"{\"count\":%llu,\"last_seen\":%llu,\"text\":\"%s\"}";
+	"{\"count\":%zu,\"last_seen\":%zu,\"text\":\"%s\"}";
 
 extern const char sJsonApiConnectionError[] =
-	"{\"last_seen\":%llu,\"text\":\"%s\"}";
+	"{\"last_seen\":%zu,\"text\":\"%s\"}";
 
 extern const char sJsonApiFormat[] =
 	"{"
@@ -231,19 +231,19 @@ extern const char sJsonApiFormat[] =
 	"},"
 
 	"\"results\":{"
-	"\"diff_current\":%llu,"
-	"\"shares_good\":%llu,"
-	"\"shares_total\":%llu,"
+	"\"diff_current\":%zu,"
+	"\"shares_good\":%zu,"
+	"\"shares_total\":%zu,"
 	"\"avg_time\":%.1f,"
-	"\"hashes_total\":%llu,"
-	"\"best\":[%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu],"
+	"\"hashes_total\":%zu,"
+	"\"best\":[%zu,%zu,%zu,%zu,%zu,%zu,%zu,%zu,%zu,%zu],"
 	"\"error_log\":[%s]"
 	"},"
 
 	"\"connection\":{"
 	"\"pool\": \"%s\","
-	"\"uptime\":%llu,"
-	"\"ping\":%llu,"
+	"\"uptime\":%zu,"
+	"\"ping\":%zu,"
 	"\"error_log\":[%s]"
 	"}"
 	"}";

@@ -379,7 +379,7 @@ bool jconf::parse_file(const char* sFilename, bool main_conf)
 	if(root.HasParseError())
 	{
 		printer::inst()->print_msg(L0, "JSON config parse error in '%s' (offset %llu): %s",
-			sFilename, int_port(root.GetErrorOffset()), GetParseError_En(root.GetParseError()));
+			sFilename, root.GetErrorOffset(), GetParseError_En(root.GetParseError()));
 		return false;
 	}
 
