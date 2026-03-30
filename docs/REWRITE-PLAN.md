@@ -126,7 +126,7 @@ tests/
 ### Near-Term Opportunities
 - **gpu.cpp split** (~4 hours) — device_init, kernel_compile, mining_loop extraction
 - **Smart pointers** — ✅ Telemetry, jpsock buffers, jpsock thread, executor telem modernized (Session 9). ~29 raw `new` remain — mostly singletons, PIMPL, plugin ABI
-- **Modern casts** — Replace C-style casts with `static_cast`/`reinterpret_cast` (~72 remaining)
+- **Modern casts** — ✅ Host code done (Session 9). Only CUDA device code + soft_aes macro retain C-style casts
 - **[[nodiscard]]** — Add to error-returning functions
 - **std::regex removal** — ✅ gpu.cpp done (Session 9). configEditor.hpp still uses regex (genuine pattern matching)
 
