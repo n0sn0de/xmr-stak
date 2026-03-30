@@ -42,15 +42,15 @@ struct n0s_algo
 		: id(algo), iter(iterations), mem(memory), mask(mem_mask) {}
 
 	// ── Accessors ─────────────────────────────────────────────────
-	n0s_algo_id Id() const { return id; }
-	uint32_t Iter() const { return iter; }
+	constexpr n0s_algo_id Id() const { return id; }
+	constexpr uint32_t Iter() const { return iter; }
 
-	size_t Mem() const
+	constexpr size_t Mem() const
 	{
 		return (id == invalid_algo) ? 0 : mem;
 	}
 
-	uint32_t Mask() const
+	constexpr uint32_t Mask() const
 	{
 		if(mask == 0)
 			return static_cast<uint32_t>(((mem - 1u) / 16) * 16);
@@ -67,18 +67,18 @@ struct n0s_algo
 	std::string BaseName() const { return Name(); }
 
 	// ── Comparison ────────────────────────────────────────────────
-	bool operator==(const n0s_algo& other) const
+	constexpr bool operator==(const n0s_algo& other) const
 	{
 		return id == other.id && mem == other.mem && iter == other.iter && mask == other.mask;
 	}
 
-	bool operator!=(const n0s_algo& other) const { return !(*this == other); }
+	constexpr bool operator!=(const n0s_algo& other) const { return !(*this == other); }
 
-	bool operator==(n0s_algo_id other_id) const { return id == other_id; }
-	bool operator!=(n0s_algo_id other_id) const { return id != other_id; }
+	constexpr bool operator==(n0s_algo_id other_id) const { return id == other_id; }
+	constexpr bool operator!=(n0s_algo_id other_id) const { return id != other_id; }
 
 	/// Implicit conversion to n0s_algo_id for switch/comparison convenience
-	operator n0s_algo_id() const { return id; }
+	constexpr operator n0s_algo_id() const { return id; }
 };
 
 // ─── The one algorithm we support ─────────────────────────────────────

@@ -106,7 +106,7 @@ struct miner_work
 		return *this;
 	}
 
-	uint8_t getVersion() const
+	constexpr uint8_t getVersion() const
 	{
 		return bWorkBlob[0];
 	}
