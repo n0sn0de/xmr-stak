@@ -23,6 +23,7 @@
 
 #include "minethd.hpp"
 #include "autoAdjust.hpp"
+#include "nvcc_code/cuda_dispatch.hpp"
 #include "n0s/backend/cpu/crypto/cryptonight.h"
 #include "n0s/backend/cpu/crypto/cryptonight_aesni.h"
 #include "n0s/backend/cpu/hwlocMemory.hpp"
@@ -157,7 +158,7 @@ std::vector<std::unique_ptr<iBackend>> minethd::thread_starter(uint32_t threadOf
 
 	for(i = 0; i < n; i++)
 	{
-		static_cast<minethd*>(pvThreads[i])->start_mining();
+		static_cast<minethd*>(pvThreads[i].get())->start_mining();
 	}
 
 	return pvThreads;

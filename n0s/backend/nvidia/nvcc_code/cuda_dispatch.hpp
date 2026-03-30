@@ -8,9 +8,7 @@
 #include "cuda_context.hpp"
 #include "n0s/backend/cryptonight.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// C++ linkage functions (take C++ types like n0s_algo&)
 
 /** Set input data for hashing (POW block header)
  *
@@ -49,6 +47,10 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
  * @param chain_height Blockchain height (unused by cn_gpu)
  */
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, const n0s_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** usleep wrapper (extern "C" for ABI compatibility) */
 void compat_usleep(uint64_t waitTime);
