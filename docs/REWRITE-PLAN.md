@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation + dead code removal complete. CUDA consolidated, OpenCL cleanup in progress.*
+*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented.*
 
 ---
 
@@ -71,9 +71,27 @@ Take the inherited xmr-stak CryptoNight-GPU implementation and transform it into
 
 Live mining tested on all 3 GPUs after every change — zero rejections.
 
+### Session 4 (2026-03-29, continued)
+
+**3 branches merged. 66 files changed. +843 / -278 = net +565 lines (documentation added).**
+
+| Phase | What | Impact |
+|-------|------|--------|
+| **S5** | Namespace migration | `xmrstak::` → `n0s::`, `nvidia::` → `cuda::`, `amd::` → `opencl::` |
+| **S5** | Type renames | `xmrstak_algo` / `xmrstak_algo_id` → `n0s_algo` / `n0s_algo_id` |
+| **S5** | Macro renames | `XMR_STAK_*` → `N0S_*`, `XMRSTAK_*` → `N0S_*` (all macros) |
+| **S5** | ABI symbol renames | `xmrstak_start_backend` → `n0s_start_backend`, lib targets updated |
+| **S5** | CMake target renames | `xmr-stak-c/backend` → `n0s-c/backend`, plugin libs renamed |
+| **S5.1** | Remaining XMRSTAK refs | Templates (.tpl), env vars, dev macros — all → N0S_ |
+| **S7** | Pool/network docs | `docs/POOL-NETWORK.md`: comprehensive stratum protocol documentation |
+| **S7** | Module-level docs | executor.cpp, jpsock.cpp, socket.cpp, msgstruct.hpp documented |
+
+Live mining tested on all 3 GPUs — zero rejections.
+Include paths (`#include "xmrstak/..."`) preserved — those change with directory restructuring (S4).
+
 ### Cumulative Total (All Sessions)
 
-**69 files changed. +2,476 / -12,300 = net -9,824 lines deleted (28% smaller)**
+**~72 files changed. +3,319 / -12,578 = net -9,259 lines. Namespace fully migrated. Protocol documented.**
 
 ---
 
@@ -208,15 +226,21 @@ Move from `xmrstak/` structure to `n0s/` target layout:
 - Should be done as ONE atomic commit to keep git blame useful
 - All CMakeLists.txt paths change
 
-**Estimated: ~4 hours. Low risk but high churn. Do last.**
+**Estimated: ~4 hours. Low risk but high churn. Next major phase.**
 
-### Phase S5: Namespace Migration
+### Phase S5: Namespace Migration ✅ COMPLETE
 
-- `xmrstak::` → `n0s::`
-- `xmrstak::nvidia::` → `n0s::cuda::`
-- Update all references
+All namespace/type/macro references migrated:
+- `namespace xmrstak` → `namespace n0s`
+- `namespace nvidia` → `namespace cuda`
+- `namespace amd` → `namespace opencl`
+- `xmrstak_algo` / `xmrstak_algo_id` → `n0s_algo` / `n0s_algo_id`
+- All `XMR_STAK_*` / `XMRSTAK_*` macros → `N0S_*`
+- ABI symbols: `xmrstak_start_backend` → `n0s_start_backend`
+- Config templates updated
+- CMake targets renamed (`n0s-c`, `n0s-backend`, `n0s_cuda_backend`, `n0s_opencl_backend`)
 
-**Can be done alongside S4 or separately.**
+Only `#include "xmrstak/..."` paths remain — intentionally deferred to S4 (directory restructuring).
 
 ### Phase S6: Modern C++ Patterns (Ongoing)
 
@@ -227,14 +251,18 @@ Apply as opportunities arise, not as a bulk pass:
 - Replace `memcpy` with structured copies where safe
 - Remove global mutable state where possible
 
-### Phase S7: Pool/Network Documentation
+### Phase S7: Pool/Network Documentation ✅ COMPLETE
 
-- Document the stratum protocol flow in `jpsock.cpp`
-- Document the executor event loop in `executor.cpp`
-- Document the job dispatch pipeline
-- Add protocol-level comments to `msgstruct.hpp`
-
-**Estimated: ~4 hours. Zero risk (documentation only).**
+- `docs/POOL-NETWORK.md`: Comprehensive protocol documentation including:
+  - Architecture overview (executor → jpsock → socket → pool)
+  - Full stratum message format (login, job, submit) with JSON examples
+  - Threading model and memory management
+  - Event system (discriminated union, event types, event loop)
+  - Job dispatch pipeline (pool → globalStates → GPU threads)
+  - Share submission pipeline (GPU → executor → pool, with CPU verification)
+  - Multi-pool failover algorithm and pool lifecycle
+  - Configuration reference and error handling summary
+- Module-level doc comments added to executor.cpp, jpsock.cpp, socket.cpp, msgstruct.hpp
 
 ### Phase S8: Performance Optimization (Future)
 
@@ -258,7 +286,7 @@ Only after all structural work is complete:
 - [ ] All `constexpr` where possible
 - [ ] Clean compiler output (zero warnings at `-Wall -Wextra`)
 - [ ] Directory restructured to `n0s/` layout
-- [ ] `xmrstak` namespace fully replaced
+- [x] `xmrstak` namespace fully replaced → `n0s::` (S5, Session 4)
 
 ---
 
