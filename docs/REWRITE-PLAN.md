@@ -393,4 +393,56 @@ Only after structural work is complete (check the Remaining things in succes cri
 
 ---
 
+## Session 23 Notes (2026-03-30 09:22 AM)
+
+**What we accomplished:**
+- ✅ Created benchmark harness foundation (`tests/benchmark_harness.cpp`, 450 lines)
+- OpenCL device init, memory allocation, timing infrastructure, signal handling
+- JSON export capability for tracking performance across builds
+- Build script (`tests/build_benchmark.sh`) with OpenCL + optional CUDA support
+- Comprehensive design doc (`docs/BENCHMARK-DESIGN.md`) with 4-phase roadmap
+- Foundation is **architecture-complete** — needs kernel integration (Phase 1, 4-6 hours)
+
+**What the harness provides:**
+1. Fixed-duration benchmarking (clean shutdown via SIGINT/SIGTERM)
+2. Reproducible measurements (same input → same hashrate)
+3. GPU isolation (no pool overhead, no thread scheduling variance)
+4. Result tracking (console + JSON export for regression detection)
+5. Multi-device support (architecture ready, implementation pending)
+
+**Next session priorities (in order):**
+1. **Benchmark Phase 1: Kernel Integration** (~4-6 hours) — HIGH PRIORITY
+   - Load CN-GPU OpenCL kernels (cryptonight.cl, cryptonight_gpu.cl, wolf-aes.cl)
+   - Implement 5-phase hash pipeline (copy from `n0s/backend/amd/amd_gpu/gpu.cpp`)
+   - Validate with golden test vectors from `cn_gpu_harness.cpp`
+   - Measure GPU timing via `clGetEventProfilingInfo`
+   
+2. **Documentation pass** (~2 hours) — Medium priority
+   - Add function-level comments to complex GPU kernels (Phase 2, Phase 3)
+   - Document memory layout for scratchpad operations
+   
+3. **More constexpr opportunities** (~1 hour) — Low priority
+   - Lookup tables, simple accessors that can be compile-time
+
+**Key insights:**
+- Benchmark tooling is **prerequisite for optimization work** — can't improve what we can't measure
+- Empty dispatch loop proves timing/shutdown infrastructure works correctly
+- Real kernel integration is straightforward copy-paste from existing AMD backend
+- JSON export enables automated regression tracking in CI (future: fail if hashrate drops >5%)
+
+**Remaining work before optimization phase:**
+- ⏳ Benchmark harness Phase 1 (kernel integration)
+- ⏳ Baseline performance measurements (all 3 GPUs: AMD RDNA4, NVIDIA Pascal, NVIDIA Turing)
+- ⏳ Document baseline results in `docs/benchmarks/baseline.json`
+- ✅ Smart pointer modernization complete (7 intentional singletons remain)
+- ✅ CUDA kernel linkage fixed (Session 22)
+- ✅ AMD + NVIDIA backends modularized (Session 18, 19)
+
+**Lessons learned:**
+- Building tools before optimization saves time (measure → change → measure → validate)
+- Minimal viable foundation beats feature-complete vaporware (empty loop proves architecture)
+- Clear roadmap documents prevent scope creep (4 phases, explicit time estimates)
+
+---
+
 The code is ours now. The dead weight is gone, the names make sense, and the path forward is clear. We're not rewriting for elegance — we're rewriting for ownership, understanding, and the ability to confidently modify any part of the system.*
