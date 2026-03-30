@@ -201,25 +201,30 @@ static bool init_opencl_device(OpenCLDevice* dev, int device_idx, size_t intensi
     constexpr size_t SCRATCHPAD_SIZE = 2 * 1024 * 1024;  // 2 MiB per thread
     constexpr size_t STATE_SIZE = 200;                    // State buffer per thread
 
-    size_t scratchpad_bytes = SCRATCHPAD_SIZE * intensity;
-    size_t states_bytes = STATE_SIZE * intensity;
+    // Round up intensity to worksize multiple (compatibility mode requirement)
+    size_t g_thd = ((intensity + worksize - 1) / worksize) * worksize;
     
-    dev->input_buf = clCreateBuffer(dev->context, CL_MEM_READ_ONLY, 128, nullptr, &err);
+    size_t scratchpad_bytes = SCRATCHPAD_SIZE * g_thd;
+    size_t states_bytes = STATE_SIZE * g_thd;
+    
+    // Use CL_MEM_ALLOC_HOST_PTR to ensure proper memory mapping for AMD GPUs
+    dev->input_buf = clCreateBuffer(dev->context, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, 128, nullptr, &err);
     check_cl(err, "clCreateBuffer(input)");
 
-    dev->scratchpad = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, scratchpad_bytes, nullptr, &err);
+    dev->scratchpad = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, scratchpad_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(scratchpad)");
 
-    dev->states = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, states_bytes, nullptr, &err);
+    dev->states = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, states_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(states)");
 
-    dev->output_buf = clCreateBuffer(dev->context, CL_MEM_WRITE_ONLY, sizeof(cl_uint) * 0x100, nullptr, &err);
+    dev->output_buf = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(cl_uint) * 0x100, nullptr, &err);
     check_cl(err, "clCreateBuffer(output)");
 
-    fprintf(stderr, "[OPENCL] Device %d: %s (intensity=%zu, worksize=%zu)\n", 
-            device_idx, dev->device_name, intensity, worksize);
-    fprintf(stderr, "[OPENCL] Buffer sizes: scratchpad=%zu MB, states=%zu bytes\n",
-            scratchpad_bytes / (1024*1024), states_bytes);
+    fprintf(stderr, "[OPENCL] Device %d: %s (intensity=%zu, worksize=%zu, g_thd=%zu)\n", 
+            device_idx, dev->device_name, intensity, worksize, g_thd);
+    fprintf(stderr, "[OPENCL] Buffer sizes: scratchpad=%zu MB (%.1f MB/hash), states=%zu bytes (%zu bytes/hash)\n",
+            scratchpad_bytes / (1024*1024), (double)SCRATCHPAD_SIZE / (1024*1024), 
+            states_bytes, STATE_SIZE);
     return true;
 }
 
@@ -410,6 +415,28 @@ static BenchmarkResult benchmark_opencl(int device_id, int duration_sec) {
             break;
         }
         fprintf(stderr, "[DEBUG] Phase 2 complete\n");
+        
+        // DEBUG: Read back first few bytes of states buffer to verify Phase 2 wrote data
+        {
+            uint32_t states_sample[50];  // First hash's state (25 ulongs = 50 uints)
+            err = clEnqueueReadBuffer(dev.queue, dev.states, CL_TRUE, 0, sizeof(states_sample), states_sample, 0, nullptr, nullptr);
+            if (err == CL_SUCCESS) {
+                fprintf(stderr, "[DEBUG] States[0-3] after Phase 2: %08x %08x %08x %08x\n",
+                        states_sample[0], states_sample[1], states_sample[2], states_sample[3]);
+            } else {
+                fprintf(stderr, "[ERROR] Failed to read states buffer: %d\n", err);
+            }
+            
+            // Also check scratchpad (first 16 bytes)
+            uint32_t scratchpad_sample[4];
+            err = clEnqueueReadBuffer(dev.queue, dev.scratchpad, CL_TRUE, 0, sizeof(scratchpad_sample), scratchpad_sample, 0, nullptr, nullptr);
+            if (err == CL_SUCCESS) {
+                fprintf(stderr, "[DEBUG] Scratchpad[0-3] after Phase 2: %08x %08x %08x %08x\n",
+                        scratchpad_sample[0], scratchpad_sample[1], scratchpad_sample[2], scratchpad_sample[3]);
+            } else {
+                fprintf(stderr, "[ERROR] Failed to read scratchpad buffer: %d\n", err);
+            }
+        }
         
         // Phase 3: Main loop (1D dispatch, MUST use g_thd * 16 and w_size * 16)
         size_t global_3 = g_thd * 16;

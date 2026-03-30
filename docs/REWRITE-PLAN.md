@@ -528,6 +528,66 @@ Only after structural work is complete (check the Remaining things in succes cri
 
 ---
 
+## Session 26 Notes (2026-03-30 10:42 AM)
+
+**What we accomplished:**
+- ✅ Fixed buffer allocation to use `g_thd` (rounded intensity in compat mode) like production
+- ✅ Added extensive debug logging: buffer readback after Phase 2 confirms valid data written
+- ✅ Verified Phases 1+2 execute successfully on AMD RDNA4 (gfx1201)
+- ✅ Tried multiple fixes: `CL_MEM_ALLOC_HOST_PTR` flags, `CL_MEM_READ_WRITE` for output buffer
+- ✅ Confirmed all dispatch parameters match production exactly (global/local work sizes, kernel args)
+
+**Current blocker (CRITICAL — Phase 3 memory fault):**
+- Phase 3 kernel hits GPU memory fault: "Page not present or supervisor privilege"
+- Fault address varies each run (0x7d9f13e00000, 0x741231400000, etc.) → not a specific offset issue
+- Phases 1+2 complete successfully and write valid data (verified via clEnqueueReadBuffer)
+- **Paradox:** Exact same kernel code works perfectly in production miner
+- Buffer sizes, kernel args, work dimensions, compilation flags ALL match production
+
+**Debugging exhausted this session:**
+- Buffer allocation formula matches production (`scratchPadSize * g_thd`)
+- Kernel array mapping verified correct (indices 0,3,1,2 for phases 1,2,3,4+5)
+- Work group validation: `global=128, local=128` (both multiples of 16 as required)
+- Buffer readback after Phase 2: States `68c3f4df c347dc2a...`, Scratchpad `459a3a4a cf8d5fe1...` (non-zero → valid data)
+- Tried `CL_MEM_ALLOC_HOST_PTR` → no change
+- Changed output buffer `CL_MEM_WRITE_ONLY` → `CL_MEM_READ_WRITE` → no change
+
+**Next session attack plan:**
+1. **Runtime comparison with production miner** (~2-3 hours) — HIGHEST PRIORITY
+   - Temporarily add debug output to production `n0s/backend/amd/amd_gpu/gpu.cpp`
+   - Capture live buffer pointers, sizes, queue properties during actual mining
+   - Run harness and production side-by-side, compare every detail at OpenCL API level
+   - May reveal subtle driver state or queue configuration difference
+
+2. **Minimal Phase 3 reproducer** (~1 hour) — If comparison unclear
+   - Strip harness to ONLY Phase 3 dispatch (skip Phases 1+2)
+   - Pre-fill scratchpad/states buffers with known-good data from production
+   - Eliminates Phase 1/2 as variables, pure Phase 3 test
+
+3. **Environment investigation** (~1 hour) — If still blocked
+   - Check ROCm/OpenCL driver versions (`clinfo`, `rocm-smi`)
+   - Try different `CL_QUEUE_PROPERTIES` (profiling, out-of-order execution)
+   - Test on different GPU or machine if available
+   - Compare kernel build logs between harness and production
+
+**Hypothesis:**
+- Not a code bug (production works with same kernel)
+- Likely: OpenCL queue state, driver interaction, or memory mapping difference
+- Possibly: Harness missing an initialization step that production does implicitly
+- Less likely: GPU-specific alignment or page boundary issue (would affect production too)
+
+**Why this matters:**
+- Benchmark harness is prerequisite for optimization work (Phase 0 of performance tuning)
+- Can't measure hashrate improvements without working baseline
+- This is a tooling blocker, not a miner functionality blocker (production works fine)
+
+**Tools available:**
+- Production miner: `build-quick/bin/n0s-ryo-miner` (OpenCL, AMD RDNA4 tested)
+- Benchmark harness: `tests/benchmark_harness` (Phase 1+2 working, Phase 3 blocked)
+- Golden hash test: `build/bin/cn_gpu_harness` (CPU reference, all tests pass)
+
+---
+
 ## Session 25 Notes (2026-03-30 10:12 AM)
 
 **What we accomplished:**
