@@ -488,7 +488,7 @@ void executor::ex_main()
 		n0s_exit();
 	}
 
-	telem = new n0s::telemetry(pvThreads->size());
+	telem = std::make_unique<n0s::telemetry>(pvThreads->size());
 
 	set_timestamp();
 	size_t pc = jconf::inst()->GetPoolCount();

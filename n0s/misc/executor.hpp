@@ -11,6 +11,7 @@
 #include <chrono>
 #include <future>
 #include <list>
+#include <memory>
 #include <vector>
 
 class jpsock;
@@ -66,7 +67,7 @@ class executor
 	std::mutex timed_event_mutex;
 	thdq<ex_event> oEventQ;
 
-	n0s::telemetry* telem;
+	std::unique_ptr<n0s::telemetry> telem;
 	std::vector<n0s::iBackend*>* pvThreads;
 
 	size_t current_pool_id = invalid_pool_id;
