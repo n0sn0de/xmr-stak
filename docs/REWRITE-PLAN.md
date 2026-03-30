@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded. Windows/macOS/BSD code stripped. Pure C++17 (zero C files). Linux-only.*
+*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded. Windows/macOS/BSD code stripped. Pure C++17 (zero C files). Linux-only. Smart pointers replacing raw new/delete. std::regex eliminated from hot paths.*
 
 ---
 
@@ -117,7 +117,7 @@ tests/
 
 ## Cumulative Progress (All Sessions)
 
-~300 files changed. Net -10,500+ lines removed. Our code: 16,136 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose.
+~300 files changed. Net -10,500+ lines removed. Our code: 16,136 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management.
 
 ---
 
@@ -125,9 +125,10 @@ tests/
 
 ### Near-Term Opportunities
 - **gpu.cpp split** (~4 hours) — device_init, kernel_compile, mining_loop extraction
-- **Smart pointers** — Replace raw `new`/`delete` as encountered
-- **Modern casts** — Replace C-style casts with `static_cast`/`reinterpret_cast`
+- **Smart pointers** — ✅ Telemetry, jpsock buffers, jpsock thread, executor telem modernized (Session 9). ~29 raw `new` remain — mostly singletons, PIMPL, plugin ABI
+- **Modern casts** — Replace C-style casts with `static_cast`/`reinterpret_cast` (~72 remaining)
 - **[[nodiscard]]** — Add to error-returning functions
+- **std::regex removal** — ✅ gpu.cpp done (Session 9). configEditor.hpp still uses regex (genuine pattern matching)
 
 ### Performance Optimization (P1)
 Only after structural work is complete:
