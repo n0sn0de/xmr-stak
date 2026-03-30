@@ -58,7 +58,7 @@ int do_benchmark(int block_version, int wait_sec, int work_sec);
 void help()
 {
 	using namespace std;
-	using namespace xmrstak;
+	using namespace n0s;
 
 	cout << "Usage: " << params::inst().binaryName << " [OPTION]..." << endl;
 	cout << " " << endl;
@@ -149,7 +149,7 @@ std::string get_multipool_entry(bool& final)
 			  << std::endl;
 
 	std::string pool;
-	std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+	std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(n0s::params::inst().currency.c_str()) << std::endl;
 	std::cin >> pool;
 
 	std::string userName;
@@ -207,7 +207,7 @@ inline bool use_simple_start()
 
 void do_guided_pool_config()
 {
-	using namespace xmrstak;
+	using namespace n0s;
 
 	// load the template of the backend config into a char variable
 	const char* tpl =
@@ -230,7 +230,7 @@ void do_guided_pool_config()
 		prompt_once(prompted);
 
 		userSetPool = false;
-		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(n0s::params::inst().currency.c_str()) << std::endl;
 		std::cin >> pool;
 	}
 
@@ -342,7 +342,7 @@ void do_guided_pool_config()
 
 void do_guided_config()
 {
-	using namespace xmrstak;
+	using namespace n0s;
 
 	// load the template of the backend config into a char variable
 	const char* tpl =
@@ -398,7 +398,7 @@ int main(int argc, char* argv[])
 
 	srand(time(0));
 
-	using namespace xmrstak;
+	using namespace n0s;
 
 	std::string pathWithName(argv[0]);
 	std::string separator("/");
@@ -891,7 +891,7 @@ int main(int argc, char* argv[])
 int do_benchmark(int block_version, int wait_sec, int work_sec)
 {
 	using namespace std::chrono;
-	std::vector<xmrstak::iBackend*>* pvThreads;
+	std::vector<n0s::iBackend*>* pvThreads;
 
 	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
 
@@ -905,10 +905,10 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	memset(work, 0, 128);
 	work[0] = static_cast<uint8_t>(block_version);
 
-	xmrstak::pool_data dat;
+	n0s::pool_data dat;
 
-	xmrstak::miner_work oWork = xmrstak::miner_work();
-	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
+	n0s::miner_work oWork = n0s::miner_work();
+	pvThreads = n0s::BackendConnector::thread_starter(oWork);
 
 	printer::inst()->print_msg(L0, "Wait %d sec until all backends are initialized", wait_sec);
 	std::this_thread::sleep_for(std::chrono::seconds(wait_sec));
@@ -916,11 +916,11 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	/* AMD and NVIDIA is currently only supporting work sizes up to 128byte
 	 */
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...", work_sec);
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 1, 0), dat);
+	n0s::globalStates::inst().switch_work(n0s::miner_work("", work, 128, 0, false, 1, 0), dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 0, 0), dat);
+	n0s::globalStates::inst().switch_work(n0s::miner_work("", work, 128, 0, false, 0, 0), dat);
 
 	double fTotalHps = 0.0;
 	for(uint32_t i = 0; i < pvThreads->size(); i++)
@@ -928,8 +928,8 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 		double fHps = pvThreads->at(i)->iHashCount;
 		fHps /= (pvThreads->at(i)->iTimestamp - iStartStamp) / 1000.0;
 
-		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
-		std::string name(xmrstak::iBackend::getName(bType));
+		auto bType = static_cast<n0s::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		std::string name(n0s::iBackend::getName(bType));
 
 		printer::inst()->print_msg(L0, "Benchmark Thread %u %s: %.1f H/S", i, name.c_str(), fHps);
 		fTotalHps += fHps;

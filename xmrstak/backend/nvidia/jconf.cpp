@@ -36,9 +36,9 @@
 #include <cpuid.h>
 #endif
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 using namespace rapidjson;
@@ -281,5 +281,5 @@ bool jconf::parse_config(const char* sFilename)
 	return true;
 }
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s

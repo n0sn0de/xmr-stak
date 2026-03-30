@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
 
 struct BackendConnector
@@ -17,4 +17,4 @@ struct BackendConnector
 	static bool self_test();
 };
 
-} // namespace xmrstak
+} // namespace n0s

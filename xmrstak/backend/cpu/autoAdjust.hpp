@@ -23,7 +23,7 @@ inline int32_t get_masked(int32_t val, int32_t h, int32_t l)
 #include <unistd.h>
 #endif // _WIN32
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -187,4 +187,4 @@ class autoAdjust
 };
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

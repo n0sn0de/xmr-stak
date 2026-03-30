@@ -68,7 +68,7 @@
 
 #endif //_WIN32
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -358,7 +358,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
  */
 template <size_t N>
 void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job& on_new_job,
-	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
+	bool bHaveAes, bool bNoPrefetch, const n0s_algo& algo)
 {
 	static_assert(N >= 1, "number of threads must be >= 1");
 
@@ -381,7 +381,7 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	on_new_job = nullptr;
 }
 
-void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
+void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, bool bNoPrefetch, const n0s_algo& algo)
 {
 	minethd::cn_on_new_job dm;
 	func_multi_selector<1>(ctx, dm, bHaveAes, bNoPrefetch, algo); // for testing us eauto, must be removed before the release
@@ -552,11 +552,11 @@ void minethd::multiway_work_main()
 }
 
 // Explicit template instantiations required by OpenCL/CUDA .so plugins (loaded via dlopen)
-template void minethd::func_multi_selector<1>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
-template void minethd::func_multi_selector<2>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
-template void minethd::func_multi_selector<3>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
-template void minethd::func_multi_selector<4>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
-template void minethd::func_multi_selector<5>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const xmrstak_algo&);
+template void minethd::func_multi_selector<1>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
+template void minethd::func_multi_selector<2>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
+template void minethd::func_multi_selector<3>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
+template void minethd::func_multi_selector<4>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
+template void minethd::func_multi_selector<5>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

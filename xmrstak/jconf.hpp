@@ -12,7 +12,7 @@ class jconf
   public:
 	static jconf* inst()
 	{
-		auto& env = xmrstak::environment::inst();
+		auto& env = n0s::environment::inst();
 		if(env.pJconfConfig == nullptr)
 		{
 			std::unique_lock<std::mutex> lck(env.update);
@@ -57,7 +57,7 @@ class jconf
 	// ---- Simplified accessors (cn_gpu is the only algorithm) ----
 
 	/// Get the mining algorithm — always returns POW(cryptonight_gpu)
-	inline xmrstak_algo GetMiningAlgo() const { return POW(cryptonight_gpu); }
+	inline n0s_algo GetMiningAlgo() const { return POW(cryptonight_gpu); }
 
 	/// Get the scratchpad memory size — always 2MB for cn_gpu
 	inline size_t GetMiningMemSize() const { return CN_MEMORY; }
@@ -102,5 +102,5 @@ class jconf
 	opaque_private* prv;
 
 	bool bHaveAes;
-	xmrstak::coin_selection currentCoin;
+	n0s::coin_selection currentCoin;
 };

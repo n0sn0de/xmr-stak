@@ -8,7 +8,7 @@
 
 #include "../version.hpp"
 
-namespace xmrstak
+namespace n0s
 {
 
 struct configEditor
@@ -58,7 +58,7 @@ struct configEditor
 		//   strip off linux endmarks, keep the lines
 		replace("---LINUX\n", "\n");
 #endif
-		replace("XMRSTAK_VERSION", get_version_str());
+		replace("N0S_VERSION", get_version_str());
 		std::ofstream out(filename);
 		out << m_fileContent;
 		out.close();
@@ -70,4 +70,4 @@ struct configEditor
 	}
 };
 
-} // namespace xmrstak
+} // namespace n0s

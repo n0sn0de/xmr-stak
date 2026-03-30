@@ -10,7 +10,7 @@
 #include <mutex>
 #include <thread>
 
-namespace xmrstak
+namespace n0s
 {
 struct miner_work
 {
@@ -108,4 +108,4 @@ struct miner_work
 		return bWorkBlob[0];
 	}
 };
-} // namespace xmrstak
+} // namespace n0s

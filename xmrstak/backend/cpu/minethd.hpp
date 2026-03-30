@@ -11,7 +11,7 @@
 #include <thread>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -24,14 +24,14 @@ class minethd : public iBackend
 
 	typedef void (*cn_on_new_job)(const miner_work&, cryptonight_ctx**);
 
-	static void func_selector(cryptonight_ctx**, bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo);
+	static void func_selector(cryptonight_ctx**, bool bHaveAes, bool bNoPrefetch, const n0s_algo& algo);
 	static bool thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id);
 
 	static cryptonight_ctx* minethd_alloc_ctx();
 
 	template <size_t N>
 	static void func_multi_selector(cryptonight_ctx**, minethd::cn_on_new_job& on_new_job,
-		bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo);
+		bool bHaveAes, bool bNoPrefetch, const n0s_algo& algo);
 
   private:
 	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
@@ -63,4 +63,4 @@ class minethd : public iBackend
 };
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

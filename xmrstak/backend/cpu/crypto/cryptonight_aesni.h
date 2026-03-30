@@ -192,8 +192,8 @@ inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3
 // Each 512-byte chunk is generated from the 200-byte hash state.
 // ============================================================
 
-template <bool PREFETCH, xmrstak_algo_id ALGO>
-void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output, const xmrstak_algo& algo)
+template <bool PREFETCH, n0s_algo_id ALGO>
+void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output, const n0s_algo& algo)
 {
 	constexpr size_t hash_size = 200; // 25x8 bytes
 	alignas(128) uint64_t hash[25];
@@ -235,8 +235,8 @@ void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output, const xmrs
 //   16 extra rounds of AES + mix_and_propagate (no scratchpad XOR)
 // ============================================================
 
-template <bool SOFT_AES, bool PREFETCH, xmrstak_algo_id ALGO>
-void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_algo& algo)
+template <bool SOFT_AES, bool PREFETCH, n0s_algo_id ALGO>
+void cn_implode_scratchpad(const __m128i* input, __m128i* output, const n0s_algo& algo)
 {
 	__m128i xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -363,8 +363,8 @@ struct Cryptonight_hash_gpu
 {
 	static constexpr size_t N = 1;
 
-	template <xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
+	template <n0s_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const n0s_algo& algo)
 	{
 		// Phase 1: Keccak-1600
 		set_float_rounding_mode_nearest();

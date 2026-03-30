@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace xmrstak
+namespace n0s
 {
 
 struct params
@@ -84,4 +84,4 @@ struct params
 	}
 };
 
-} // namespace xmrstak
+} // namespace n0s

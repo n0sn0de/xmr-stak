@@ -54,7 +54,7 @@ extern "C" void compat_usleep(uint64_t waitTime)
 // Index type: 64-bit for large grids on sm_30+
 // ============================================================
 
-#if defined(XMR_STAK_LARGEGRID) && (__CUDA_ARCH__ >= 300)
+#if defined(N0S_LARGEGRID) && (__CUDA_ARCH__ >= 300)
 typedef uint64_t IndexType;
 #else
 typedef int IndexType;
@@ -154,7 +154,7 @@ __device__ __forceinline__ void cryptonight_aes_set_key(uint32_t* __restrict__ k
 //   4. XOR state halves → ctx_a and ctx_b (initial values for Phase 3)
 // ============================================================
 
-template <xmrstak_algo_id ALGO>
+template <n0s_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_prepare(int threads, uint32_t* __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t* __restrict__ d_ctx_state, uint32_t* __restrict__ d_ctx_state2, uint32_t* __restrict__ d_ctx_a, uint32_t* __restrict__ d_ctx_b, uint32_t* __restrict__ d_ctx_key1, uint32_t* __restrict__ d_ctx_key2)
 {
 	int thread = (blockDim.x * blockIdx.x + threadIdx.x);
@@ -200,7 +200,7 @@ __global__ void cryptonight_extra_gpu_prepare(int threads, uint32_t* __restrict_
 // 8 threads cooperate per hash (each handles 4 bytes of a 32-byte chunk).
 // ============================================================
 
-template <xmrstak_algo_id ALGO>
+template <n0s_algo_id ALGO>
 __global__ void kernel_implode_scratchpad(
 	const uint32_t ITERATIONS, const size_t MEMORY,
 	int threads, int bfactor, int partidx,
@@ -320,7 +320,7 @@ __device__ __forceinline__ void mix_and_propagate(uint32_t* state)
 // cn_gpu outputs directly: no extra_hashes branch (blake/groestl/jh/skein).
 // ============================================================
 
-template <xmrstak_algo_id ALGO>
+template <n0s_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_final(int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t* __restrict__ d_res_nonce, uint32_t* __restrict__ d_ctx_state, uint32_t* __restrict__ d_ctx_key2)
 {
 	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
@@ -373,8 +373,8 @@ __global__ void cryptonight_extra_gpu_final(int threads, uint64_t target, uint32
 // by cryptonight_extra_cpu_prepare and cryptonight_extra_cpu_final).
 // ============================================================
 
-template <xmrstak_algo_id ALGO, uint32_t MEM_MODE>
-void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo)
+template <n0s_algo_id ALGO, uint32_t MEM_MODE>
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const n0s_algo& algo)
 {
 	const uint32_t MASK = algo.Mask();
 	const uint32_t ITERATIONS = algo.Iter();
@@ -389,7 +389,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 	// ---- Phase 2: Expand scratchpad (keccak-based) ----
 	CUDA_CHECK_KERNEL(
 		ctx->device_id,
-		xmrstak::nvidia::kernel_expand_scratchpad<<<intensity, 128>>>(
+		n0s::cuda::kernel_expand_scratchpad<<<intensity, 128>>>(
 			MEM, (int*)ctx->d_ctx_state, (int*)ctx->d_long_state));
 
 	// ---- Phase 3: GPU floating-point computation loop ----
@@ -399,10 +399,10 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 	{
 		CUDA_CHECK_KERNEL(
 			ctx->device_id,
-			xmrstak::nvidia::kernel_gpu_compute<<<
+			n0s::cuda::kernel_gpu_compute<<<
 				ctx->device_blocks,
 				ctx->device_threads * 16,
-				sizeof(xmrstak::nvidia::SharedMemory) * ctx->device_threads>>>(
+				sizeof(n0s::cuda::SharedMemory) * ctx->device_threads>>>(
 				ITERATIONS, MEM, MASK,
 				(int*)ctx->d_ctx_state,
 				(int*)ctx->d_long_state,
@@ -448,7 +448,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 // Entry point: called by CUDA mining thread
 // ============================================================
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, const n0s_algo& miner_algo, uint32_t startNonce, uint64_t chain_height)
 {
 	if(miner_algo == invalid_algo)
 		return;
@@ -469,7 +469,7 @@ extern "C" void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void* data, 
 	CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_input, data, len, cudaMemcpyHostToDevice));
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const n0s_algo& miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -481,7 +481,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 										  ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
 }
 
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo)
+extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const n0s_algo& miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -674,11 +674,11 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->device_id, gpuArch, ctx->device_name);
 
 	std::vector<int> arch;
-#define XMRSTAK_PP_TOSTRING1(str) #str
-#define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)
-	char const* archStringList = XMRSTAK_PP_TOSTRING(XMRSTAK_CUDA_ARCH_LIST);
-#undef XMRSTAK_PP_TOSTRING
-#undef XMRSTAK_PP_TOSTRING1
+#define N0S_PP_TOSTRING1(str) #str
+#define N0S_PP_TOSTRING(str) N0S_PP_TOSTRING1(str)
+	char const* archStringList = N0S_PP_TOSTRING(N0S_CUDA_ARCH_LIST);
+#undef N0S_PP_TOSTRING
+#undef N0S_PP_TOSTRING1
 	std::stringstream ss(archStringList);
 
 	//transform string list separated with `+` into a vector of integers

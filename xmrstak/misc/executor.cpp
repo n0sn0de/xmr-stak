@@ -116,11 +116,11 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools)
 
 	if(eval_pools.size() == 0)
 	{
-		if(xmrstak::globalStates::inst().pool_id != invalid_pool_id)
+		if(n0s::globalStates::inst().pool_id != invalid_pool_id)
 		{
 			printer::inst()->print_msg(L0, "All pools are dead. Idling...");
-			xmrstak::pool_data dat;
-			xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(), dat);
+			n0s::pool_data dat;
+			n0s::globalStates::inst().switch_work(n0s::miner_work(), dat);
 		}
 
 		if(over_limit == pool_count)
@@ -174,7 +174,7 @@ void executor::eval_pool_choice()
 	std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(true) < a->get_pool_weight(true); });
 	jpsock* goal = eval_pools[0];
 
-	if(goal->get_pool_id() != xmrstak::globalStates::inst().pool_id)
+	if(goal->get_pool_id() != n0s::globalStates::inst().pool_id)
 	{
 		if(!goal->is_running() && goal->can_connect())
 		{
@@ -332,11 +332,11 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::pool_data dat;
+	n0s::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
 	dat.pool_id = pool_id;
 
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(oPoolJob.sJobID, oPoolJob.bWorkBlob,
+	n0s::globalStates::inst().switch_work(n0s::miner_work(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 												  oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id, oPoolJob.iBlockHeight),
 		dat);
 
@@ -371,7 +371,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	const char* backend_name = xmrstak::iBackend::getName(pvThreads->at(oResult.iThreadId)->backendType);
+	const char* backend_name = n0s::iBackend::getName(pvThreads->at(oResult.iThreadId)->backendType);
 	uint64_t backend_hashcount, total_hashcount = 0;
 
 	backend_hashcount = pvThreads->at(oResult.iThreadId)->iHashCount.load(std::memory_order_relaxed);
@@ -401,7 +401,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(t64_to_diff(targets[3]));
 
-		if (pvThreads->at(oResult.iThreadId)->backendType == xmrstak::iBackend::BackendType::CPU)
+		if (pvThreads->at(oResult.iThreadId)->backendType == n0s::iBackend::BackendType::CPU)
 		{
 			printer::inst()->print_msg(L3, "CPU: Share accepted. Pool: %s", pool->get_pool_addr());
 		}
@@ -414,7 +414,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	{
 		if(!pool->have_sock_error())
 		{
-			if (pvThreads->at(oResult.iThreadId)->backendType == xmrstak::iBackend::BackendType::CPU)
+			if (pvThreads->at(oResult.iThreadId)->backendType == n0s::iBackend::BackendType::CPU)
 			{
 				printer::inst()->print_msg(L3, "CPU: Share rejected. Pool: %s", pool->get_pool_addr());
 			}
@@ -463,10 +463,10 @@ void executor::ex_main()
 
 	assert(1000 % iTickTime == 0);
 
-	xmrstak::miner_work oWork = xmrstak::miner_work();
+	n0s::miner_work oWork = n0s::miner_work();
 
 	// \todo collect all backend threads
-	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
+	pvThreads = n0s::BackendConnector::thread_starter(oWork);
 
 	if(pvThreads->size() == 0)
 	{
@@ -474,7 +474,7 @@ void executor::ex_main()
 		win_exit();
 	}
 
-	telem = new xmrstak::telemetry(pvThreads->size());
+	telem = new n0s::telemetry(pvThreads->size());
 
 	set_timestamp();
 	size_t pc = jconf::inst()->GetPoolCount();
@@ -492,9 +492,9 @@ void executor::ex_main()
 		}
 #endif
 
-		if(!xmrstak::params::inst().poolURL.empty() && xmrstak::params::inst().poolURL == cfg.sPoolAddr)
+		if(!n0s::params::inst().poolURL.empty() && n0s::params::inst().poolURL == cfg.sPoolAddr)
 		{
-			auto& params = xmrstak::params::inst();
+			auto& params = n0s::params::inst();
 			already_have_cli_pool = true;
 
 			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
@@ -509,12 +509,12 @@ void executor::ex_main()
 			pools.emplace_back(i + 1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
 
-	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
+	if(!n0s::params::inst().poolURL.empty() && !already_have_cli_pool)
 	{
-		auto& params = xmrstak::params::inst();
+		auto& params = n0s::params::inst();
 		if(params.poolUsername.empty())
 		{
-			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", xmrstak::params::inst().poolURL.c_str());
+			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", n0s::params::inst().poolURL.c_str());
 			win_exit();
 		}
 
@@ -709,9 +709,9 @@ void executor::hashrate_report(std::string& out)
 
 	for(uint32_t b = 0; b < 4u; ++b)
 	{
-		std::vector<xmrstak::iBackend*> backEnds;
+		std::vector<n0s::iBackend*> backEnds;
 		std::copy_if(pvThreads->begin(), pvThreads->end(), std::back_inserter(backEnds),
-			[&](xmrstak::iBackend* backend) {
+			[&](n0s::iBackend* backend) {
 				return backend->backendType == b;
 			});
 
@@ -719,8 +719,8 @@ void executor::hashrate_report(std::string& out)
 		if(nthd != 0)
 		{
 			size_t i;
-			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
-			std::string name(xmrstak::iBackend::getName(bType));
+			auto bType = static_cast<n0s::iBackend::BackendType>(b);
+			std::string name(n0s::iBackend::getName(bType));
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
@@ -971,21 +971,21 @@ void executor::http_hashrate_report(std::string& out)
 	out.append(buffer);
 
 	double fTotal[3] = {0.0, 0.0, 0.0};
-	auto bTypePrev = static_cast<xmrstak::iBackend::BackendType>(0);
+	auto bTypePrev = static_cast<n0s::iBackend::BackendType>(0);
 	std::string name;
 	size_t j = 0;
 	for(size_t i = 0; i < nthd; i++)
 	{
 		double fHps[3];
 		char csThreadTag[25];
-		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		auto bType = static_cast<n0s::iBackend::BackendType>(pvThreads->at(i)->backendType);
 		if(bTypePrev == bType)
 			j++;
 		else
 		{
 			j = 0;
 			bTypePrev = bType;
-			name = xmrstak::iBackend::getName(bType);
+			name = n0s::iBackend::getName(bType);
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 		}
 		snprintf(csThreadTag, sizeof(csThreadTag),

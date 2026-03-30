@@ -38,10 +38,10 @@ struct job_result
 	char sJobID[64];
 	uint32_t iNonce;
 	uint32_t iThreadId;
-	xmrstak_algo algorithm = {invalid_algo};
+	n0s_algo algorithm = {invalid_algo};
 
 	job_result() {}
-	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId, const xmrstak_algo& algo) :
+	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId, const n0s_algo& algo) :
 		iNonce(iNonce),
 		iThreadId(iThreadId),
 		algorithm(algo)

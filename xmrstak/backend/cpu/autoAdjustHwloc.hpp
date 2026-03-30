@@ -16,7 +16,7 @@
 #include <hwloc.h>
 #include <stdio.h>
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -224,4 +224,4 @@ public:
 };
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

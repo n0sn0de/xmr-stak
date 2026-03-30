@@ -34,11 +34,11 @@
 #include "xmrstak/backend/cryptonight.hpp"
 
 // Stub out jconf dependency — we don't need runtime config for hashing
-namespace xmrstak { class globalStates; }
+namespace n0s { class globalStates; }
 class jconf {
 public:
     struct coinDescription {
-        std::vector<xmrstak_algo> GetAllAlgorithms() const {
+        std::vector<n0s_algo> GetAllAlgorithms() const {
             return { POW(cryptonight_gpu) };
         }
     };
@@ -282,7 +282,7 @@ static void cn_gpu_hash(const uint8_t* input, size_t len, uint8_t* output,
                         uint8_t* scratchpad_snapshot_after_explode = nullptr,
                         uint8_t* scratchpad_snapshot_after_inner = nullptr) {
     cryptonight_ctx* ctx = alloc_ctx();
-    xmrstak_algo algo = POW(cryptonight_gpu);
+    n0s_algo algo = POW(cryptonight_gpu);
 
     // Phase 1: Keccak
     set_float_rounding_mode_nearest();

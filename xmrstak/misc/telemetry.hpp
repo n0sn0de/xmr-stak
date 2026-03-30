@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace xmrstak
+namespace n0s
 {
 
 class telemetry
@@ -21,4 +21,4 @@ class telemetry
 	uint64_t** ppTimestamps;
 };
 
-} // namespace xmrstak
+} // namespace n0s

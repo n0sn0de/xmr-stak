@@ -8,7 +8,7 @@
 
 #include <atomic>
 
-namespace xmrstak
+namespace n0s
 {
 
 struct globalStates
@@ -56,4 +56,4 @@ struct globalStates
 	::cpputil::RWLock jobLock;
 };
 
-} // namespace xmrstak
+} // namespace n0s

@@ -34,7 +34,7 @@ class jpsock
 	void disconnect(bool quiet = false);
 
 	bool cmd_login();
-	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, const xmrstak_algo& algo);
+	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, const n0s_algo& algo);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);

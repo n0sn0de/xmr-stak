@@ -114,7 +114,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		printer::inst()->print_msg(L1, "Device %lu work size to large, reduce to %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
 	}
 
-	const std::string backendName = xmrstak::params::inst().openCLVendor;
+	const std::string backendName = n0s::params::inst().openCLVendor;
 	if((ctx->stridedIndex == 2 || ctx->stridedIndex == 3) && (ctx->rawIntensity % ctx->workSize) != 0)
 	{
 		size_t reduced_intensity = (ctx->rawIntensity / ctx->workSize) * ctx->workSize;
@@ -240,13 +240,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::string hash_hex_str;
 		picosha2::hash256_hex_string(src_str, hash_hex_str);
 
-		const std::string cache_dir = xmrstak::params::inst().rootAMDCacheDir;
+		const std::string cache_dir = n0s::params::inst().rootAMDCacheDir;
 
 		std::string cache_file = cache_dir + hash_hex_str + ".openclbin";
 		std::ifstream clBinFile(cache_file, std::ofstream::in | std::ofstream::binary);
-		if(xmrstak::params::inst().AMDCache == false || !clBinFile.good())
+		if(n0s::params::inst().AMDCache == false || !clBinFile.good())
 		{
-			if(xmrstak::params::inst().AMDCache)
+			if(n0s::params::inst().AMDCache)
 				printer::inst()->print_msg(L1, "OpenCL device %u - Precompiled code %s not found. Compiling ...", ctx->deviceIdx, cache_file.c_str());
 			ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
 			if(ret != CL_SUCCESS)
@@ -311,7 +311,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				port_sleep(1);
 			} while(status == CL_BUILD_IN_PROGRESS);
 
-			if(xmrstak::params::inst().AMDCache)
+			if(n0s::params::inst().AMDCache)
 			{
 				std::vector<size_t> binary_sizes(num_devices);
 				clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
@@ -476,7 +476,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 		bool isAMDDevice = devVendor.find("Advanced Micro Devices") != std::string::npos || devVendor.find("AMD") != std::string::npos;
 		bool isNVIDIADevice = devVendor.find("NVIDIA Corporation") != std::string::npos || devVendor.find("NVIDIA") != std::string::npos;
 
-		std::string selectedOpenCLVendor = xmrstak::params::inst().openCLVendor;
+		std::string selectedOpenCLVendor = n0s::params::inst().openCLVendor;
 		if((isAMDDevice && selectedOpenCLVendor == "AMD") || (isNVIDIADevice && selectedOpenCLVendor == "NVIDIA"))
 		{
 			GpuContext ctx;
@@ -570,7 +570,7 @@ int getAMDPlatformIdx()
 							   platformName.find("Apple") != std::string::npos ||
 							   platformName.find("Mesa") != std::string::npos;
 			bool isNVIDIADevice = platformName.find("NVIDIA Corporation") != std::string::npos || platformName.find("NVIDIA") != std::string::npos;
-			std::string selectedOpenCLVendor = xmrstak::params::inst().openCLVendor;
+			std::string selectedOpenCLVendor = n0s::params::inst().openCLVendor;
 			if((isAMDOpenCL && selectedOpenCLVendor == "AMD") || (isNVIDIADevice && selectedOpenCLVendor == "NVIDIA"))
 			{
 				printer::inst()->print_msg(L0, "Found %s platform index id = %i, name = %s", selectedOpenCLVendor.c_str(), i, platformName.c_str());
@@ -631,7 +631,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	std::vector<char> platformNameVec(infoSize);
 	clGetPlatformInfo(PlatformIDList[platform_idx], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
 	std::string platformName(platformNameVec.data());
-	if(xmrstak::params::inst().openCLVendor == "AMD" && platformName.find("Advanced Micro Devices") == std::string::npos)
+	if(n0s::params::inst().openCLVendor == "AMD" && platformName.find("Advanced Micro Devices") == std::string::npos)
 	{
 		printer::inst()->print_msg(L1, "WARNING: using non AMD device: %s", platformName.c_str());
 	}
@@ -688,11 +688,11 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		;
 
 	std::string source_code(cryptonightCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
-	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_CN_GPU"), cryptonight_gpu);
+	source_code = std::regex_replace(source_code, std::regex("N0S_INCLUDE_WOLF_AES"), wolfAesCL);
+	source_code = std::regex_replace(source_code, std::regex("N0S_INCLUDE_CN_GPU"), cryptonight_gpu);
 
 	// create a directory  for the OpenCL compile cache
-	const std::string cache_dir = xmrstak::params::inst().rootAMDCacheDir;
+	const std::string cache_dir = n0s::params::inst().rootAMDCacheDir;
 	create_directory(cache_dir);
 
 	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);

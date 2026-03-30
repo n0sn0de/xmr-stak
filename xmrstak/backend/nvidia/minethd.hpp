@@ -14,9 +14,9 @@
 #include <thread>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 class minethd : public iBackend
@@ -26,7 +26,7 @@ class minethd : public iBackend
 	static bool self_test();
 
   private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const n0s_algo&);
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
 	void start_mining();
@@ -55,5 +55,5 @@ class minethd : public iBackend
 	bool bQuit;
 };
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s

@@ -5,7 +5,7 @@
 
 constexpr static size_t invalid_pool_id = (-1);
 
-namespace xmrstak
+namespace n0s
 {
 
 struct pool_data
@@ -20,4 +20,4 @@ struct pool_data
 	}
 };
 
-} // namespace xmrstak
+} // namespace n0s

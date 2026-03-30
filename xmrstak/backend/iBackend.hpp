@@ -15,7 +15,7 @@ constexpr std::size_t countof(T const (&)[N]) noexcept
 	return N;
 }
 
-namespace xmrstak
+namespace n0s
 {
 struct iBackend
 {
@@ -79,4 +79,4 @@ struct iBackend
 	}
 };
 
-} // namespace xmrstak
+} // namespace n0s

@@ -103,7 +103,7 @@ inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256
 
 inline __m256i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m256i*>(lpad + (idx & mask) + n * 16); }
 
-void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
+void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const n0s_algo& algo)
 {
 	const uint32_t ITER = algo.Iter();
 	const uint32_t mask = algo.Mask();

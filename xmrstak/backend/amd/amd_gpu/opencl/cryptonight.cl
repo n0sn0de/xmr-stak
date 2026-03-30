@@ -51,7 +51,7 @@ static const __constant uchar sbox[256] =
 };
 
 //#include "opencl/wolf-aes.cl"
-XMRSTAK_INCLUDE_WOLF_AES
+N0S_INCLUDE_WOLF_AES
 
 // Dead code removed: keccakf1600 (private), keccakf1600_1 (private)
 // cn_gpu only uses keccakf1600_2 (local memory version)
@@ -312,7 +312,7 @@ inline int4 _mm_alignr_epi8(int4 a, const uint rot)
 }
 
 // cn_gpu-specific kernels (Phase 1: Keccak, Phase 2: Expand, Phase 3: FP compute)
-XMRSTAK_INCLUDE_CN_GPU
+N0S_INCLUDE_CN_GPU
 
 // Dead kernels removed: cn0 (generic Keccak — cn_gpu uses cn0_cn_gpu from above)
 // Dead kernels removed: cn1 (generic AES main loop — cn_gpu uses cn1_cn_gpu from above)

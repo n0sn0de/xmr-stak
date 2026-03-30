@@ -53,9 +53,9 @@
 #include <iostream>
 #endif
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 #ifdef WIN32
@@ -114,10 +114,10 @@ extern "C"
 #ifdef WIN32
 	__declspec(dllexport)
 #endif
-		std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
+		std::vector<iBackend*>* n0s_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 	{
 		environment::inst(&env);
-		return nvidia::minethd::thread_starter(threadOffset, pWork);
+		return cuda::minethd::thread_starter(threadOffset, pWork);
 	}
 } // extern "C"
 
@@ -301,5 +301,5 @@ void minethd::work_main()
 	}
 }
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s

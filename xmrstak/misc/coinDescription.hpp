@@ -7,28 +7,28 @@
 #include <string>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
 struct coinDescription
 {
-	xmrstak_algo algo = {xmrstak_algo_id::invalid_algo};
+	n0s_algo algo = {n0s_algo_id::invalid_algo};
 	uint8_t fork_version = 0u;
-	xmrstak_algo algo_root = {xmrstak_algo_id::invalid_algo};
+	n0s_algo algo_root = {n0s_algo_id::invalid_algo};
 
 	coinDescription() = default;
 
 	coinDescription(
-		const xmrstak_algo in_algo,
+		const n0s_algo in_algo,
 		const uint8_t in_fork_version = 0,
-		xmrstak_algo in_algo_root = xmrstak_algo_id::invalid_algo) :
+		n0s_algo in_algo_root = n0s_algo_id::invalid_algo) :
 		algo(in_algo),
 		algo_root(in_algo_root),
 		fork_version(in_fork_version)
 	{
 	}
 
-	inline xmrstak_algo GetMiningAlgo() const { return algo; }
-	inline xmrstak_algo GetMiningAlgoRoot() const { return algo_root; }
+	inline n0s_algo GetMiningAlgo() const { return algo; }
+	inline n0s_algo GetMiningAlgoRoot() const { return algo_root; }
 	inline uint8_t GetMiningForkVersion() const { return fork_version; }
 };
 
@@ -69,9 +69,9 @@ struct coin_selection
 		 *
 		 * @return required POW algorithms without duplicated entries
 		 */
-	inline std::vector<xmrstak_algo> GetAllAlgorithms()
+	inline std::vector<n0s_algo> GetAllAlgorithms()
 	{
-		std::vector<xmrstak_algo> allAlgos = {
+		std::vector<n0s_algo> allAlgos = {
 			GetDescription(0).GetMiningAlgo(),
 			GetDescription(0).GetMiningAlgoRoot(),
 			GetDescription(1).GetMiningAlgo(),
@@ -86,4 +86,4 @@ struct coin_selection
 		return allAlgos;
 	}
 };
-} // namespace xmrstak
+} // namespace n0s

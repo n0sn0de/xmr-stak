@@ -6,7 +6,7 @@ class printer;
 class jconf;
 class executor;
 
-namespace xmrstak
+namespace n0s
 {
 
 struct globalStates;
@@ -48,4 +48,4 @@ private:
 	void init_singeltons();
 };
 
-} // namespace xmrstak
+} // namespace n0s

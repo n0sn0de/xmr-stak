@@ -47,7 +47,7 @@ class printer
   public:
 	static inline printer* inst()
 	{
-		auto& env = xmrstak::environment::inst();
+		auto& env = n0s::environment::inst();
 		if(env.pPrinter == nullptr)
 		{
 			std::unique_lock<std::mutex> lck(env.update);

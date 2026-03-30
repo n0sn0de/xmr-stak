@@ -37,7 +37,7 @@
 #include <cpuid.h>
 #endif
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -263,4 +263,4 @@ bool jconf::parse_config(const char* sFilename)
 }
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

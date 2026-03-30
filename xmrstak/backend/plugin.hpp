@@ -21,7 +21,7 @@
 #include <iostream>
 #endif
 
-namespace xmrstak
+namespace n0s
 {
 
 struct plugin
@@ -62,19 +62,19 @@ struct plugin
 #endif
 
 #ifdef WIN32
-		fn_startBackend = (startBackend_t)GetProcAddress(libBackend, "xmrstak_start_backend");
+		fn_startBackend = (startBackend_t)GetProcAddress(libBackend, "n0s_start_backend");
 		if(!fn_startBackend)
 		{
-			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " << GetLastError() << std::endl;
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'n0s_start_backend': " << GetLastError() << std::endl;
 		}
 #else
 		// reset last error
 		dlerror();
-		fn_startBackend = (startBackend_t)dlsym(libBackend, "xmrstak_start_backend");
+		fn_startBackend = (startBackend_t)dlsym(libBackend, "n0s_start_backend");
 		const char* dlsym_error = dlerror();
 		if(dlsym_error)
 		{
-			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " << dlsym_error << std::endl;
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'n0s_start_backend': " << dlsym_error << std::endl;
 		}
 #endif
 	}
@@ -116,4 +116,4 @@ struct plugin
 #endif
 };
 
-} // namespace xmrstak
+} // namespace n0s

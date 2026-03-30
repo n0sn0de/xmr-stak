@@ -29,7 +29,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace xmrstak
+namespace n0s
 {
 
 void globalStates::consume_work(miner_work& threadWork, uint64_t& currentJobId)
@@ -65,4 +65,4 @@ void globalStates::switch_work(miner_work&& pWork, pool_data& dat)
 	jobLock.UnLock();
 }
 
-} // namespace xmrstak
+} // namespace n0s

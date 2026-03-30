@@ -15,21 +15,21 @@
 
 class jpsock;
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
 class minethd;
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s
 
 class executor
 {
   public:
 	static executor* inst()
 	{
-		auto& env = xmrstak::environment::inst();
+		auto& env = n0s::environment::inst();
 		if(env.pExecutor == nullptr)
 		{
 			std::unique_lock<std::mutex> lck(env.update);
@@ -66,8 +66,8 @@ class executor
 	std::mutex timed_event_mutex;
 	thdq<ex_event> oEventQ;
 
-	xmrstak::telemetry* telem;
-	std::vector<xmrstak::iBackend*>* pvThreads;
+	n0s::telemetry* telem;
+	std::vector<n0s::iBackend*>* pvThreads;
 
 	size_t current_pool_id = invalid_pool_id;
 	size_t last_usr_pool_id = invalid_pool_id;

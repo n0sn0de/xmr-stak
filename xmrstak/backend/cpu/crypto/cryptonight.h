@@ -14,7 +14,7 @@ struct cryptonight_ctx;
 
 typedef void (*cn_mainloop_fun)(cryptonight_ctx* ctx);
 typedef void (*cn_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
-typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
+typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const n0s_algo&);
 
 struct cryptonight_ctx
 {
@@ -25,7 +25,7 @@ struct cryptonight_ctx
 	cn_hash_fun hash_fn = nullptr;
 	uint8_t* fun_data = nullptr;
 
-	xmrstak_algo last_algo = invalid_algo;
+	n0s_algo last_algo = invalid_algo;
 };
 
 struct alloc_msg

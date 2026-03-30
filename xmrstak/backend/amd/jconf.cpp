@@ -36,9 +36,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-namespace xmrstak
+namespace n0s
 {
-namespace amd
+namespace opencl
 {
 
 using namespace rapidjson;
@@ -340,5 +340,5 @@ bool jconf::parse_config(const char* sFilename)
 	return true;
 }
 
-} // namespace amd
-} // namespace xmrstak
+} // namespace opencl
+} // namespace n0s

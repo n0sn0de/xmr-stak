@@ -96,7 +96,7 @@ inline void single_comupte_wrap(__m128 n0, __m128 n1, __m128 n2, __m128 n3, floa
 
 inline __m128i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m128i*>(lpad + (idx & mask) + n * 16); }
 
-void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
+void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const n0s_algo& algo)
 {
 	const uint32_t ITER = algo.Iter();
 	const uint32_t mask = algo.Mask();

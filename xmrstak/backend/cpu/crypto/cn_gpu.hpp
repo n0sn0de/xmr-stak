@@ -37,6 +37,6 @@ inline bool cngpu_check_avx2()
 	return (cpu_info[1] & (1 << 5)) != 0;
 }
 
-void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo);
+void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const n0s_algo& algo);
 
-void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo);
+void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const n0s_algo& algo);

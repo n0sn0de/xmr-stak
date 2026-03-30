@@ -100,7 +100,7 @@ configVal oConfigValues[] = {
 constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
 
 // Only CryptoNight-GPU (RYO Currency) is supported
-xmrstak::coin_selection coins[] = {
+n0s::coin_selection coins[] = {
 	// name, userpool, devpool, default_pool_suggestion
 	{"cryptonight_gpu", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
 	{"ryo", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"}};
@@ -222,18 +222,18 @@ bool jconf::PrintMotd()
 
 uint64_t jconf::GetAutohashTime()
 {
-	if (xmrstak::params::inst().h_print_time == -1)
+	if (n0s::params::inst().h_print_time == -1)
 		return prv->configValues[iAutohashTime]->GetUint64();
 	else
-		return uint64_t(xmrstak::params::inst().h_print_time);
+		return uint64_t(n0s::params::inst().h_print_time);
 }
 
 uint16_t jconf::GetHttpdPort()
 {
-	if(xmrstak::params::inst().httpd_port == xmrstak::params::httpd_port_unset)
+	if(n0s::params::inst().httpd_port == n0s::params::httpd_port_unset)
 		return prv->configValues[iHttpdPort]->GetUint();
 	else
-		return uint16_t(xmrstak::params::inst().httpd_port);
+		return uint16_t(n0s::params::inst().httpd_port);
 }
 
 const char* jconf::GetHttpUsername()
@@ -253,8 +253,8 @@ bool jconf::DaemonMode()
 
 const char* jconf::GetOutputFile()
 {
-	if(xmrstak::params::inst().outputFile.length() > 0)
-		return xmrstak::params::inst().outputFile.c_str();
+	if(n0s::params::inst().outputFile.length() > 0)
+		return n0s::params::inst().outputFile.c_str();
 	else
 		return prv->configValues[sOutputFile]->GetString();
 }
@@ -303,8 +303,8 @@ jconf::slow_mem_cfg jconf::GetSlowMemSetting()
 
 std::string jconf::GetMiningCoin()
 {
-	if(xmrstak::params::inst().currency.length() > 0)
-		return xmrstak::params::inst().currency;
+	if(n0s::params::inst().currency.length() > 0)
+		return n0s::params::inst().currency;
 	else
 		return prv->configValues[sCurrency]->GetString();
 }

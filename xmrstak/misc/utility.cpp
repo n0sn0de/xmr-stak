@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <string>
 
-namespace xmrstak
+namespace n0s
 {
 bool strcmp_i(const std::string& str1, const std::string& str2)
 {
@@ -12,4 +12,4 @@ bool strcmp_i(const std::string& str1, const std::string& str2)
 			return ::tolower(c1) == ::tolower(c2);
 		});
 }
-} // namespace xmrstak
+} // namespace n0s

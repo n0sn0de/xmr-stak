@@ -24,9 +24,9 @@
 #include <CL/cl.h>
 #endif
 
-namespace xmrstak
+namespace n0s
 {
-namespace amd
+namespace opencl
 {
 
 class autoAdjust
@@ -239,12 +239,12 @@ class autoAdjust
 		configTpl.replace("GPUCONFIG", conf);
 		configTpl.write(params::inst().configFileAMD);
 
-		const std::string backendName = xmrstak::params::inst().openCLVendor;
+		const std::string backendName = n0s::params::inst().openCLVendor;
 		printer::inst()->print_msg(L0, "%s: GPU (OpenCL) configuration stored in file '%s'", backendName.c_str(), params::inst().configFileAMD.c_str());
 	}
 
 	std::vector<GpuContext> devVec;
 };
 
-} // namespace amd
-} // namespace xmrstak
+} // namespace opencl
+} // namespace n0s

@@ -42,9 +42,9 @@
 #include <thread>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
-namespace amd
+namespace opencl
 {
 
 minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg)
@@ -78,10 +78,10 @@ extern "C"
 #ifdef WIN32
 	__declspec(dllexport)
 #endif
-		std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
+		std::vector<iBackend*>* n0s_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 	{
 		environment::inst(&env);
-		return amd::minethd::thread_starter(threadOffset, pWork);
+		return opencl::minethd::thread_starter(threadOffset, pWork);
 	}
 } // extern "C"
 
@@ -143,7 +143,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
-		const std::string backendName = xmrstak::params::inst().openCLVendor;
+		const std::string backendName = n0s::params::inst().openCLVendor;
 
 		if(cfg.cpu_aff >= 0)
 		{
@@ -338,5 +338,5 @@ void minethd::work_main()
 	}
 }
 
-} // namespace amd
-} // namespace xmrstak
+} // namespace opencl
+} // namespace n0s

@@ -71,9 +71,9 @@ if(CUDA_ENABLE)
 
         list(APPEND BACKEND_TYPES "nvidia")
 
-        option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
-        if(XMR-STAK_LARGEGRID)
-            add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
+        option(N0S_LARGEGRID "Support large CUDA block count > 128" ON)
+        if(N0S_LARGEGRID)
+            add_definitions("-DN0S_LARGEGRID=${N0S_LARGEGRID}")
         endif()
 
         # GPU Architecture Targets
@@ -104,7 +104,7 @@ if(CUDA_ENABLE)
         endforeach()
 
         string(REPLACE ";" "+" STR_CUDA_ARCH "${CUDA_ARCH}")
-        add_definitions("-DXMRSTAK_CUDA_ARCH_LIST=${STR_CUDA_ARCH}")
+        add_definitions("-DN0S_CUDA_ARCH_LIST=${STR_CUDA_ARCH}")
 
         # NVCC Flags
         # CRITICAL: --fmad=false --prec-div=true --ftz=false required for correct cn_gpu hashes
@@ -296,12 +296,12 @@ endif()
 
 # C crypto library
 file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
-add_library(xmr-stak-c STATIC ${SRCFILES_C})
-set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
+add_library(n0s-c STATIC ${SRCFILES_C})
+set_property(TARGET n0s-c PROPERTY C_STANDARD 99)
 if(MICROHTTPD_ENABLE)
-    target_link_libraries(xmr-stak-c ${MHTD})
+    target_link_libraries(n0s-c ${MHTD})
 endif()
-target_link_libraries(xmr-stak-c ${LIBS})
+target_link_libraries(n0s-c ${LIBS})
 
 # Core backend library
 file(GLOB BACKEND_CPP
@@ -312,8 +312,8 @@ file(GLOB BACKEND_CPP
     "xmrstak/http/*.cpp"
     "xmrstak/misc/*.cpp"
     "xmrstak/net/*.cpp")
-add_library(xmr-stak-backend STATIC ${BACKEND_CPP})
-target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
+add_library(n0s-backend STATIC ${BACKEND_CPP})
+target_link_libraries(n0s-backend n0s-c ${CMAKE_DL_LIBS})
 
 # CUDA backend (shared library, loaded via dlopen)
 if(CUDA_FOUND)
@@ -321,11 +321,11 @@ if(CUDA_FOUND)
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
-    cuda_add_library(xmrstak_cuda_backend SHARED ${CUDASRCFILES})
+    cuda_add_library(n0s_cuda_backend SHARED ${CUDASRCFILES})
 
     set(CUDA_LIBRARIES ${CUDA_LIB} ${CUDA_LIBRARIES} ${CUDA_NVRTC_LIB})
-    target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
+    target_link_libraries(n0s_cuda_backend ${CUDA_LIBRARIES})
+    target_link_libraries(n0s_cuda_backend n0s-backend)
 endif()
 
 # OpenCL backend (shared library, loaded via dlopen)
@@ -333,9 +333,9 @@ if(OpenCL_FOUND)
     file(GLOB OPENCLSRCFILES
         "xmrstak/backend/amd/amd_gpu/*.cpp"
         "xmrstak/backend/amd/*.cpp")
-    add_library(xmrstak_opencl_backend SHARED ${OPENCLSRCFILES})
-    target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY})
-    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
+    add_library(n0s_opencl_backend SHARED ${OPENCLSRCFILES})
+    target_link_libraries(n0s_opencl_backend ${OpenCL_LIBRARY})
+    target_link_libraries(n0s_opencl_backend n0s-backend)
 endif()
 
 # Main executable
@@ -346,7 +346,7 @@ add_executable(n0s-ryo-miner ${SRCFILES_CPP})
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(n0s-ryo-miner ${LIBS} xmr-stak-c xmr-stak-backend)
+target_link_libraries(n0s-ryo-miner ${LIBS} n0s-c n0s-backend)
 
 ################################################################################
 # Install
@@ -355,10 +355,10 @@ target_link_libraries(n0s-ryo-miner ${LIBS} xmr-stak-c xmr-stak-backend)
 if(NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR)
     install(TARGETS n0s-ryo-miner RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
     if(CUDA_FOUND)
-        install(TARGETS xmrstak_cuda_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
+        install(TARGETS n0s_cuda_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
     endif()
     if(OpenCL_FOUND)
-        install(TARGETS xmrstak_opencl_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
+        install(TARGETS n0s_opencl_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
     endif()
 else()
     install(CODE "MESSAGE(\"n0s-ryo-miner installed to folder 'bin'\")")

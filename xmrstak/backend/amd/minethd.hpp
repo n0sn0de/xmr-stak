@@ -11,9 +11,9 @@
 #include <future>
 #include <thread>
 
-namespace xmrstak
+namespace n0s
 {
-namespace amd
+namespace opencl
 {
 
 class minethd : public iBackend
@@ -23,7 +23,7 @@ class minethd : public iBackend
 	static bool init_gpus();
 
   private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const n0s_algo&);
 
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 
@@ -51,5 +51,5 @@ class minethd : public iBackend
 	static std::vector<GpuContext> vGpuData;
 };
 
-} // namespace amd
-} // namespace xmrstak
+} // namespace opencl
+} // namespace n0s

@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string>
 
-namespace xmrstak
+namespace n0s
 {
-namespace amd
+namespace opencl
 {
 
 class jconf
@@ -49,5 +49,5 @@ class jconf
 	opaque_private* prv;
 };
 
-} // namespace amd
-} // namespace xmrstak
+} // namespace opencl
+} // namespace n0s

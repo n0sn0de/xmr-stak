@@ -6,7 +6,7 @@
 #include "xmrstak/misc/executor.hpp"
 #include "xmrstak/jconf.hpp"
 
-namespace xmrstak
+namespace n0s
 {
 void environment::init_singeltons()
 {

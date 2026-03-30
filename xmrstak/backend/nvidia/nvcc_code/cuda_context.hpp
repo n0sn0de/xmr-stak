@@ -5,7 +5,7 @@
  *
  * Contains:
  *   nvid_ctx        — Per-device state: GPU buffers, config, CUDA context
- *   extern "C" API  — Functions exported by libxmrstak_cuda_backend.so
+ *   extern "C" API  — Functions exported by libn0s_cuda_backend.so
  *
  * Was: cryptonight.hpp (CUDA-side, easily confused with backend/cryptonight.hpp)
  */
@@ -52,7 +52,7 @@ typedef struct
 	CUmodule module = nullptr;
 	CUfunction kernel = nullptr;
 	uint64_t kernel_height = 0;
-	xmrstak_algo cached_algo = {xmrstak_algo_id::invalid_algo};
+	n0s_algo cached_algo = {n0s_algo_id::invalid_algo};
 } nvid_ctx;
 
 extern "C"
@@ -67,8 +67,8 @@ extern "C"
 	int cuda_get_deviceinfo(nvid_ctx* ctx);
 	int cryptonight_extra_cpu_init(nvid_ctx* ctx);
 	void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void* data, uint32_t len);
-	void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo);
-	void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo);
+	void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const n0s_algo& miner_algo);
+	void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const n0s_algo& miner_algo);
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, const n0s_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);

@@ -84,9 +84,9 @@ __device__ __forceinline__ void storeGlobal64(T* addr, T const& val)
 #endif
 }
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 // ============================================================
@@ -658,5 +658,5 @@ __global__ void kernel_expand_scratchpad(const size_t MEMORY, int32_t* state_buf
 	}
 }
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s

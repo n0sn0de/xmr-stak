@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string>
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 class jconf
@@ -50,5 +50,5 @@ class jconf
 	opaque_private* prv;
 };
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s

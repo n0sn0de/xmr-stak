@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string>
 
-namespace xmrstak
+namespace n0s
 {
 namespace cpu
 {
@@ -42,4 +42,4 @@ class jconf
 };
 
 } // namespace cpu
-} // namespace xmrstak
+} // namespace n0s

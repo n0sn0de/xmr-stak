@@ -7,7 +7,7 @@
 #include <hwloc.h>
 
 static __hwloc_inline int
-xmrstak_set_membind_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+n0s_set_membind_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
 {
 #if HWLOC_API_VERSION >= 0x20000
 	return hwloc_set_membind(
@@ -55,7 +55,7 @@ void bindMemoryToNUMANode(size_t puId)
 		hwloc_obj_t pu = hwloc_get_obj_by_depth(topology, depth, i);
 		if(pu->os_index == puId)
 		{
-			if(0 > xmrstak_set_membind_nodeset(
+			if(0 > n0s_set_membind_nodeset(
 					   topology,
 					   pu->nodeset,
 					   HWLOC_MEMBIND_BIND,

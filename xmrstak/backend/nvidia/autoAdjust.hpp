@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
-namespace xmrstak
+namespace n0s
 {
-namespace nvidia
+namespace cuda
 {
 
 class autoAdjust
@@ -130,5 +130,5 @@ class autoAdjust
 	std::vector<nvid_ctx> nvidCtxVec;
 };
 
-} // namespace nvidia
-} // namespace xmrstak
+} // namespace cuda
+} // namespace n0s
