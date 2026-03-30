@@ -117,6 +117,28 @@ tests/
 
 ## Cumulative Progress (All Sessions)
 
+**Session 20 (2026-03-30 05:05 AM):**
+- ✅ Expanded constexpr to compile-time computable functions
+- ✅ Made n0s_algo constructors constexpr (default, single-arg, full)
+- ✅ Made POW() constexpr (algorithm lookup)
+- ✅ Made jconf getters constexpr: GetMiningAlgo(), GetMiningMemSize(), HaveHardwareAes()
+- ✅ Made msgstruct converters constexpr: t32_to_t64, t64_to_diff, diff_to_t64
+- ✅ Made get_masked() constexpr (CPU autoAdjust bit extraction)
+- ✅ Added const to jpsock simple getters (get_pool_addr, get_tls_fp, get_rigid, is_nicehash)
+- Net: 5 files changed, 19 insertions(+), 19 deletions(-) — zero behavior changes, bit-exact hashes verified
+
+## Cumulative Progress (All Sessions)
+
+**Session 20 (2026-03-30 05:05 AM):**
+- ✅ Expanded constexpr to compile-time computable functions
+- ✅ Made n0s_algo constructors constexpr (default, single-arg, full)
+- ✅ Made POW() constexpr (algorithm lookup)
+- ✅ Made jconf getters constexpr: GetMiningAlgo(), GetMiningMemSize(), HaveHardwareAes()
+- ✅ Made msgstruct converters constexpr: t32_to_t64, t64_to_diff, diff_to_t64
+- ✅ Made get_masked() constexpr (CPU autoAdjust bit extraction)
+- ✅ Added const to jpsock simple getters (get_pool_addr, get_tls_fp, get_rigid, is_nicehash)
+- Net: 5 files changed, 19 insertions(+), 19 deletions(-) — zero behavior changes, bit-exact hashes verified
+
 **Session 18 (2026-03-30 03:35 AM):**
 - ✅ Split AMD `gpu.cpp` (1003 lines) into focused modules: gpu_utils, gpu_platform, gpu_device, gpu (4 files, 373-421 lines each)
 - ✅ Wrapped all AMD GPU functions in `n0s::amd` namespace (was global scope)
@@ -138,7 +160,7 @@ tests/
 - Net: -10 raw new/delete pairs, 6 memory leaks fixed
 - Remaining raw `new`: 13 (8 singletons, 3 minethd thread objects, 2 backend singletons)
 
-~330 files changed. Net -10,300+ lines removed. Our code: ~16,350 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management. [[nodiscard]] on critical functions. AMD backend now modular.
+~335 files changed. Net -10,300+ lines removed. Our code: ~16,350 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management. [[nodiscard]] on critical functions. AMD + NVIDIA backends modular. constexpr on compile-time functions.
 
 ---
 
@@ -147,14 +169,15 @@ tests/
 ### Near-Term Opportunities
 
 **Next Session Targets:**
-1. **More constexpr** (~2 hours) — Expand to remaining compile-time constants (lookup tables, simple getters, config values)
-2. **NVIDIA backend modularization** (~4 hours) — Similar split for CUDA code (currently cuda_kernels.cu is 1400+ lines)
-3. **Documentation pass** (~2 hours) — Add function-level comments to complex GPU kernels (Phase 2, Phase 3, etc.)
+1. **Documentation pass** (~2 hours) — Add function-level comments to complex GPU kernels (Phase 2, Phase 3, etc.)
+2. **More constexpr expansion** (~1-2 hours) — Look for more lookup tables, accessor functions
+3. **Fix CUDA deprecation warnings** (~1 hour) — Replace deprecated intrinsics in cuda_cryptonight_gpu.hpp
 
 **Completed Modernizations:**
 - ✅ **AMD GPU modularization** — Monolithic 1003-line gpu.cpp split into 4 focused modules (S18)
+- ✅ **NVIDIA backend modularization** — Monolithic 832-line cuda_kernels.cu split into 4 focused modules (S19)
 - ✅ **[[nodiscard]]** — 40+ critical error-returning functions (S17)
-- ✅ **constexpr** — Compile-time functions (S17: getName, sec_to_ticks). Algorithm constants already done
+- ✅ **constexpr** — Core algorithm functions (S17: getName, sec_to_ticks). Algorithm constants (S15). Expanded to constructors, getters, converters (S20)
 - ✅ **Smart pointers** — Thread vectors, socket, PIMPL (S16). Telemetry, jpsock buffers/thread, executor telem (S9). 13 raw `new` remain (singletons + minethd — intentional)
 - ✅ **Modern casts** — Host code done (S9). Only CUDA device code + soft_aes macro retain C-style casts
 - ✅ **NULL → nullptr** — Host code done (S9, 68 replacements)
@@ -268,6 +291,30 @@ Only after structural work is complete (check the Remaining things in succes cri
 - Refactoring patterns transfer cleanly between backends (AMD OpenCL → NVIDIA CUDA)
 - Modular code compiles faster (parallel nvcc invocations on separate .cu files)
 - Container builds expose missing flags that local builds hide (hwloc present on host but not in container)
+
+---
+
+## Session 20 Notes (2026-03-30 05:05 AM)
+
+**What we accomplished:**
+- Expanded constexpr to compile-time computable functions across 5 files
+- Made n0s_algo constructors constexpr → enables POW() to be constexpr
+- Made algorithm lookup (POW), config getters (GetMiningAlgo, GetMiningMemSize), and difficulty converters constexpr
+- Added const correctness to jpsock simple getters (pool_addr, tls_fp, rigid, nicehash)
+- Avoided constexpr on atomic member accessors (compiler would reject)
+- Zero warnings, bit-exact hashes verified via test harness
+
+**Key insights:**
+- constexpr enables compile-time evaluation of pure functions — more optimization, clearer intent
+- Can't mark functions constexpr if they access atomics or call non-constexpr members
+- Constructors can be constexpr if they only initialize member variables with compile-time expressions
+- constexpr implies inline, so inline keyword becomes redundant
+- Test harness critical for verifying no behavior changes (3/3 golden hashes pass)
+
+**Next session priorities:**
+1. **Documentation pass** (~2 hours) — Add function-level comments to complex GPU kernels
+2. **More constexpr** (~1-2 hours) — Look for more opportunities (lookup tables, simple accessors)
+3. **Fix CUDA deprecation warnings** (~1 hour) — Replace deprecated intrinsics
 
 ---
 
