@@ -393,6 +393,67 @@ Only after structural work is complete (check the Remaining things in succes cri
 
 ---
 
+## Session 24 Notes (2026-03-30 09:33 AM)
+
+**What we accomplished:**
+- ✅ Integrated real CN-GPU OpenCL kernels into benchmark harness (Phase 1 complete!)
+- Loaded kernel sources via C++ `#include` (same pattern as production: raw string literals)
+- Added all required preprocessor defines (ITERATIONS, MASK, WORKSIZE, MEMORY, etc.)
+- Fixed kernel names (`cn_gpu_phase1_keccak`, `cn_gpu_phase2_expand`, `cn_gpu_phase3_compute`, `cn_gpu_phase4_finalize`)
+- Set up 5-phase hash pipeline dispatch with correct work sizes
+- Kernel compilation succeeds, all 4 kernels load successfully
+- **Current blocker:** GPU memory fault in phase 3 (memory access violation)
+
+**What works:**
+- OpenCL device init + memory allocation
+- Kernel compilation with full algorithm constants
+- Kernel extraction (all 4 phase kernels)
+- Phase 1 + 2 dispatch (no errors reported)
+- Clean shutdown on SIGINT
+
+**What doesn't work yet:**
+- Phase 3 execution hits GPU memory fault (`Page not present or supervisor privilege`)
+- Likely causes: buffer stride mismatch, incorrect memory layout, or alignment issue
+- Need to verify scratchpad/state buffer access patterns match production code
+
+**Debugging done:**
+- Reduced intensity from 512 → 64 (still faults, rules out pure size issue)
+- Verified kernel argument counts (phase3 needs 3 args: scratchpad, states, numThreads)
+- Confirmed work sizes align with kernel requirements (global % local == 0)
+- Added debug output for work dimensions
+
+**Next session priorities:**
+1. **Fix GPU memory fault** (~1-2 hours) — HIGH PRIORITY
+   - Compare buffer allocation sizes with production `InitOpenCLGpu`
+   - Check scratchpad access pattern (Phase 3 uses `scratchpad_ptr` inline function)
+   - Verify states buffer type/size (200 bytes per thread)
+   - May need to set additional kernel args or use different mem flags
+   
+2. **Validate with golden hashes** (~1 hour) — After fault fixed
+   - Read back output buffer after successful run
+   - Compare against test vectors from `cn_gpu_harness.cpp`
+   
+3. **Add GPU timing** (~30 min) — After validation
+   - Use `clGetEventProfilingInfo` for kernel execution time
+   
+4. **Measure real hashrate** (~30 min)
+   - Run 60-second benchmark on working harness
+   - Establish baseline performance
+
+**Key insights:**
+- Kernel loading via `#include` cleanly mirrors production code (no file I/O at runtime)
+- OpenCL kernel names are explicit (no JOIN macro indirection) — easier to debug
+- Work size calculations critical: `g_thd` must be multiple of `w_size`, phase3 needs `*16` multiplier
+- GPU memory faults harder to debug than host-side errors (no stack trace, just address)
+
+**Lessons learned:**
+- Start with minimal intensity when debugging new kernel dispatch code
+- OpenCL error codes are cryptic but systematic: `-46` = bad kernel name, `-52` = bad args, `-54` = bad work size
+- GPU memory faults indicate buffer mismatch, not just size issues
+- Benchmark harness architecture is sound — just need to nail the kernel invocation details
+
+---
+
 ## Session 23 Notes (2026-03-30 09:22 AM)
 
 **What we accomplished:**
