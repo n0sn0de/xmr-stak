@@ -115,12 +115,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	const std::string backendName = n0s::params::inst().openCLVendor;
-	if((ctx->stridedIndex == 2 || ctx->stridedIndex == 3) && (ctx->rawIntensity % ctx->workSize) != 0)
-	{
-		size_t reduced_intensity = (ctx->rawIntensity / ctx->workSize) * ctx->workSize;
-		ctx->rawIntensity = reduced_intensity;
-		printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx->deviceIdx, int(reduced_intensity));
-	}
+
 
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = {0, 0, 0};
@@ -197,19 +192,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		const int threadMemMask = miner_algo.Mask();
 		const int hashIterations = miner_algo.Iter();
 
-		size_t mem_chunk_exp = 1u << ctx->memChunk;
-		// cn_gpu always uses non-strided index
-		size_t strided_index = 0;
-
-		// if intensity is a multiple of worksize than comp mode is not needed
+		// if intensity is a multiple of worksize then comp mode is not needed
 		int needCompMode = ctx->compMode && ctx->rawIntensity % ctx->workSize != 0 ? 1 : 0;
 
 		std::string options;
 		options += " -DITERATIONS=" + std::to_string(hashIterations);
 		options += " -DMASK=" + std::to_string(threadMemMask) + "U";
 		options += " -DWORKSIZE=" + std::to_string(ctx->workSize) + "U";
-		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
-		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
 		options += " -DCOMP_MODE=" + std::to_string(needCompMode);
 		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
 		options += " -DALGO=" + std::to_string(miner_algo.Id());

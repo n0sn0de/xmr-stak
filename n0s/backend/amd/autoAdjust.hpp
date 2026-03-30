@@ -147,12 +147,7 @@ class autoAdjust
 				minFreeMem = 512u * byteToMiB;
 			}
 
-			// Strided index: contiguous for best cn_gpu performance
-			ctx.stridedIndex = 1;
-
-			// nvidia OpenCL: contiguous scratchpad required
-			if(ctx.isNVIDIA)
-				ctx.stridedIndex = 0;
+			// cn_gpu always uses direct (non-strided) scratchpad indexing
 
 			if(hashMemSize < CN_MEMORY)
 			{
@@ -169,7 +164,6 @@ class autoAdjust
 				// 6 waves per compute unit are a good value (based on profiling)
 				// @todo check again after all optimizations
 				maxThreads = ctx.computeUnits * 6 * 8;
-				ctx.stridedIndex = 0;
 				// do not change unroll for AMD RX5700 but set 2 threads per gpu
 				if(ctx.name.compare("gfx1010") == 0)
 					numThreads = 2;
@@ -220,7 +214,7 @@ class autoAdjust
 							std::to_string(ctx.maxMemPerAlloc / byteToMiB) + "|" + std::to_string(maxAvailableFreeMem / byteToMiB) + " MiB (used per thread|max per alloc|total free)\n";
 					conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 							"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(default_workSize) + ",\n" +
-							"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
+							"    \"affine_to_cpu\" : false, \"strided_index\" : 0, \"mem_chunk\" : 2,\n"
 																													   "    \"unroll\" : " +
 							std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 							"  },\n";

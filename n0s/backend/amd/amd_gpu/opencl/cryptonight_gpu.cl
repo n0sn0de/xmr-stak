@@ -196,9 +196,7 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 
 	uint chunk = get_local_id(0) / 16;
 
-#if(STRIDED_INDEX==0)
 	__global int* scratchpad = (__global int*)((__global char*)scratchpad_in + MEMORY * (gIdx/16));
-#endif
 
 	__local struct SharedMemory smem_in[WORKSIZE];
 	__local struct SharedMemory* smem = smem_in + chunk;
@@ -315,10 +313,7 @@ __kernel void cn_gpu_phase1_keccak(__global ulong *input, __global int *Scratchp
 #endif
     {
         states += 25 * gIdx;
-
-#if(STRIDED_INDEX==0)
         Scratchpad = (__global int*)((__global char*)Scratchpad + MEMORY * gIdx);
-#endif
 
         if (get_local_id(1) == 0)
         {
@@ -368,10 +363,7 @@ __kernel void cn_gpu_phase2_expand(__global int *Scratchpad, __global ulong *sta
     __local ulong State[25];
 
 	states += 25 * gIdx;
-
-#if(STRIDED_INDEX==0)
     Scratchpad = (__global int*)((__global char*)Scratchpad + MEMORY * gIdx);
-#endif
 
 	for(int i = get_local_id(0); i < 25; i+=get_local_size(0))
 		State[i] = states[i];

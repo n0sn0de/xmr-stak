@@ -220,17 +220,8 @@ inline uint getIdx()
 	return get_global_id(0) - get_global_offset(0);
 }
 
-#define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
-
-#if(STRIDED_INDEX==0)
-#   define IDX(x)	(x)
-#elif(STRIDED_INDEX==1)
-#	define IDX(x)   (mul24(((uint)(x)), Threads))
-#elif(STRIDED_INDEX==2)
-#   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
-#elif(STRIDED_INDEX==3)
-#	define IDX(x)   ((x) * WORKSIZE)
-#endif
+// CryptoNight-GPU always uses direct (non-strided) scratchpad indexing
+#define IDX(x)	(x)
 //#include "opencl/wolf-skein.cl"
 //#include "opencl/jh.cl"
 //#include "opencl/blake256.cl"
@@ -356,15 +347,7 @@ __kernel void cn_gpu_phase4_finalize (__global uint4 *Scratchpad, __global ulong
 #endif
     {
         states += 25 * gIdx;
-#if(STRIDED_INDEX==0)
         Scratchpad += gIdx * (MEMORY >> 4);
-#elif(STRIDED_INDEX==1)
-                Scratchpad += gIdx;
-#elif(STRIDED_INDEX==2)
-        Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
-#elif(STRIDED_INDEX==3)
-                Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
-#endif
 
         #if defined(__Tahiti__) || defined(__Pitcairn__)
 
