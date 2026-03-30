@@ -7,6 +7,7 @@
 
 #include "cuda_context.hpp"
 #include "n0s/backend/cryptonight.hpp"
+#include "n0s/backend/kernel_profile.hpp"
 
 // C++ linkage functions (take C++ types like n0s_algo&)
 
@@ -47,6 +48,13 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
  * @param chain_height Blockchain height (unused by cn_gpu)
  */
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, const n0s_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);
+
+/** Launch full CryptoNight-GPU hash pipeline with per-phase timing
+ *
+ * Uses cudaEvent_t for GPU-accurate timing between phases.
+ * Results accumulated into profile struct for averaging.
+ */
+void cryptonight_core_cpu_hash_profile(nvid_ctx* ctx, const n0s_algo& miner_algo, uint32_t startNonce, uint64_t chain_height, n0s::KernelProfile& profile);
 
 #ifdef __cplusplus
 extern "C" {
