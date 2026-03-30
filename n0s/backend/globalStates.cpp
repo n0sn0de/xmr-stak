@@ -24,7 +24,7 @@
 #include "globalStates.hpp"
 #include "miner_work.hpp"
 
-#include <assert.h>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstring>

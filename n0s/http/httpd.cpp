@@ -30,9 +30,9 @@
 #include "n0s/misc/executor.hpp"
 #include "n0s/net/msgstruct.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include <microhttpd.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <string>
 
 extern const char ver_long[];

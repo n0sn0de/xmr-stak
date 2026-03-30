@@ -8,7 +8,7 @@
 #include <array>
 #include <memory>
 #include <mutex>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 

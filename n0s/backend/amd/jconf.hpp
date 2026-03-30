@@ -2,7 +2,7 @@
 
 #include "n0s/params.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 
 namespace n0s

@@ -10,7 +10,7 @@
 #include <string>
 
 #include <hwloc.h>
-#include <stdio.h>
+#include <cstdio>
 
 namespace n0s
 {

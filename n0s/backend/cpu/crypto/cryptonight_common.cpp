@@ -25,7 +25,7 @@
 #include <mm_malloc.h>
 #endif
 
-#include <errno.h>
+#include <cerrno>
 #include <sys/mman.h>
 
 size_t cryptonight_init([[maybe_unused]] size_t use_fast_mem, [[maybe_unused]] size_t use_mlock, [[maybe_unused]] alloc_msg* msg)

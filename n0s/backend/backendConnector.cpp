@@ -38,7 +38,7 @@
 #include "amd/minethd.hpp"
 #endif
 
-#include <assert.h>
+#include <cassert>
 #include <bitset>
 #include <chrono>
 #include <cmath>

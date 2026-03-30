@@ -61,12 +61,12 @@
 #include "n0s/version.hpp"
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <cmath>
 #include <functional>
 #include <string>
 #include <thread>
-#include <time.h>
+#include <ctime>
 
 
 

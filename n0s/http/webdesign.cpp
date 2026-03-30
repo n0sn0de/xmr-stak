@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <cstdlib>
 
 extern const char sHtmlCssEtag[] = "00000009";
 extern const char sHtmlCssFile[] =

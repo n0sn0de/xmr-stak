@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <microhttpd.h>
 
 struct MHD_Daemon;

@@ -29,11 +29,11 @@
 #include "n0s/misc/utility.hpp"
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <numeric>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
 #include <cpuid.h>
