@@ -148,7 +148,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		}
 		if(!interleaveData[devIdx])
 		{
-			interleaveData[devIdx].reset(new InterleaveData{});
+			interleaveData[devIdx] = std::make_unique<InterleaveData>();
 			interleaveData[devIdx]->lastRunTimeStamp = get_timestamp_ms();
 		}
 		ctx[i].idWorkerOnDevice = interleaveData[devIdx]->numThreadsOnGPU;
