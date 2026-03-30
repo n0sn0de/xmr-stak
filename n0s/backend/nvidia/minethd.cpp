@@ -23,6 +23,7 @@
 
 #include "minethd.hpp"
 #include "autoAdjust.hpp"
+#include "nvcc_code/cuda_dispatch.hpp"
 #include "n0s/backend/cpu/crypto/cryptonight.h"
 #include "n0s/backend/cpu/crypto/cryptonight_aesni.h"
 #include "n0s/backend/cpu/hwlocMemory.hpp"
@@ -99,16 +100,16 @@ bool minethd::self_test()
 
 extern "C"
 {
-	std::vector<iBackend*> n0s_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
+	std::vector<std::unique_ptr<iBackend>> n0s_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 	{
 		environment::inst(&env);
 		return cuda::minethd::thread_starter(threadOffset, pWork);
 	}
 } // extern "C"
 
-std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
+std::vector<std::unique_ptr<iBackend>> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
 {
-	std::vector<iBackend*> pvThreads;
+	std::vector<std::unique_ptr<iBackend>> pvThreads;
 
 	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 
@@ -152,13 +153,12 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, no affinity.", i);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
-		pvThreads.push_back(thd);
+		pvThreads.push_back(std::make_unique<minethd>(pWork, i + threadOffset, cfg));
 	}
 
 	for(i = 0; i < n; i++)
 	{
-		static_cast<minethd*>(pvThreads[i])->start_mining();
+		static_cast<minethd*>(pvThreads[i].get())->start_mining();
 	}
 
 	return pvThreads;

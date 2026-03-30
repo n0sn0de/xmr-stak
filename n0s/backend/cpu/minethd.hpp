@@ -19,7 +19,7 @@ namespace cpu
 class minethd : public iBackend
 {
   public:
-	static std::vector<iBackend*> thread_starter(uint32_t threadOffset, miner_work& pWork);
+	static std::vector<std::unique_ptr<iBackend>> thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool self_test();
 
 	typedef void (*cn_on_new_job)(const miner_work&, cryptonight_ctx**);
@@ -33,8 +33,9 @@ class minethd : public iBackend
 	static void func_multi_selector(cryptonight_ctx**, minethd::cn_on_new_job& on_new_job,
 		bool bHaveAes, bool bNoPrefetch, const n0s_algo& algo);
 
-  private:
 	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
+
+  private:
 
 	template <uint32_t N>
 	void multiway_work_main();

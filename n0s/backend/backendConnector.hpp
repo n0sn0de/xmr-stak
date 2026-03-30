@@ -13,7 +13,7 @@ namespace n0s
 
 struct BackendConnector
 {
-	static std::vector<iBackend*> thread_starter(miner_work& pWork);
+	static std::vector<std::unique_ptr<iBackend>> thread_starter(miner_work& pWork);
 	static bool self_test();
 };
 

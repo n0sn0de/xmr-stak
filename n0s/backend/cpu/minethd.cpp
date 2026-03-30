@@ -247,9 +247,9 @@ bool minethd::self_test()
 	return bResult;
 }
 
-std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
+std::vector<std::unique_ptr<iBackend>> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
 {
-	std::vector<iBackend*> pvThreads;
+	std::vector<std::unique_ptr<iBackend>> pvThreads;
 
 	if(!configEditor::file_exist(std::string("cpu.txt")))
 	{
@@ -294,8 +294,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
-		pvThreads.push_back(thd);
+		pvThreads.push_back(std::make_unique<minethd>(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff));
 	}
 
 	return pvThreads;

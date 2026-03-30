@@ -868,7 +868,7 @@ int main(int argc, char* argv[])
 int do_benchmark(int block_version, int wait_sec, int work_sec)
 {
 	using namespace std::chrono;
-	std::vector<n0s::iBackend*> pvThreads;
+	std::vector<std::unique_ptr<n0s::iBackend>> pvThreads;
 
 	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
 

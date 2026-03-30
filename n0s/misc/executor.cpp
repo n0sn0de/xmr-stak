@@ -723,11 +723,13 @@ void executor::hashrate_report(std::string& out)
 
 	for(uint32_t b = 0; b < 4u; ++b)
 	{
+		// Collect raw pointers for backends matching this type
 		std::vector<n0s::iBackend*> backEnds;
-		std::copy_if(pvThreads.begin(), pvThreads.end(), std::back_inserter(backEnds),
-			[&](n0s::iBackend* backend) {
-				return backend->backendType == b;
-			});
+		for(const auto& backend_ptr : pvThreads)
+		{
+			if(backend_ptr->backendType == b)
+				backEnds.push_back(backend_ptr.get());
+		}
 
 		size_t nthd = backEnds.size();
 		if(nthd != 0)
@@ -1222,16 +1224,16 @@ void executor::http_json_report(std::string& out)
 	}
 
 	size_t bb_size = 2048 + hr_thds.size() + res_error.size() + cn_error.size();
-	std::unique_ptr<char[]> bigbuf(new char[bb_size]);
+	std::vector<char> bigbuf(bb_size);
 
-	int bb_len = snprintf(bigbuf.get(), bb_size, sJsonApiFormat,
+	int bb_len = snprintf(bigbuf.data(), bb_size, sJsonApiFormat,
 		get_version_str().c_str(), hr_thds.c_str(), hr_buffer, a,
 		iPoolDiff, iGoodRes, iTotalRes, fAvgResTime, iPoolHashes,
 		iTopDiff[0], iTopDiff[1], iTopDiff[2], iTopDiff[3], iTopDiff[4],
 		iTopDiff[5], iTopDiff[6], iTopDiff[7], iTopDiff[8], iTopDiff[9],
 		res_error.c_str(), pool != nullptr ? pool->get_pool_addr() : "not connected", iConnSec, iPoolPing, cn_error.c_str());
 
-	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
+	out = std::string(bigbuf.data(), bigbuf.data() + bb_len);
 }
 
 void executor::http_report(ex_event_name ev)

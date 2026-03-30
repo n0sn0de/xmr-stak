@@ -22,13 +22,14 @@ namespace cuda
 class minethd : public iBackend
 {
   public:
-	static std::vector<iBackend*> thread_starter(uint32_t threadOffset, miner_work& pWork);
+	static std::vector<std::unique_ptr<iBackend>> thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool self_test();
 
-  private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const n0s_algo&);
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
+
+  private:
 	void start_mining();
 
 	void work_main();

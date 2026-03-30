@@ -51,9 +51,9 @@ bool BackendConnector::self_test()
 	return cpu::minethd::self_test();
 }
 
-std::vector<iBackend*> BackendConnector::thread_starter(miner_work& pWork)
+std::vector<std::unique_ptr<iBackend>> BackendConnector::thread_starter(miner_work& pWork)
 {
-	std::vector<iBackend*> pvThreads;
+	std::vector<std::unique_ptr<iBackend>> pvThreads;
 
 #ifndef CONF_NO_OPENCL
 	if(params::inst().useAMD)
@@ -65,7 +65,9 @@ std::vector<iBackend*> BackendConnector::thread_starter(miner_work& pWork)
 		size_t numWorkers = amdThreads.size();
 		if(numWorkers > 0)
 		{
-			pvThreads.insert(std::end(pvThreads), std::begin(amdThreads), std::end(amdThreads));
+			// Convert raw pointers from plugin to unique_ptr
+			for(auto* ptr : amdThreads)
+				pvThreads.push_back(std::unique_ptr<iBackend>(ptr));
 		}
 		if(numWorkers == 0)
 			printer::inst()->print_msg(L0, "WARNING: backend %s (OpenCL) disabled.", backendName.c_str());
@@ -88,7 +90,9 @@ std::vector<iBackend*> BackendConnector::thread_starter(miner_work& pWork)
 				numWorkers = nvidiaThreads.size();
 				if(numWorkers > 0)
 				{
-					pvThreads.insert(std::end(pvThreads), std::begin(nvidiaThreads), std::end(nvidiaThreads));
+					// Convert raw pointers from plugin to unique_ptr
+					for(auto* ptr : nvidiaThreads)
+						pvThreads.push_back(std::unique_ptr<iBackend>(ptr));
 				}
 				else
 				{
