@@ -117,7 +117,12 @@ tests/
 
 ## Cumulative Progress (All Sessions)
 
-~300 files changed. Net -10,500+ lines removed. Our code: 16,136 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management.
+**Session 16 (2026-03-30):**
+- ✅ Eliminated pointer-to-vector pattern in thread_starter (AMD, NVIDIA, CPU, BackendConnector)
+- ✅ Fixed socket memory leak in jpsock (sck → unique_ptr<base_socket>)
+- Net: -5 raw new/delete pairs, cleaner RAII semantics
+
+~305 files changed. Net -10,500+ lines removed. Our code: 16,136 lines (down from ~43K). Clean C++17, zero warnings, zero C files, Linux-only, single-purpose. Smart pointers + RAII replacing manual memory management.
 
 ---
 
@@ -125,7 +130,7 @@ tests/
 
 ### Near-Term Opportunities
 - **gpu.cpp split** (~4 hours) — device_init, kernel_compile, mining_loop extraction
-- **Smart pointers** — ✅ Telemetry, jpsock buffers, jpsock thread, executor telem modernized (Session 9). ~29 raw `new` remain — mostly singletons, PIMPL, plugin ABI
+- **Smart pointers** — ✅ Thread vectors, socket (Session 16). ✅ Telemetry, jpsock buffers, jpsock thread, executor telem (Session 9). ~24 raw `new` remain — mostly singletons, PIMPL, minethd objects
 - **Modern casts** — ✅ Host code done (Session 9). Only CUDA device code + soft_aes macro retain C-style casts
 - **[[nodiscard]]** — Add to error-returning functions
 - **std::regex removal** — ✅ gpu.cpp done (Session 9). configEditor.hpp still uses regex (genuine pattern matching)
