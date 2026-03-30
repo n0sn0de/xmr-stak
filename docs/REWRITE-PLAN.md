@@ -528,6 +528,77 @@ Only after structural work is complete (check the Remaining things in succes cri
 
 ---
 
+## Session 27 Notes (2026-03-30 11:05 AM)
+
+**What we accomplished:**
+- ✅ Verified production miner compiles and loads kernels successfully on same hardware
+- ✅ Removed `CL_MEM_ALLOC_HOST_PTR` flags to match production (no effect on crash)
+- ✅ Changed buffer allocation to use `intensity` (not rounded `g_thd`) to match production exactly
+- ✅ Added explicit zero-initialization of buffers to ensure proper GPU mapping (no effect)
+- ✅ Added temporary debug logging to production code (not yet tested with actual mining job)
+
+**Current blocker (CRITICAL — unchanged from S26):**
+- Phase 3 kernel hits GPU memory fault at varying addresses (e.g., `0x765b97e00000`)
+- Error: "Page not present or supervisor privilege"
+- Phases 1+2 complete successfully and write valid data (verified via buffer readback)
+- **Production miner works perfectly on same hardware with identical OpenCL setup**
+
+**Key insights this session:**
+- Fault address changes each run → suggests virtual memory mapping issue, not fixed offset bug
+- Production miner kernel compilation succeeds (cached binary loaded: `baf5608de...openclbin`)
+- Buffer allocation sizes, dispatch parameters, kernel args ALL match production exactly
+- No code differences in kernel source — using same `.cl` files
+- OpenCL device discovery and basic operations work (buffer creation, Phase 1/2 execution)
+
+**Theories explored and ruled out:**
+- ❌ Buffer allocation size mismatch (now using `intensity`, not `g_thd` — no change)
+- ❌ `CL_MEM_ALLOC_HOST_PTR` flag causing issue (removed — no change)
+- ❌ Uninitialized buffer memory (added explicit zeroing — no change)
+- ❌ Kernel compilation flags (match production: `COMP_MODE=1`, `WORKSIZE=8`, etc.)
+- ❌ Work group size mismatch (verified: `global=128, local=128` correct for `reqd_work_group_size(128,1,1)`)
+- ❌ Missing `numThreads` kernel arg (verified: set to intensity=8, kernel checks `gIdx/16 < 8`)
+
+**Remaining hypotheses (for next session):**
+1. **OpenCL queue properties** — Production may create queue with different flags (profiling, out-of-order)
+2. **Kernel build environment** — Production uses cached binary, harness compiles fresh (may have subtle differences)
+3. **Context or platform state** — Production initializes something during startup that harness skips
+4. **AMD ROCm driver quirk** — Phase 3's specific memory access pattern triggers edge case
+5. **Missing initialization** — Production calls some OpenCL setup function that harness doesn't
+
+**Next session attack plan:**
+1. **Use production's cached kernel binary** (~30 min) — HIGHEST PRIORITY
+   - Copy `/home/nitro/.openclcache/baf5608d...openclbin` into harness
+   - Load pre-compiled binary instead of compiling from source
+   - Eliminates compilation as a variable
+
+2. **Compare OpenCL queue/context creation** (~1 hour)
+   - Check if production uses `CL_QUEUE_PROFILING_ENABLE` or `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE`
+   - Match queue properties exactly in harness
+
+3. **Minimal Phase 3 test** (~1 hour)
+   - Strip harness to ONLY Phase 3 (skip Phases 1+2)
+   - Pre-fill scratchpad/states with known-good data from production miner dump
+   - Isolates whether Phase 1/2 output is corrupt vs. Phase 3 dispatch is wrong
+
+4. **clinfo device capabilities** (~15 min)
+   - Check for AMD-specific device limits or quirks (`CL_DEVICE_LOCAL_MEM_SIZE`, alignment requirements)
+
+5. **ROCm/driver investigation** (~30 min)
+   - Check `rocm-smi`, `dmesg` for GPU errors
+   - Try different ROCm versions if available
+
+**Why this matters:**
+- Benchmark harness is prerequisite for all optimization work
+- Can't profile or improve hashrate without working baseline measurement
+- This is a tooling blocker, not a miner functionality issue (production works)
+
+**Lessons learned:**
+- GPU memory faults with varying addresses suggest driver/runtime issue, not code logic bug
+- When production works but isolated test doesn't, focus on environment/initialization differences
+- Bit-exact code match doesn't guarantee bit-exact runtime behavior (OpenCL driver state matters)
+
+---
+
 ## Session 26 Notes (2026-03-30 10:42 AM)
 
 **What we accomplished:**

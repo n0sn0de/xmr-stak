@@ -201,24 +201,36 @@ static bool init_opencl_device(OpenCLDevice* dev, int device_idx, size_t intensi
     constexpr size_t SCRATCHPAD_SIZE = 2 * 1024 * 1024;  // 2 MiB per thread
     constexpr size_t STATE_SIZE = 200;                    // State buffer per thread
 
-    // Round up intensity to worksize multiple (compatibility mode requirement)
+    // Match production: allocate with rawIntensity (not rounded)
+    size_t scratchpad_bytes = SCRATCHPAD_SIZE * intensity;
+    size_t states_bytes = STATE_SIZE * intensity;
+    
+    // But compute rounded g_thd for dispatch (compatibility mode)
     size_t g_thd = ((intensity + worksize - 1) / worksize) * worksize;
     
-    size_t scratchpad_bytes = SCRATCHPAD_SIZE * g_thd;
-    size_t states_bytes = STATE_SIZE * g_thd;
-    
-    // Use CL_MEM_ALLOC_HOST_PTR to ensure proper memory mapping for AMD GPUs
-    dev->input_buf = clCreateBuffer(dev->context, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, 128, nullptr, &err);
+    // Match production: plain CL_MEM_READ_WRITE (no ALLOC_HOST_PTR)
+    dev->input_buf = clCreateBuffer(dev->context, CL_MEM_READ_ONLY, 128, nullptr, &err);
     check_cl(err, "clCreateBuffer(input)");
 
-    dev->scratchpad = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, scratchpad_bytes, nullptr, &err);
+    dev->scratchpad = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, scratchpad_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(scratchpad)");
 
-    dev->states = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, states_bytes, nullptr, &err);
+    dev->states = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, states_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(states)");
 
-    dev->output_buf = clCreateBuffer(dev->context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(cl_uint) * 0x100, nullptr, &err);
+    dev->output_buf = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, sizeof(cl_uint) * 0x100, nullptr, &err);
     check_cl(err, "clCreateBuffer(output)");
+
+    // Zero out buffers to ensure proper GPU memory mapping
+    {
+        std::vector<char> zero_buf(scratchpad_bytes, 0);
+        err = clEnqueueWriteBuffer(dev->queue, dev->scratchpad, CL_TRUE, 0, scratchpad_bytes, zero_buf.data(), 0, nullptr, nullptr);
+        check_cl(err, "clEnqueueWriteBuffer(zero scratchpad)");
+        
+        zero_buf.resize(states_bytes);
+        err = clEnqueueWriteBuffer(dev->queue, dev->states, CL_TRUE, 0, states_bytes, zero_buf.data(), 0, nullptr, nullptr);
+        check_cl(err, "clEnqueueWriteBuffer(zero states)");
+    }
 
     fprintf(stderr, "[OPENCL] Device %d: %s (intensity=%zu, worksize=%zu, g_thd=%zu)\n", 
             device_idx, dev->device_name, intensity, worksize, g_thd);
