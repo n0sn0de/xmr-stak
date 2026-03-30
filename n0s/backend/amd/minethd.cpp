@@ -50,6 +50,8 @@ namespace opencl
 using n0s::amd::InitOpenCL;
 using n0s::amd::XMRSetJob;
 using n0s::amd::XMRRunJob;
+using n0s::amd::XMRRunJobProfile;
+using n0s::amd::KernelProfile;
 using n0s::amd::interleaveAdjustDelay;
 using n0s::amd::updateTimings;
 
@@ -263,7 +265,27 @@ void minethd::work_main()
 			cl_uint results[0x100];
 			memset(results, 0, sizeof(cl_uint) * (0x100));
 
-			if(XMRRunJob(pGpuCtx, results) != ERR_SUCCESS)
+			// Kernel profiling: collect timing for first 50 dispatches then print summary
+			static thread_local KernelProfile kernelProfile;
+			static thread_local bool profileDone = false;
+			const bool profiling = n0s::params::inst().profileKernels && !profileDone;
+
+			size_t runResult;
+			if(profiling)
+			{
+				runResult = XMRRunJobProfile(pGpuCtx, results, kernelProfile);
+				if(kernelProfile.iterations >= 50)
+				{
+					kernelProfile.print_summary(pGpuCtx->rawIntensity);
+					profileDone = true;
+				}
+			}
+			else
+			{
+				runResult = XMRRunJob(pGpuCtx, results);
+			}
+
+			if(runResult != ERR_SUCCESS)
 			{
 				printer::inst()->print_msg(L0, "AMD GPU %u|%u: XMRRunJob failed, retrying",
 					pGpuCtx->deviceIdx, pGpuCtx->idWorkerOnDevice);

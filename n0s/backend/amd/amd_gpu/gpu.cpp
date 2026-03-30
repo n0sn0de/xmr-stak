@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -39,6 +40,31 @@
 
 namespace n0s {
 namespace amd {
+
+void KernelProfile::print_summary(size_t intensity) const
+{
+	if(iterations == 0) return;
+
+	auto avg = [&](int64_t val) -> double { return static_cast<double>(val) / iterations; };
+	double total = avg(total_us);
+
+	auto pct = [&](int64_t val) -> double {
+		return total > 0 ? (avg(val) / total * 100.0) : 0.0;
+	};
+
+	printer::inst()->print_msg(L0, "");
+	printer::inst()->print_msg(L0, "=== OpenCL Kernel Profile (%d dispatches, intensity=%zu) ===", iterations, intensity);
+	printer::inst()->print_msg(L0, "  Phase 1 (Keccak prepare):   %8.0f µs  (%5.1f%%)", avg(phase1_us), pct(phase1_us));
+	printer::inst()->print_msg(L0, "  Phase 2 (Scratchpad expand):%8.0f µs  (%5.1f%%)", avg(phase2_us), pct(phase2_us));
+	printer::inst()->print_msg(L0, "  Phase 3 (GPU compute):      %8.0f µs  (%5.1f%%)", avg(phase3_us), pct(phase3_us));
+	printer::inst()->print_msg(L0, "  Phase 4+5 (Implode+final):  %8.0f µs  (%5.1f%%)", avg(phase45_us), pct(phase45_us));
+	printer::inst()->print_msg(L0, "  ──────────────────────────────────────────");
+	printer::inst()->print_msg(L0, "  Total per dispatch:         %8.0f µs", total);
+
+	double hashes_per_sec = (total > 0) ? (static_cast<double>(intensity) / (total / 1e6)) : 0.0;
+	printer::inst()->print_msg(L0, "  Effective hashrate:         %.1f H/s", hashes_per_sec);
+	printer::inst()->print_msg(L0, "");
+}
 
 // InitOpenCL: Initialize OpenCL context and compile kernels for all requested GPUs
 // Returns ERR_SUCCESS on success, ERR_STUPID_PARAMS or ERR_OCL_API on failure
@@ -365,6 +391,86 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	if(numHashValues > 0xFF)
 		numHashValues = 0xFF;
 	ctx->Nonce += g_intensity;
+
+	return ERR_SUCCESS;
+}
+
+[[nodiscard]] size_t XMRRunJobProfile(GpuContext* ctx, cl_uint* HashOutput, KernelProfile& profile)
+{
+	const auto& Kernels = ctx->Kernels;
+
+	cl_int ret;
+	cl_uint zero = 0;
+
+	size_t g_intensity = ctx->rawIntensity;
+	size_t w_size = ctx->workSize;
+	size_t g_thd = g_intensity;
+
+	if(ctx->compMode)
+	{
+		g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+		assert(g_thd % w_size == 0);
+	}
+
+	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_FALSE, sizeof(cl_uint) * 0xFF, sizeof(cl_uint), &zero, 0, nullptr, nullptr)) != CL_SUCCESS)
+		return ERR_OCL_API;
+
+	auto now = []() { return std::chrono::steady_clock::now(); };
+	auto us = [](auto start, auto end) {
+		return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	};
+
+	// Phase 1: Keccak prepare
+	auto t0 = now();
+	size_t Nonce[2] = {ctx->Nonce, 1}, gthreads[2] = {g_thd, 8}, lthreads[2] = {8, 8};
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[0], 2, Nonce, gthreads, lthreads, 0, nullptr, nullptr)) != CL_SUCCESS)
+		return ERR_OCL_API;
+	clFinish(ctx->CommandQueues);
+	auto t1 = now();
+
+	// Phase 2: Scratchpad expand
+	{
+		size_t thd = 64;
+		size_t intens = g_intensity * thd;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &thd, 0, nullptr, nullptr)) != CL_SUCCESS)
+			return ERR_OCL_API;
+	}
+	clFinish(ctx->CommandQueues);
+	auto t2 = now();
+
+	// Phase 3: Main GPU compute loop (the big one)
+	{
+		size_t w_size_cn_gpu = w_size * 16;
+		size_t g_thd_cn_gpu = g_thd * 16;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[1], 1, 0, &g_thd_cn_gpu, &w_size_cn_gpu, 0, nullptr, nullptr)) != CL_SUCCESS)
+			return ERR_OCL_API;
+	}
+	clFinish(ctx->CommandQueues);
+	auto t3 = now();
+
+	// Phase 4+5: Implode + finalize
+	size_t NonceT[2] = {0, ctx->Nonce}, gthreadsT[2] = {8, g_thd}, lthreadsT[2] = {8, w_size};
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[2], 2, NonceT, gthreadsT, lthreadsT, 0, nullptr, nullptr)) != CL_SUCCESS)
+		return ERR_OCL_API;
+	clFinish(ctx->CommandQueues);
+	auto t4 = now();
+
+	// Read results
+	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_TRUE, 0, sizeof(cl_uint) * 0x100, HashOutput, 0, nullptr, nullptr)) != CL_SUCCESS)
+		return ERR_OCL_API;
+
+	auto& numHashValues = HashOutput[0xFF];
+	if(numHashValues > 0xFF)
+		numHashValues = 0xFF;
+	ctx->Nonce += g_intensity;
+
+	// Record timing
+	profile.phase1_us += us(t0, t1);
+	profile.phase2_us += us(t1, t2);
+	profile.phase3_us += us(t2, t3);
+	profile.phase45_us += us(t3, t4);
+	profile.total_us += us(t0, t4);
+	profile.iterations++;
 
 	return ERR_SUCCESS;
 }

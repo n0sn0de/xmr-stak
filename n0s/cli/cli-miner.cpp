@@ -69,6 +69,7 @@ void help()
 	cout << "  --benchwait WAIT_SEC             ... benchmark wait time" << endl;
 	cout << "  --benchwork WORK_SEC             ... benchmark work time" << endl;
 	cout << "  --benchmark-json FILE            ... write benchmark results as JSON" << endl;
+	cout << "  --profile                        enable per-kernel timing (use with --benchmark)" << endl;
 #ifndef CONF_NO_OPENCL
 	cout << "  --noAMD                    disable the AMD miner backend" << endl;
 	cout << "  --amdGpus GPUS             indices of AMD GPUs to use. Example: 0,2,3" << endl;
@@ -755,6 +756,10 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 			params::inst().benchmark_json = argv[i];
+		}
+		else if(opName.compare("--profile") == 0)
+		{
+			params::inst().profileKernels = true;
 		}
 		else
 		{

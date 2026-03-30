@@ -203,6 +203,20 @@ namespace
 namespace n0s {
 namespace amd {
 
+/// Per-phase kernel timing data for profiling
+struct KernelProfile
+{
+	int64_t phase1_us = 0;   ///< Phase 1: Keccak prepare (microseconds)
+	int64_t phase2_us = 0;   ///< Phase 2: Scratchpad expand
+	int64_t phase3_us = 0;   ///< Phase 3: GPU compute (main loop)
+	int64_t phase45_us = 0;  ///< Phase 4+5: Implode + finalize
+	int64_t total_us = 0;    ///< Total dispatch time
+	int iterations = 0;      ///< Number of dispatch calls profiled
+
+	void print_summary(size_t intensity) const;
+	void reset() { *this = KernelProfile{}; }
+};
+
 // Platform discovery (see gpu_platform.hpp)
 uint32_t getNumPlatforms();
 [[nodiscard]] int getAMDPlatformIdx();
@@ -217,6 +231,7 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx, bool enableAutoAdjustment = true
 [[nodiscard]] size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx);
 [[nodiscard]] size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target);
 [[nodiscard]] size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput);
+[[nodiscard]] size_t XMRRunJobProfile(GpuContext* ctx, cl_uint* HashOutput, KernelProfile& profile);
 
 } // namespace amd
 } // namespace n0s
