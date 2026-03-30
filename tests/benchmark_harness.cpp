@@ -208,18 +208,29 @@ static bool init_opencl_device(OpenCLDevice* dev, int device_idx, size_t intensi
     // But compute rounded g_thd for dispatch (compatibility mode)
     size_t g_thd = ((intensity + worksize - 1) / worksize) * worksize;
     
+    fprintf(stderr, "[OPENCL] Allocating buffers: scratchpad=%zu bytes, states=%zu bytes\n",
+            scratchpad_bytes, states_bytes);
+    fprintf(stderr, "[OPENCL] intensity=%zu, g_thd=%zu, worksize=%zu\n",
+            intensity, g_thd, worksize);
+    
     // Match production: plain CL_MEM_READ_WRITE (no ALLOC_HOST_PTR)
     dev->input_buf = clCreateBuffer(dev->context, CL_MEM_READ_ONLY, 128, nullptr, &err);
     check_cl(err, "clCreateBuffer(input)");
+    fprintf(stderr, "[OPENCL] Created input buffer: ptr=%p\n", (void*)dev->input_buf);
 
     dev->scratchpad = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, scratchpad_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(scratchpad)");
+    fprintf(stderr, "[OPENCL] Created scratchpad buffer: ptr=%p, size=%zu MB\n",
+            (void*)dev->scratchpad, scratchpad_bytes / (1024*1024));
 
     dev->states = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, states_bytes, nullptr, &err);
     check_cl(err, "clCreateBuffer(states)");
+    fprintf(stderr, "[OPENCL] Created states buffer: ptr=%p, size=%zu bytes\n",
+            (void*)dev->states, states_bytes);
 
     dev->output_buf = clCreateBuffer(dev->context, CL_MEM_READ_WRITE, sizeof(cl_uint) * 0x100, nullptr, &err);
     check_cl(err, "clCreateBuffer(output)");
+    fprintf(stderr, "[OPENCL] Created output buffer: ptr=%p\n", (void*)dev->output_buf);
 
     // Zero out buffers to ensure proper GPU memory mapping
     {
@@ -332,7 +343,7 @@ static void cleanup_opencl_device(OpenCLDevice* dev) {
 
 static BenchmarkResult benchmark_opencl(int device_id, int duration_sec) {
     // Benchmark configuration
-    constexpr size_t INTENSITY = 8;     // Number of parallel hashes
+    constexpr size_t INTENSITY = 1;     // Number of parallel hashes
     constexpr size_t WORKSIZE = 8;      // Local work size (must be >=8 for Phase1's 8x8 local size)
     
     OpenCLDevice dev = {0};
@@ -409,58 +420,18 @@ static BenchmarkResult benchmark_opencl(int device_id, int duration_sec) {
         size_t local_1[2] = {8, 8};
         err = clEnqueueNDRangeKernel(dev.queue, dev.kernel_phase1, 2, nonce_offset, global_1, local_1, 0, nullptr, nullptr);
         check_cl(err, "clEnqueueNDRangeKernel(phase1)");
-        err = clFinish(dev.queue);
-        if (err != CL_SUCCESS) {
-            fprintf(stderr, "[ERROR] Phase 1 GPU execution failed: %d\n", err);
-            break;
-        }
-        fprintf(stderr, "[DEBUG] Phase 1 complete\n");
         
         // Phase 2: Scratchpad expansion (1D dispatch, 64 threads per hash)
         size_t global_2 = g_intensity * 64;
         size_t local_2 = 64;
         err = clEnqueueNDRangeKernel(dev.queue, dev.kernel_phase2, 1, nullptr, &global_2, &local_2, 0, nullptr, nullptr);
         check_cl(err, "clEnqueueNDRangeKernel(phase2)");
-        err = clFinish(dev.queue);
-        if (err != CL_SUCCESS) {
-            fprintf(stderr, "[ERROR] Phase 2 GPU execution failed: %d\n", err);
-            break;
-        }
-        fprintf(stderr, "[DEBUG] Phase 2 complete\n");
-        
-        // DEBUG: Read back first few bytes of states buffer to verify Phase 2 wrote data
-        {
-            uint32_t states_sample[50];  // First hash's state (25 ulongs = 50 uints)
-            err = clEnqueueReadBuffer(dev.queue, dev.states, CL_TRUE, 0, sizeof(states_sample), states_sample, 0, nullptr, nullptr);
-            if (err == CL_SUCCESS) {
-                fprintf(stderr, "[DEBUG] States[0-3] after Phase 2: %08x %08x %08x %08x\n",
-                        states_sample[0], states_sample[1], states_sample[2], states_sample[3]);
-            } else {
-                fprintf(stderr, "[ERROR] Failed to read states buffer: %d\n", err);
-            }
-            
-            // Also check scratchpad (first 16 bytes)
-            uint32_t scratchpad_sample[4];
-            err = clEnqueueReadBuffer(dev.queue, dev.scratchpad, CL_TRUE, 0, sizeof(scratchpad_sample), scratchpad_sample, 0, nullptr, nullptr);
-            if (err == CL_SUCCESS) {
-                fprintf(stderr, "[DEBUG] Scratchpad[0-3] after Phase 2: %08x %08x %08x %08x\n",
-                        scratchpad_sample[0], scratchpad_sample[1], scratchpad_sample[2], scratchpad_sample[3]);
-            } else {
-                fprintf(stderr, "[ERROR] Failed to read scratchpad buffer: %d\n", err);
-            }
-        }
         
         // Phase 3: Main loop (1D dispatch, MUST use g_thd * 16 and w_size * 16)
         size_t global_3 = g_thd * 16;
         size_t local_3 = w_size * 16;
         err = clEnqueueNDRangeKernel(dev.queue, dev.kernel_phase3, 1, nullptr, &global_3, &local_3, 0, nullptr, nullptr);
         check_cl(err, "clEnqueueNDRangeKernel(phase3)");
-        err = clFinish(dev.queue);
-        if (err != CL_SUCCESS) {
-            fprintf(stderr, "[ERROR] Phase 3 GPU execution failed: %d\n", err);
-            break;
-        }
-        fprintf(stderr, "[DEBUG] Phase 3 complete\n");
         
         // Phase 4+5: Finalize (2D dispatch)
         size_t nonce_offset_45[2] = {0, dev.nonce};
@@ -469,8 +440,13 @@ static BenchmarkResult benchmark_opencl(int device_id, int duration_sec) {
         err = clEnqueueNDRangeKernel(dev.queue, dev.kernel_phase4_5, 2, nonce_offset_45, global_45, local_45, 0, nullptr, nullptr);
         check_cl(err, "clEnqueueNDRangeKernel(phase4_5)");
         
-        // Wait for completion
-        clFinish(dev.queue);
+        // CRITICAL: Only one clFinish() at the end, like production code
+        // (Production uses blocking clEnqueueReadBuffer which implies clFinish)
+        err = clFinish(dev.queue);
+        if (err != CL_SUCCESS) {
+            fprintf(stderr, "[ERROR] GPU pipeline execution failed: %d\n", err);
+            break;
+        }
         
         hashes += g_intensity;
         dev.nonce += g_intensity;
