@@ -98,14 +98,6 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	{
 		MaximumWorkSize /= 16;
 	}
-	if(false)
-	{
-		/* Dead code — only cn_gpu is supported. Left for reference.
-		 * Some kernel spawn 8 times more threads than the user is configuring.
-		 * To give the user the correct maximum work size we divide the hardware specific max by 8.
-		 */
-		MaximumWorkSize /= 8;
-	}
 	printer::inst()->print_msg(L1, "Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
 
 	if(ctx->workSize > MaximumWorkSize)

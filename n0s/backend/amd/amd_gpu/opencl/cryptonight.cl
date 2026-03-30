@@ -53,8 +53,8 @@ static const __constant uchar sbox[256] =
 //#include "opencl/wolf-aes.cl"
 N0S_INCLUDE_WOLF_AES
 
-// Dead code removed: keccakf1600 (private), keccakf1600_1 (private)
-// cn_gpu only uses keccakf1600_2 (local memory version)
+// keccakf1600_1: private memory — used by cn_gpu Phase 1 (Keccak) and Phase 2 (expand)
+// keccakf1600_2: local memory — used by cn_gpu Phase 4/5 (finalize)
 
 static const __constant uint keccakf_rotc[24] =
 {
@@ -211,9 +211,7 @@ void keccakf1600_2(__local ulong *st)
 }
 
 
-// Dead code removed: _mm_* float4 helpers (only used by cn1 AES loop)
-// Dead code removed: CNKeccak (only used by cn0 Keccak kernel)
-// Dead code removed: mix_and_propagate macro (only used by cn0)
+
 
 inline uint getIdx()
 {
@@ -222,34 +220,6 @@ inline uint getIdx()
 
 // CryptoNight-GPU always uses direct (non-strided) scratchpad indexing
 #define IDX(x)	(x)
-//#include "opencl/wolf-skein.cl"
-//#include "opencl/jh.cl"
-//#include "opencl/blake256.cl"
-//#include "opencl/groestl256.cl"
-
-
-void CNKeccak(ulong *output, ulong *input)
-{
-	ulong st[25];
-
-	// Copy 72 bytes
-	for(int i = 0; i < 9; ++i) st[i] = input[i];
-
-	// Last four and '1' bit for padding
-	//st[9] = as_ulong((uint2)(((uint *)input)[18], 0x00000001U));
-
-	st[9] = (input[9] & 0x00000000FFFFFFFFUL) | 0x0000000100000000UL;
-
-	for(int i = 10; i < 25; ++i) st[i] = 0x00UL;
-
-	// Last bit of padding
-	st[16] = 0x8000000000000000UL;
-
-	keccakf1600_1(st);
-
-	for(int i = 0; i < 25; ++i) output[i] = st[i];
-}
-
 static const __constant uchar rcon[8] = { 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40 };
 
 #define SubWord(inw)		((sbox[BYTE(inw, 3)] << 24) | (sbox[BYTE(inw, 2)] << 16) | (sbox[BYTE(inw, 1)] << 8) | sbox[BYTE(inw, 0)])
@@ -305,8 +275,7 @@ inline int4 _mm_alignr_epi8(int4 a, const uint rot)
 // cn_gpu-specific kernels (Phase 1: Keccak, Phase 2: Expand, Phase 3: FP compute)
 N0S_INCLUDE_CN_GPU
 
-// Dead kernels removed: cn0 (generic Keccak — cn_gpu uses cn0_cn_gpu from above)
-// Dead kernels removed: cn1 (generic AES main loop — cn_gpu uses cn1_cn_gpu from above)
+
 
 )==="
 R"===(
@@ -496,6 +465,3 @@ __kernel void cn_gpu_phase4_finalize (__global uint4 *Scratchpad, __global ulong
 }
 
 )==="
-
-// Branch kernels (Skein, JH, Blake, Groestl) removed — cn_gpu outputs
-// first 32 bytes of Keccak state directly in cn2, no branch dispatch.
