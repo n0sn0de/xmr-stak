@@ -99,13 +99,12 @@ configVal oConfigValues[] = {
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
 
-// Only CryptoNight-GPU (RYO Currency) is supported
-n0s::coin_selection coins[] = {
-	// name, userpool, devpool, default_pool_suggestion
-	{"cryptonight_gpu", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
-	{"ryo", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"}};
-
-constexpr size_t coin_algo_size = (sizeof(coins) / sizeof(coins[0]));
+// Only CryptoNight-GPU (RYO Currency) is supported.
+// Valid currency names in config: "ryo" or "cryptonight_gpu"
+static bool isValidCurrency(const std::string& name)
+{
+	return name == "ryo" || name == "cryptonight_gpu";
+}
 
 inline bool checkType(Type have, Type want)
 {
@@ -311,43 +310,20 @@ std::string jconf::GetMiningCoin()
 
 void jconf::GetAlgoList(std::string& list)
 {
-	list.reserve(256);
-	for(size_t i = 0; i < coin_algo_size; i++)
-	{
-		list += "\t- ";
-		list += coins[i].coin_name;
-		list += "\n";
-	}
+	list = "\t- ryo\n\t- cryptonight_gpu\n";
 }
 
 bool jconf::IsOnAlgoList(std::string& needle)
 {
 	std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-
-	for(size_t i = 0; i < coin_algo_size; i++)
-	{
-		if(needle == coins[i].coin_name)
-			return true;
-	}
-	return false;
+	return isValidCurrency(needle);
 }
 
 const char* jconf::GetDefaultPool(const char* needle)
 {
-	const char* default_example = "pool.example.com:3333";
-
-	for(size_t i = 0; i < coin_algo_size; i++)
-	{
-		if(strcmp(needle, coins[i].coin_name) == 0)
-		{
-			if(coins[i].default_pool != nullptr)
-				return coins[i].default_pool;
-			else
-				return default_example;
-		}
-	}
-
-	return default_example;
+	if(isValidCurrency(needle))
+		return "pool.ryo-currency.com:3333";
+	return "pool.example.com:3333";
 }
 
 bool jconf::parse_file(const char* sFilename, bool main_conf)
@@ -600,22 +576,13 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 	std::string ctmp = GetMiningCoin();
 	std::transform(ctmp.begin(), ctmp.end(), ctmp.begin(), ::tolower);
 
-	if(ctmp.length() == 0)
+	if(ctmp.empty())
 	{
 		printer::inst()->print_msg(L0, "You need to specify the coin that you want to mine.");
 		return false;
 	}
 
-	for(size_t i = 0; i < coin_algo_size; i++)
-	{
-		if(ctmp == coins[i].coin_name)
-		{
-			currentCoin = coins[i];
-			break;
-		}
-	}
-
-	if(currentCoin.GetDescription(1).GetMiningAlgo() == invalid_algo)
+	if(!isValidCurrency(ctmp))
 	{
 		std::string cl;
 		GetAlgoList(cl);

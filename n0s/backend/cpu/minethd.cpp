@@ -164,7 +164,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
 			
-			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
 
@@ -178,7 +177,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
 			
-			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
 
@@ -195,7 +193,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
 			
-			ctx->last_algo = invalid_algo;
 		}
 		return ctx;
 
@@ -206,7 +203,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 		ctx->loop_fn = nullptr;
 		ctx->fun_data = nullptr;
 		
-		ctx->last_algo = invalid_algo;
 
 		return ctx;
 

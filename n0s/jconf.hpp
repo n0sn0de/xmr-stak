@@ -1,7 +1,7 @@
 #pragma once
 
 #include "params.hpp"
-#include "n0s/misc/coinDescription.hpp"
+#include "n0s/backend/cryptonight.hpp"
 #include "n0s/misc/environment.hpp"
 
 #include <stdlib.h>
@@ -102,5 +102,5 @@ class jconf
 	opaque_private* prv;
 
 	bool bHaveAes;
-	n0s::coin_selection currentCoin;
+
 };

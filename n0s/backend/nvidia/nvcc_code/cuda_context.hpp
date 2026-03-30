@@ -52,7 +52,6 @@ typedef struct
 	CUmodule module = nullptr;
 	CUfunction kernel = nullptr;
 	uint64_t kernel_height = 0;
-	n0s_algo cached_algo = {n0s_algo_id::invalid_algo};
 } nvid_ctx;
 
 extern "C"
