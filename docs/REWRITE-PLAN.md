@@ -152,7 +152,7 @@ Only after structural work is complete:
 - ✅ Modern C++ headers everywhere (`<cstdint>` not `<stdint.h>`)
 
 **Remaining:**
-- ⏳ Algorithm/Kernel Autotuning based on users hardware
+- ⏳ Algorithm/Kernel Autotuning based on users hardware (see /docs/PRD_01-AUTOTUNING.md)
 - ⏳ No raw `new`/`delete` outside vendored code
 - ⏳ No global mutable state outside `main()`
 - ⏳ All `constexpr` where possible
