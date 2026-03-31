@@ -473,6 +473,8 @@ bool SubprocessRunner::collectNvidiaFingerprint(uint32_t device_index, DeviceFin
 		pclose(sm_pipe);
 	}
 
+	printer::inst()->print_msg(L0, "AUTOTUNE: nvidia-smi SM query result: compute_units=%u", fingerprint.compute_units);
+
 	// If nvidia-smi didn't report SM count (older drivers), estimate from compute cap
 	if(fingerprint.compute_units == 0)
 	{
