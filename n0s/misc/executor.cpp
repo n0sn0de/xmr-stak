@@ -56,7 +56,9 @@
 #include "n0s/backend/miner_work.hpp"
 
 #include "n0s/http/webdesign.hpp"
+#include "n0s/misc/banner.hpp"
 #include "n0s/misc/console.hpp"
+#include "n0s/misc/gpu_telemetry.hpp"
 #include "n0s/version.hpp"
 
 #include <algorithm>
@@ -428,7 +430,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		}
 		else
 		{
-			printer::inst()->print_msg(L3, "%s GPU %u: Share accepted. Pool: %s", name.c_str(), pvThreads.at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
+			n0s::print_share_accepted(name.c_str(), pvThreads.at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
 		}
 	}
 	else
@@ -441,7 +443,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 			}
 			else
 			{
-				printer::inst()->print_msg(L3, "%s GPU %u: Share rejected. Pool: %s", name.c_str(), pvThreads.at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
+				n0s::print_share_rejected(name.c_str(), pvThreads.at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
 			}
 
 			std::string error = pool->get_call_error();
@@ -739,10 +741,10 @@ void executor::hashrate_report(std::string& out)
 			std::string name(n0s::iBackend::getName(bType));
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 
-			out.append("HASHRATE REPORT - ").append(name).append("\n");
-			out.append("| ID |    10s |    60s |    15m |");
+			out.append("\x1B[96m    ══ HASHRATE ══ \x1B[97m").append(name).append("\x1B[0m\n");
+			out.append("\x1B[2;37m    | ID |    10s |    60s |    15m |\x1B[0m");
 			if(nthd != 1)
-				out.append(" ID |    10s |    60s |    15m |\n");
+				out.append("\x1B[2;37m ID |    10s |    60s |    15m |\x1B[0m\n");
 			else
 				out.append(1, '\n');
 
@@ -777,24 +779,47 @@ void executor::hashrate_report(std::string& out)
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
 
-			out.append("Totals (").append(name).append("): ");
-			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
+			out.append("\x1B[97m    Totals (\x1B[96m").append(name).append("\x1B[97m): ");
+			out.append(n0s::format_hashrate_colored(fTotalCur[0]));
 			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
 			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
-			out.append(" H/s\n");
+			out.append(" H/s\x1B[0m\n");
 
-			out.append("-----------------------------------------------------------------\n");
+			// GPU telemetry section
+			for(i = 0; i < nthd; i++)
+			{
+				uint32_t gpu_idx = backEnds[i]->iGpuIndex;
+				double hps10 = telem->calc_telemetry_data(10000, backEnds[i]->iThreadNo);
+				n0s::GpuTelemetry gt;
+				bool hasTelem = false;
+
+				if(bType == n0s::iBackend::BackendType::AMD)
+					hasTelem = n0s::queryAmdTelemetry(gpu_idx, gt);
+				else if(bType == n0s::iBackend::BackendType::NVIDIA)
+					hasTelem = n0s::queryNvidiaTelemetry(gpu_idx, gt);
+
+				if(hasTelem)
+				{
+					out.append(n0s::format_gpu_telemetry(
+						name.c_str(), gpu_idx, hps10,
+						gt.temp_c, gt.power_w, gt.fan_pct,
+						gt.gpu_clock_mhz, gt.mem_clock_mhz));
+				}
+			}
+
+			out.append("\x1B[38;5;25m    ═══════════════════════════════════════════════════════════\x1B[0m\n");
 		}
 	}
 
-	out.append("Totals (ALL):  ");
-	out.append(hps_format(fTotal[0], num, sizeof(num)));
+	out.append("\n\x1B[1;97m    TOTAL:  ");
+	out.append(n0s::format_hashrate_colored(fTotal[0]));
 	out.append(hps_format(fTotal[1], num, sizeof(num)));
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
-	out.append(" H/s\nHighest: ");
+	out.append(" H/s\x1B[0m\n");
+	out.append("\x1B[2;37m    Peak:   ");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
-	out.append(" H/s\n");
-	out.append("-----------------------------------------------------------------\n");
+	out.append(" H/s\x1B[0m\n");
+	out.append("\x1B[38;5;25m    ═══════════════════════════════════════════════════════════\x1B[0m\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)

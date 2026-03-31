@@ -1,0 +1,34 @@
+#pragma once
+
+/// GPU telemetry data — temperature, power, fan, clocks
+/// Queried via sysfs (AMD) or nvidia-smi (NVIDIA)
+
+#include <cstdint>
+#include <string>
+
+namespace n0s
+{
+
+struct GpuTelemetry
+{
+	int temp_c = -1;        // Temperature in °C (-1 = unavailable)
+	int power_w = -1;       // Power draw in watts (-1 = unavailable)
+	int fan_rpm = -1;       // Fan speed in RPM (-1 = unavailable)
+	int fan_pct = -1;       // Fan speed in percent (-1 = unavailable)
+	int gpu_clock_mhz = -1; // GPU clock in MHz
+	int mem_clock_mhz = -1; // Memory clock in MHz
+};
+
+/// Query AMD GPU telemetry via sysfs
+/// @param device_index  GPU index (maps to /sys/class/drm/cardN)
+/// @param telem         [out] Telemetry data
+/// @return true if at least some data was collected
+bool queryAmdTelemetry(uint32_t device_index, GpuTelemetry& telem);
+
+/// Query NVIDIA GPU telemetry via nvidia-smi
+/// @param device_index  GPU index
+/// @param telem         [out] Telemetry data
+/// @return true if at least some data was collected
+bool queryNvidiaTelemetry(uint32_t device_index, GpuTelemetry& telem);
+
+} // namespace n0s

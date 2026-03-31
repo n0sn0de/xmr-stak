@@ -30,6 +30,7 @@
 #include "n0s/misc/executor.hpp"
 #include "n0s/misc/utility.hpp"
 #include "n0s/autotune/autotune_entry.hpp"
+#include "n0s/misc/banner.hpp"
 #include "n0s/params.hpp"
 #include "n0s/version.hpp"
 
@@ -899,36 +900,20 @@ int main(int argc, char* argv[])
 #endif
 	}
 
-	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str(get_version_str_short().c_str());
-	printer::inst()->print_str("\n\n");
-	printer::inst()->print_str("n0s-ryo-miner - Optimized GPU miner for RYO Currency\n");
-	printer::inst()->print_str("CryptoNight-GPU algorithm - AMD (OpenCL) & NVIDIA (CUDA) support\n\n");
-	printer::inst()->print_str("Based on xmr-stak by fireice_uk and psychocrypt (GPLv3)\n");
+	n0s::print_banner();
+	n0s::print_separator();
+	printer::inst()->print_str("\x1B[2;37m    Based on xmr-stak by fireice_uk & psychocrypt (GPLv3)\x1B[0m\n");
 #ifndef CONF_NO_CUDA
-	printer::inst()->print_str("NVIDIA backend: KlausT and psychocrypt\n");
+	printer::inst()->print_str("\x1B[2;37m    NVIDIA backend: KlausT and psychocrypt\x1B[0m\n");
 #endif
 #ifndef CONF_NO_OPENCL
-	printer::inst()->print_str("AMD backend: wolf9466\n");
+	printer::inst()->print_str("\x1B[2;37m    AMD backend: wolf9466\x1B[0m\n");
 #endif
-	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str("Keyboard commands:\n");
-	printer::inst()->print_str("  'h' - hashrate\n");
-	printer::inst()->print_str("  'r' - results\n");
-	printer::inst()->print_str("  'c' - connection\n");
-	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str("Mining RYO Currency:\n");
-	printer::inst()->print_str("   #####   ______               ____\n");
-	printer::inst()->print_str(" ##     ## | ___ \\             /  _ \\\n");
-	printer::inst()->print_str("#    _    #| |_/ /_   _   ___  | / \\/ _   _  _ _  _ _  ___  _ __    ___  _   _\n");
-	printer::inst()->print_str("#   |_|   #|    /| | | | / _ \\ | |   | | | || '_|| '_|/ _ \\| '_ \\  / __|| | | |\n");
-	printer::inst()->print_str("#         #| |\\ \\| |_| || (_) || \\_/\\| |_| || |  | | |  __/| | | || (__ | |_| |\n");
-	printer::inst()->print_str(" ##     ## \\_| \\_|\\__, | \\___/ \\____/ \\__,_||_|  |_|  \\___||_| |_| \\___| \\__, |\n");
-	printer::inst()->print_str("   #####           __/ |                                                  __/ |\n");
-	printer::inst()->print_str("                  |___/   https://ryo-currency.com                       |___/\n\n");
-	printer::inst()->print_str("Privacy-focused cryptocurrency with GPU-friendly mining.\n");
-	printer::inst()->print_str("More info: https://github.com/ryo-currency\n");
-	printer::inst()->print_str("-------------------------------------------------------------------\n");
+	printer::inst()->print_str("\x1B[2;37m    https://ryo-currency.com • https://github.com/n0sn0de\x1B[0m\n");
+	n0s::print_separator();
+	printer::inst()->print_str("\n");
+	printer::inst()->print_str("    \x1B[96mKeys:\x1B[0m \x1B[97mh\x1B[2;37m=hashrate  \x1B[0m\x1B[97mr\x1B[2;37m=results  \x1B[0m\x1B[97mc\x1B[2;37m=connection\x1B[0m\n\n");
+	n0s::print_separator();
 	printer::inst()->print_msg(L0, "Mining coin: %s", ::jconf::inst()->GetMiningAlgo().Name().c_str());
 
 	if(params::inst().autotune)
