@@ -2,7 +2,7 @@
 
 **High-Level Strategy for the Foundational C++ Rewrite**
 
-*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded. Windows/macOS/BSD code stripped. Pure C++17 (zero C files). Linux-only. Smart pointers replacing raw new/delete. std::regex eliminated from hot paths.*
+*Status: Foundation + dead code removal complete. CUDA consolidated. Namespace migrated (n0s::). Pool/network documented. Directory restructured (xmrstak/ → n0s/). Zero-warning build. Modern C++ patterns applied. Config/algo simplified. OpenCL constants hardcoded. Windows/macOS/BSD code stripped. Pure C++17 (zero C files). Linux-only. Smart pointers replacing raw new/delete. std::regex eliminated from hot paths. Pre-sm_60 CUDA dead code purged (704 lines). Ancient GCN 1.0 OpenCL workarounds removed.*
 
 ---
 
@@ -289,3 +289,38 @@ This means Phase 3 optimization ROI is near zero without changing the algorithm 
 ---
 
 The code is ours now. The dead weight is gone, the names make sense, and the path forward is clear. We're not rewriting for elegance — we're rewriting for ownership, understanding, and the ability to confidently modify any part of the system.
+
+---
+
+## Session 45 Notes (2026-03-31 12:00 PM) — Dead Architecture Code Purge 🧹⚡
+
+**What we accomplished:**
+- ✅ **Purged 704 lines of dead pre-sm_60 CUDA code:**
+  - Removed `cuda_cryptonight_r.curt` (618 lines, completely unreferenced dead file)
+  - Stripped all `__CUDA_ARCH__ < 300/350/500` fallback paths (min target is sm_60 Pascal)
+  - Removed pre-CUDA 9 `__shfl()` paths → always `__shfl_sync()` 
+  - Simplified `shuffle<>` template: removed unused shared memory params (was pre-sm_30 fallback)
+  - Removed `N0S_LARGEGRID` cmake conditional → always `uint64_t` IndexType
+  - Always use `__byte_perm()`, `__funnelshift_l/r()` for bit ops (native on sm_60+)
+  - Always use `__syncwarp()` (CUDA 9+ guaranteed)
+  - Removed dynamic shared memory allocation for shuffle fallback in Phase 4 dispatch
+  - **Kept** `__CUDA_ARCH__ < 700` `.cg` cache hints (real perf benefit on Pascal/Turing)
+- ✅ **Removed dead Tahiti/Pitcairn OpenCL code path** (ancient GCN 1.0, HD 7000 series from 2012)
+- ✅ **3-GPU validation — all pass with identical hashrates:**
+  - AMD RX 9070 XT (nitro): 2304.0 H/s ✅
+  - NVIDIA GTX 1070 Ti (nos2): 1489.6 H/s ✅  
+  - NVIDIA RTX 2070 (nosnode): 2073.6 H/s ✅
+- ✅ **Both branches merged to master, deleted, all 3 nodes synced**
+
+**Key insight:** The CUDA codebase carried ~700 lines of dead compatibility code for architectures (Fermi/Kepler/Maxwell) that our CMakeLists.txt already rejects at configure time (min sm_60). The `cuda_cryptonight_r.curt` file was a 618-line template for a completely different algorithm variant that was never compiled or referenced. Clean kills, zero risk.
+
+**What we deliberately kept:**
+- `__CUDA_ARCH__ < 700` cache hint paths: `.cg` (cache global L2 only) PTX for `loadGlobal64/32` and `storeGlobal64/32` — real optimization for Pascal/Turing scratchpad access
+- `HAS_AMD_BPERMUTE` OpenCL paths: AMD's equivalent of CUDA `__shfl_sync`, used on GCN 3+ and RDNA
+- `COMP_MODE` OpenCL paths: runtime-configured for non-aligned workgroup sizes
+
+**Next session priorities (Session 46):**
+1. **Phase 4+5 optimization experiments** — Profile AES rounds on 3 GPUs, test occupancy changes
+2. **Autotune balanced mode on NVIDIA** — Test wider block count sweep
+3. **Multi-GPU autotune** — Test `--autotune-gpu 0,1` scenarios
+4. **Interactive hashrate display improvements** — Consider per-GPU telemetry refresh rate
