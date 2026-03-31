@@ -180,65 +180,6 @@ tests/
 
 ---
 
-## Session 42 Notes (2026-03-30 10:00 PM) — cn_gpu-Aware Candidates + Balanced Mode Validation 🎵🎯
-
-**What we accomplished:**
-- ✅ Rewrote NVIDIA candidate generator with cn_gpu constraints (threads=8 fixed, blocks sweep)
-- ✅ Eliminated 100% NVIDIA OOM crashes (was 67% → 0%)
-- ✅ Balanced mode confirmed i=1536/ws=8 optimal on AMD (10/10 candidates OK)
-- ✅ Full 3-GPU validation: 100% success rate on all candidates
-
----
-
-## Session 43 Notes (2026-03-30 10:36 PM) — Documentation, Release v3.1.0, Deep Kernel Analysis 📝⚡
-
-**What we accomplished:**
-- ✅ **README overhaul** — Added comprehensive autotune section with:
-  - Full CLI reference table (10 `--autotune*` flags)
-  - How-it-works workflow description (6 steps)
-  - Benchmark results table (3 GPUs with autotuned settings)
-  - Per-phase kernel profiling table
-  - Updated project structure with autotune/ module
-  - Unit test commands in Testing section
-- ✅ **New `docs/AUTOTUNE.md`** — Architecture guide:
-  - ASCII architecture diagram (7 layers)
-  - Subprocess isolation strategy with fork/exec flow
-  - CryptoNight-GPU kernel constraints (NVIDIA + AMD)
-  - Scoring model with formulas
-  - Device fingerprint caching behavior
-  - Tuning modes comparison table
-  - File inventory (~2,100 lines total)
-- ✅ **`CHANGELOG.md`** — v3.1.0 and v3.0.0 changelog
-- ✅ **Released v3.1.0** — Tagged, GitHub release created with benchmark data
-- ✅ **Deep Phase 3 kernel analysis** — Read full CUDA + OpenCL Phase 3 implementations:
-  - `fma_break()` prevents FMA fusion — intentional anti-optimization
-  - Data-dependent scratchpad addresses prevent prefetching
-  - 32 data-dependent float divisions per round — cannot use fast reciprocal
-  - Phase 3 is algorithmically resistant to optimization by design
-- ✅ **Phase 4+5 kernel analysis** — Read CUDA `cuda_phase4_5.cu` + OpenCL `cryptonight.cl`:
-  - Implode: AES pseudo-rounds + warp shuffle for mix_and_propagate
-  - Finalize: 16 rounds AES + mix + Keccak-f + target check
-  - Well-structured but bounded optimization potential (11-18% of time)
-- ✅ **Branch cleanup** — Pruned stale session9/ branches from nos2 + nosnode
-- ✅ **All 3 nodes synced to master** with v3.1.0
-
-**Key algorithmic insight:**
-The CryptoNight-GPU algorithm is *intentionally* resistant to optimization in Phase 3:
-1. `fma_break()` forces exponent into [1.0, 2.0) — prevents FMA fusion
-2. Data-dependent scratchpad addresses — prevents memory prefetching
-3. Data-dependent denominators in division — cannot use approximate reciprocal
-4. 8 sub-rounds per round with rotated inputs — prevents algebraic simplification
-
-This means Phase 3 optimization ROI is near zero without changing the algorithm itself. Future optimization efforts should focus on Phase 4+5 (11-18%), or infrastructure improvements (multi-GPU scheduling, pool efficiency).
-
-**Next session priorities (Session 44):**
-1. ✅ **Live mining validation** — 100% accepted shares on real pool (all 3 GPUs)
-2. ✅ **Container builds for v3.1.0** — Full build matrix (OpenCL + CUDA 11.8/12.6/12.8)
-3. **Autotune balanced mode on NVIDIA** — Test wider block count sweep for more data
-4. **Phase 4+5 optimization experiments** — Profile AES rounds, test __shfl_sync alternatives
-
----
-
 ## Session 44 Notes (2026-03-30 11:01 PM) — Live Mining Validation + Release Binaries 🎯🚀
 
 **What we accomplished:**
@@ -320,7 +261,63 @@ The code is ours now. The dead weight is gone, the names make sense, and the pat
 - `COMP_MODE` OpenCL paths: runtime-configured for non-aligned workgroup sizes
 
 **Next session priorities (Session 46):**
-1. **Phase 4+5 optimization experiments** — Profile AES rounds on 3 GPUs, test occupancy changes
-2. **Autotune balanced mode on NVIDIA** — Test wider block count sweep
-3. **Multi-GPU autotune** — Test `--autotune-gpu 0,1` scenarios
-4. **Interactive hashrate display improvements** — Consider per-GPU telemetry refresh rate
+1. ✅ **Phase 4+5 profiling split** — Separate Phase 4 (implode) from Phase 5 (finalize) timing
+2. ✅ **Phase 4+5 optimization experiments** — Tested AES table variants, worksize tuning
+3. ✅ **RDNA worksize fix** — Default worksize 16 for RDNA GPUs (was 8)
+
+---
+
+## Session 46 Notes (2026-03-31 12:14 PM) — Phase 4/5 Profiling Split + RDNA Worksize Optimization 🔬⚡
+
+**What we accomplished:**
+
+### 1. Phase 4/5 Profiling Split (CUDA)
+- ✅ Added separate `phase4_us` and `phase5_us` fields to `KernelProfile`
+- ✅ CUDA dispatch now times Phase 4 (implode) separately from Phase 5 (finalize)
+- ✅ Phase 5 timing captured via `chrono` in CUDA `minethd.cpp` profile path
+- ✅ Updated OpenCL `KernelProfile` struct for field consistency
+
+**Key discovery: Phase 5 is negligible (~270 µs, <0.04%).** All Phase 4+5 time is Phase 4 (AES scratchpad compression).
+
+| GPU | Phase 4 (Implode) | Phase 5 (Finalize) |
+|-----|------------------:|-------------------:|
+| GTX 1070 Ti | 102,584 µs (15.0%) | 263 µs (0.0%) |
+| RTX 2070 | 91,019 µs (11.6%) | 288 µs (0.0%) |
+
+### 2. Corrected Baselines — Old Numbers Were Wrong
+- Re-tested at Session 37 commit: **same ~2,380 H/s** (not 4,427 H/s reported)
+- Environment changed (AMD driver update), NOT a code regression
+- **Phase 4+5 is actually 32-38% of total time, not 18%** — a MUCH bigger target
+
+### 3. Phase 4 Optimization Experiments (AMD RDNA4)
+- ❌ **Single AES table** (1KB LDS vs 4KB): No measurable difference — LDS not the bottleneck
+- ❌ **Scratchpad prefetching**: ~5% Phase 4 improvement but within noise overall
+- ❌ **AES unroll 5 vs 10**: Partial unroll is slower — full unroll is optimal
+- ✅ **Worksize 16 vs 8**: **4.4% hashrate improvement**, Phase 4+5 down 42%
+
+### 4. RDNA Worksize Default Fix
+- ✅ `autoAdjust.hpp` now detects RDNA (gfx1xxx prefix) and sets worksize 16
+- Previously only VEGA (gfx9xx) got worksize 16; RDNA fell through to default 8
+- **Benchmarked on RX 9070 XT (gfx1201):**
+  - worksize 8:  2,330 H/s — Phase 4+5: 235K µs
+  - worksize 16: 2,432 H/s — Phase 4+5: 137K µs (**42% Phase 4+5 reduction**)
+- ✅ Live mining validated: 89+ accepted shares, 0 rejected
+- ✅ CUDA builds verified clean on nos2 (Pascal)
+
+### 5. Updated 3-GPU Baselines (Session 46)
+
+| Phase | RX 9070 XT (ws=16) | GTX 1070 Ti | RTX 2070 |
+|-------|-------------------:|------------:|---------:|
+| Phase 1 | ~6K µs (0.9%) | ~0 µs | ~0 µs |
+| Phase 2 | 158K µs (25.2%) | 17K µs (2.5%) | 24K µs (3.1%) |
+| Phase 3 | 326K µs (52.0%) | 566K µs (82.5%) | 666K µs (85.2%) |
+| Phase 4 | 137K µs (21.9%) | 103K µs (15.0%) | 91K µs (11.6%) |
+| Phase 5 | *combined* | 263 µs (0.0%) | 288 µs (0.0%) |
+| **Total** | **627K µs** | **686K µs** | **781K µs** |
+| **H/s** | **2,432** | **1,552** | **2,211** |
+
+**Next session priorities (Session 47):**
+1. **Autotune integration of worksize sweep** — Add worksize 16/32 to AMD candidate generator
+2. **Phase 2 investigation on AMD** — Phase 2 jumped to 25% with worksize 16 (was 6% with ws=8)
+3. **NVIDIA worksize/block tuning** — Apply similar profiling to CUDA backend
+4. **Container builds with worksize fix** — Release v3.2.0 with RDNA optimization
