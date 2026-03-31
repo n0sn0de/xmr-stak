@@ -38,24 +38,27 @@ void print_banner()
 
 	// Gradient ASCII art — n0s-ryo-miner branded
 	// Uses the RYO blue→cyan color theme
+	// Inner width = 63 visible chars between ║ delimiters
+	// N0S-RYO ASCII art with blue→cyan gradient
+	// All inner lines are exactly 63 visible chars between ║ delimiters
 	p->print_str(
-		RYO_DARK  "    ╔═══════════════════════════════════════════════════════════╗\n" RST
-		RYO_DARK  "    ║" RYO_MED   "                                                           " RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_MED  "   ███╗   ██╗ ██████╗ ███████╗" RYO_CYAN "     ██████╗ ██╗   ██╗ ██████╗ " RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_MED  "   ████╗  ██║██╔═══██╗██╔════╝" RYO_CYAN "     ██╔══██╗╚██╗ ██╔╝██╔═══██╗" RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_LIGHT "   ██╔██╗ ██║██║   ██║███████╗" RYO_BCYAN "█████╗██████╔╝ ╚████╔╝ ██║   ██║" RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_LIGHT "   ██║╚██╗██║██║   ██║╚════██║" RYO_BCYAN "╚════╝██╔══██╗  ╚██╔╝  ██║   ██║" RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_CYAN  "   ██║ ╚████║╚██████╔╝███████║" RYO_BCYAN "     ██║  ██║   ██║   ╚██████╔╝" RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RST
-			RYO_CYAN  "   ╚═╝  ╚═══╝ ╚═════╝ ╚══════╝" RYO_BCYAN "     ╚═╝  ╚═╝   ╚═╝    ╚═════╝ " RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" RYO_MED   "                                                           " RYO_DARK "║\n" RST
-		RYO_DARK  "    ║" CLR_DIM "   GPU Miner for RYO Currency • CryptoNight-GPU • v3.1.0   " RYO_DARK "║\n" RST
-		RYO_DARK  "    ╚═══════════════════════════════════════════════════════════╝\n" RST
+		RYO_DARK  "   ╔═══════════════════════════════════════════════════════════════╗\n" RST
+		RYO_DARK  "   ║" "                                                               " RYO_DARK "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_MED  "███╗   ██╗ ██████╗ ███████╗" RYO_DARK "━━━━━━" RYO_CYAN "██████╗ ██╗   ██╗ ██████╗    " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_MED  "████╗  ██║██╔═══██╗██╔════╝" RYO_DARK "      " RYO_CYAN "██╔══██╗╚██╗ ██╔╝██╔═══██╗   " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_LIGHT "██╔██╗ ██║██║   ██║███████╗" RYO_BCYAN "█████╗██████╔╝ ╚████╔╝ ██║   ██║   " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_LIGHT "██║╚██╗██║██║   ██║╚════██║" RYO_BCYAN "╚════╝██╔══██╗  ╚██╔╝  ██║   ██║   " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_CYAN  "██║ ╚████║╚██████╔╝███████║" RYO_DARK "      " RYO_BCYAN "██║  ██║   ██║   ╚██████╔╝   " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║ " RST
+			RYO_CYAN  "╚═╝  ╚═══╝ ╚═════╝ ╚══════╝" RYO_DARK "      " RYO_BCYAN "╚═╝  ╚═╝   ╚═╝    ╚═════╝    " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║" "                                                               " RYO_DARK "║\n" RST
+		RYO_DARK  "   ║" CLR_DIM "     GPU Miner for RYO Currency • CryptoNight-GPU • v3.1.0     " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ╚═══════════════════════════════════════════════════════════════╝\n" RST
 	);
 
 	p->print_str("\n");
@@ -64,7 +67,7 @@ void print_banner()
 void print_separator()
 {
 	printer::inst()->print_str(
-		RYO_DARK "    ═══════════════════════════════════════════════════════════\n" RST
+		RYO_DARK "   ═════════════════════════════════════════════════════════════════\n" RST
 	);
 }
 

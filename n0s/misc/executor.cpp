@@ -741,73 +741,99 @@ void executor::hashrate_report(std::string& out)
 			std::string name(n0s::iBackend::getName(bType));
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 
-			out.append("\n\x1B[96;1m    ═══ HASHRATE ═══ \x1B[97m").append(name).append("\x1B[0m\n");
-			out.append("\x1B[2;37m    | ID |    10s |    60s |    15m |\x1B[0m");
-			if(nthd != 1)
-				out.append("\x1B[2;37m  ID |    10s |    60s |    15m |\x1B[0m\n");
-			else
-				out.append(1, '\n');
-
 			double fTotalCur[3] = {0.0, 0.0, 0.0};
+
+			// Collect hashrates
 			for(i = 0; i < nthd; i++)
 			{
 				double fHps[3];
-
 				uint32_t tid = backEnds[i]->iThreadNo;
 				fHps[0] = telem->calc_telemetry_data(10000, tid);
 				fHps[1] = telem->calc_telemetry_data(60000, tid);
 				fHps[2] = telem->calc_telemetry_data(900000, tid);
 
-				snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
-				out.append(num);
-				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
-				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
-				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-
 				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
 				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
 				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
-
 				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
 				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
 				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
-
-				if((i & 0x1) == 1) //Odd i's
-					out.append("|\n");
 			}
 
-			if((i & 0x1) == 1) //We had odd number of threads
-				out.append("|\n");
-
-			out.append("\x1B[97m    Totals (\x1B[96m").append(name).append("\x1B[97m): ");
-			out.append(n0s::format_hashrate_colored(fTotalCur[0]));
-			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
-			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
-			out.append(" H/s\x1B[0m\n");
-
-			// GPU telemetry section
+			// Per-GPU line: hashrate + telemetry (compact, one line per GPU)
 			for(i = 0; i < nthd; i++)
 			{
 				uint32_t gpu_idx = backEnds[i]->iGpuIndex;
-				double hps10 = telem->calc_telemetry_data(10000, backEnds[i]->iThreadNo);
+				uint32_t tid = backEnds[i]->iThreadNo;
+				double fHps[3];
+				fHps[0] = telem->calc_telemetry_data(10000, tid);
+				fHps[1] = telem->calc_telemetry_data(60000, tid);
+				fHps[2] = telem->calc_telemetry_data(900000, tid);
+
+				// Query GPU telemetry
 				n0s::GpuTelemetry gt;
 				bool hasTelem = false;
-
 				if(bType == n0s::iBackend::BackendType::AMD)
 					hasTelem = n0s::queryAmdTelemetry(gpu_idx, gt);
 				else if(bType == n0s::iBackend::BackendType::NVIDIA)
 					hasTelem = n0s::queryNvidiaTelemetry(gpu_idx, gt);
 
+				// Format: "   GPU0 [AMD]  4531.0 H/s  54°C  17W  266.5 H/W  FAN:0%  CC:2222MHz"
+				out.append("\x1B[97m   GPU").append(std::to_string(gpu_idx));
+				out.append(" \x1B[2;37m[\x1B[0m\x1B[96m").append(name).append("\x1B[2;37m]\x1B[0m  ");
+				out.append(n0s::format_hashrate_colored(fHps[0]));
+				out.append("\x1B[2;37m H/s\x1B[0m");
+
+				// 60s and 15m in dim if available
+				if(std::isnormal(fHps[1]))
+				{
+					snprintf(num, sizeof(num), "  \x1B[2;37m60s:\x1B[0m\x1B[97m%.0f\x1B[0m", fHps[1]);
+					out.append(num);
+				}
+				if(std::isnormal(fHps[2]))
+				{
+					snprintf(num, sizeof(num), "  \x1B[2;37m15m:\x1B[0m\x1B[97m%.0f\x1B[0m", fHps[2]);
+					out.append(num);
+				}
+
+				// Telemetry inline
 				if(hasTelem)
 				{
-					out.append(n0s::format_gpu_telemetry(
-						name.c_str(), gpu_idx, hps10,
-						gt.temp_c, gt.power_w, gt.fan_pct,
-						gt.gpu_clock_mhz, gt.mem_clock_mhz));
+					if(gt.temp_c > 0)
+					{
+						const char* tc = (gt.temp_c >= 85) ? "\x1B[91m" : (gt.temp_c >= 70) ? "\x1B[93m" : "\x1B[96m";
+						snprintf(num, sizeof(num), "  %s%d°C\x1B[0m", tc, gt.temp_c);
+						out.append(num);
+					}
+					if(gt.power_w > 0)
+					{
+						snprintf(num, sizeof(num), "  \x1B[93m%dW\x1B[0m", gt.power_w);
+						out.append(num);
+						if(fHps[0] > 0)
+						{
+							snprintf(num, sizeof(num), "  \x1B[2;37m%.1f H/W\x1B[0m", fHps[0] / gt.power_w);
+							out.append(num);
+						}
+					}
+					if(gt.fan_pct >= 0)
+					{
+						const char* fc = (gt.fan_pct > 80) ? "\x1B[91m" : "\x1B[2;37m";
+						snprintf(num, sizeof(num), "  %sFAN:%d%%\x1B[0m", fc, gt.fan_pct);
+						out.append(num);
+					}
+					if(gt.gpu_clock_mhz > 0)
+					{
+						snprintf(num, sizeof(num), "  \x1B[2;37mCC:%dMHz\x1B[0m", gt.gpu_clock_mhz);
+						out.append(num);
+					}
+					if(gt.mem_clock_mhz > 0)
+					{
+						snprintf(num, sizeof(num), "  \x1B[2;37mMC:%dMHz\x1B[0m", gt.mem_clock_mhz);
+						out.append(num);
+					}
 				}
+				out.append("\n");
 			}
-
-			out.append("\x1B[38;5;25m    ═══════════════════════════════════════════════════════════\x1B[0m\n");
 		}
 	}
 
@@ -816,10 +842,10 @@ void executor::hashrate_report(std::string& out)
 	out.append(hps_format(fTotal[1], num, sizeof(num)));
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
 	out.append("\x1B[97m H/s\x1B[0m\n");
-	out.append("\x1B[2;37m    Peak:   \x1B[0m");
+	out.append("\x1B[2;37m   Peak:   \x1B[0m");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
 	out.append("\x1B[2;37m H/s\x1B[0m\n");
-	out.append("\x1B[38;5;25m    ═══════════════════════════════════════════════════════════\x1B[0m\n");
+	out.append("\x1B[38;5;25m   ═════════════════════════════════════════════════════════════════\x1B[0m\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)
