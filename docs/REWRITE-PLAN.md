@@ -260,8 +260,31 @@ This means Phase 3 optimization ROI is near zero without changing the algorithm 
 **Next session priorities (Session 45):**
 1. **Autotune balanced mode on NVIDIA** — Test wider block count sweep
 2. **Phase 4+5 optimization experiments** — Profile AES rounds on 3 GPUs
-3. **Autotune UX improvements** — Better GPU name detection, progress bars
-4. **Multi-GPU autotune** — Test `--autotune-gpu 0,1` scenarios
+3. **Multi-GPU autotune** — Test `--autotune-gpu 0,1` scenarios
+4. **Interactive hashrate display** — Periodic GPU telemetry updates during mining
+
+---
+
+## Session 44b Notes (2026-03-30 11:35 PM) — Colorized Terminal + GPU Telemetry 🎨⚡
+
+**What we accomplished:**
+- ✅ **RYO-branded ASCII banner** — Blue→cyan gradient using 256-color ANSI codes
+  - "N0S" in medium blue, "RYO" in cyan, connected with bright cyan dash
+  - Version + tagline in dim text, framed in dark blue box-drawing
+- ✅ **Colorized share notifications:**
+  - `✓` green checkmark for accepted shares
+  - `✗` red X for rejected shares
+  - Pool address in dim text
+- ✅ **GPU telemetry module** — `gpu_telemetry.cpp/hpp`:
+  - AMD: sysfs queries for temp, power (µW→W), fan RPM/%, GPU/mem clocks
+  - NVIDIA: nvidia-smi CSV query for temp, power, fan%, GPU/mem clocks
+  - Color-coded temperature: cyan (<70°C), yellow (70-85°C), red (>85°C)
+  - H/W efficiency display (hashrate / watts)
+- ✅ **Extended ANSI color palette** — K_BRIGHT_BLUE, K_BRIGHT_CYAN, K_DIM, K_BOLD
+- ✅ **Colorized hashrate report** — Gradient separators, colored totals, telemetry section
+- ✅ **Color-stripped logfile output** — `print_str_color()` method
+- ✅ **3-GPU build validated** — nitro (OpenCL), nos2 (CUDA 11.8), nosnode (CUDA 12.6)
+- ✅ **Live mining: green checkmarks flooding in** — 100% accepted shares with new visuals
 
 ---
 
