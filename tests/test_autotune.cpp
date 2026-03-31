@@ -177,10 +177,27 @@ TEST(nvidia_candidates_quick)
 	ASSERT(!c.empty(), "should generate NVIDIA candidates");
 	for(const auto& cand : c)
 	{
-		ASSERT(cand.threads > 0, "threads must be positive");
+		ASSERT(cand.threads == 8, "cn_gpu threads must be 8");
 		ASSERT(cand.blocks > 0, "blocks must be positive");
+		// blocks should be SM-aligned
+		ASSERT(cand.blocks % 15 == 0, "blocks should be multiple of SM count");
 	}
 	PASS("nvidia_candidates_quick");
+}
+
+TEST(nvidia_candidates_pascal_vs_turing)
+{
+	auto pascal = generateNvidiaCandidates(15, 8ULL * 1024 * 1024 * 1024, 61, TuneMode::Quick);
+	auto turing = generateNvidiaCandidates(36, 8ULL * 1024 * 1024 * 1024, 75, TuneMode::Quick);
+	ASSERT(!pascal.empty(), "pascal should have candidates");
+	ASSERT(!turing.empty(), "turing should have candidates");
+	// Pascal optimal mult is 7, Turing is 6 — different center points
+	bool pascal_has_7x = false, turing_has_6x = false;
+	for(const auto& c : pascal) if(c.blocks == 15 * 7) pascal_has_7x = true;
+	for(const auto& c : turing) if(c.blocks == 36 * 6) turing_has_6x = true;
+	ASSERT(pascal_has_7x, "pascal should include 7×SM optimal blocks");
+	ASSERT(turing_has_6x, "turing should include 6×SM optimal blocks");
+	PASS("nvidia_candidates_pascal_vs_turing");
 }
 
 TEST(nvidia_candidates_exhaustive)
@@ -188,6 +205,9 @@ TEST(nvidia_candidates_exhaustive)
 	auto q = generateNvidiaCandidates(15, 8ULL * 1024 * 1024 * 1024, 61, TuneMode::Quick);
 	auto e = generateNvidiaCandidates(15, 8ULL * 1024 * 1024 * 1024, 61, TuneMode::Exhaustive);
 	ASSERT(e.size() > q.size(), "exhaustive should generate more candidates than quick");
+	// All candidates should still use threads=8
+	for(const auto& c : e)
+		ASSERT(c.threads == 8, "exhaustive cn_gpu threads must be 8");
 	PASS("nvidia_candidates_exhaustive");
 }
 
@@ -195,11 +215,13 @@ TEST(nvidia_candidates_vram_limit)
 {
 	// 256 MiB VRAM — should limit candidates
 	auto c = generateNvidiaCandidates(15, 256ULL * 1024 * 1024, 61, TuneMode::Balanced);
-	size_t max_threads = (256ULL * 1024 * 1024 - 128ULL * 1024 * 1024) / ((2u * 1024u * 1024u) + 240u);
+	// cn_gpu: 2 MiB + 16 KiB + 680 bytes per hash
+	constexpr size_t hash_mem = (2u * 1024u * 1024u) + 16192u + 680u;
+	size_t max_hashes = (256ULL * 1024 * 1024 - 128ULL * 1024 * 1024) / hash_mem;
 	for(const auto& cand : c)
 	{
 		size_t total = static_cast<size_t>(cand.threads) * cand.blocks;
-		ASSERT(total <= max_threads, "total threads should not exceed VRAM limit");
+		ASSERT(total <= max_hashes, "total hashes should not exceed VRAM limit");
 	}
 	PASS("nvidia_candidates_vram_limit");
 }

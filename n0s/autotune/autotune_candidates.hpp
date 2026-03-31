@@ -102,6 +102,13 @@ inline std::vector<AmdCandidate> generateAmdCandidates(
 
 /// Generate NVIDIA/CUDA candidate parameter sets for a device.
 ///
+/// CryptoNight-GPU specific constraints:
+///   - `threads` is the number of thread groups per block (each group = 16 CUDA threads)
+///   - The kernel uses __launch_bounds__(128, 8) so 128 threads/block = 8 groups is ideal
+///   - `blocks` controls total parallelism: total_hashes = threads × blocks
+///   - `blocks` is bounded by SM_count × occupancy_mult and available VRAM
+///   - Each hash needs ~2 MiB scratchpad + 16 KiB local + 680 bytes metadata
+///
 /// @param sm_count       Number of SMs on the device
 /// @param vram_bytes     Available VRAM
 /// @param compute_cap    Compute capability (e.g., 61 for Pascal, 75 for Turing)
@@ -110,56 +117,66 @@ inline std::vector<AmdCandidate> generateAmdCandidates(
 inline std::vector<NvidiaCandidate> generateNvidiaCandidates(
 	uint32_t sm_count,
 	uint64_t vram_bytes,
-	uint32_t compute_cap [[maybe_unused]],
+	uint32_t compute_cap,
 	TuneMode mode)
 {
 	std::vector<NvidiaCandidate> candidates;
 
-	constexpr size_t mem_per_thread = (2u * 1024u * 1024u) + 240u;
+	// cn_gpu memory per hash: 2 MiB scratchpad + 16 KiB local mem + 680 bytes metadata
+	constexpr size_t hash_mem = (2u * 1024u * 1024u) + 16192u + 680u;
 	constexpr size_t min_free_mem = 128u * 1024u * 1024u;
 
 	uint64_t usable_vram = (vram_bytes > min_free_mem) ? (vram_bytes - min_free_mem) : 0;
-	size_t max_threads_total = usable_vram / mem_per_thread;
-	if(max_threads_total == 0) return candidates;
+	size_t max_total_hashes = usable_vram / hash_mem;
+	if(max_total_hashes == 0 || sm_count == 0) return candidates;
 
-	// Thread counts: typically 8-64 per block for cn_gpu
-	std::vector<uint32_t> thread_options;
-	if(mode == TuneMode::Quick)
-		thread_options = {8, 16, 32};
-	else if(mode == TuneMode::Balanced)
-		thread_options = {8, 12, 16, 24, 32, 48};
-	else
-		thread_options = {4, 8, 12, 16, 20, 24, 32, 40, 48, 64};
+	// cn_gpu threads: The kernel is designed for 8 thread groups per block
+	// (8 groups × 16 threads/hash = 128 threads/block, matching __launch_bounds__)
+	// Values other than 8 crash or severely underperform.
+	constexpr uint32_t cn_gpu_threads = 8;
 
-	// Block counts: typically SM_count * multiplier
-	// cn_gpu uses blocks = total_threads / threads_per_block
+	// Block multipliers: blocks = SM_count × multiplier
+	// Architecture-optimal ranges from CUDA init code:
+	//   Pascal (sm_6x): 7 × SM_count is optimal
+	//   Turing+ (sm_7x+): 6 × SM_count is optimal
+	// We sweep around these values to find the true best.
+	uint32_t arch_optimal_mult = (compute_cap >= 70) ? 6 : 7;
+
 	std::vector<uint32_t> block_multipliers;
 	if(mode == TuneMode::Quick)
-		block_multipliers = {3, 4, 6};
+	{
+		// 3 candidates: optimal ± 1
+		block_multipliers = {arch_optimal_mult - 1, arch_optimal_mult, arch_optimal_mult + 1};
+	}
 	else if(mode == TuneMode::Balanced)
-		block_multipliers = {2, 3, 4, 5, 6, 8};
-	else
-		block_multipliers = {1, 2, 3, 4, 5, 6, 7, 8, 10, 12};
+	{
+		// Sweep from arch_optimal - 2 to arch_optimal + 3
+		for(uint32_t m = std::max(2u, arch_optimal_mult - 2); m <= arch_optimal_mult + 3; ++m)
+			block_multipliers.push_back(m);
+	}
+	else // Exhaustive
+	{
+		// Full sweep 2..12
+		for(uint32_t m = 2; m <= 12; ++m)
+			block_multipliers.push_back(m);
+	}
 
-	// bfactor: 0 is best for dedicated mining, higher values yield to desktop
+	// bfactor: 0 is best for dedicated mining
 	std::vector<uint32_t> bfactors = {0};
 	if(mode == TuneMode::Exhaustive)
 		bfactors = {0, 6, 8};
 
-	for(uint32_t threads : thread_options)
+	for(uint32_t mult : block_multipliers)
 	{
-		for(uint32_t mult : block_multipliers)
-		{
-			uint32_t blocks = sm_count * mult;
-			size_t total = static_cast<size_t>(threads) * blocks;
-			if(total > max_threads_total || total == 0) continue;
+		uint32_t blocks = sm_count * mult;
+		size_t total_hashes = static_cast<size_t>(cn_gpu_threads) * blocks;
+		if(total_hashes > max_total_hashes || total_hashes == 0) continue;
 
-			for(uint32_t bf : bfactors)
-				candidates.push_back({threads, blocks, bf});
-		}
+		for(uint32_t bf : bfactors)
+			candidates.push_back({cn_gpu_threads, blocks, bf});
 	}
 
-	// Deduplicate
+	// Deduplicate (shouldn't be needed but safety first)
 	std::sort(candidates.begin(), candidates.end(), [](const NvidiaCandidate& a, const NvidiaCandidate& b) {
 		if(a.threads != b.threads) return a.threads < b.threads;
 		if(a.blocks != b.blocks) return a.blocks < b.blocks;
