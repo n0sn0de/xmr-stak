@@ -6,7 +6,7 @@ Supports **AMD** (OpenCL) and **NVIDIA** (CUDA) GPUs. No CPU mining — this is 
 
 Fork of [xmr-stak](https://github.com/fireice-uk/xmr-stak) by fireice-uk and psychocrypt, stripped down and modernized for CryptoNight-GPU exclusively.
 
-**Latest Release:** [v3.0.0 - Modern C++ Rewrite Complete](https://github.com/n0sn0de/n0s-ryo-miner/releases/tag/v3.0.0) 🚀
+**Latest Release:** [v3.1.0 - GPU Autotune](https://github.com/n0sn0de/n0s-ryo-miner/releases/tag/v3.1.0) 🚀
 
 ## Download Pre-Built Binaries
 
@@ -14,10 +14,10 @@ Grab the latest release from [GitHub Releases](https://github.com/n0sn0de/n0s-ry
 
 | Platform | Binary | Backend Library | Architectures |
 |---|---|---|---|
-| **OpenCL (AMD)** | `n0s-ryo-miner-v3.0.0-opencl-ubuntu22.04` | `libn0s_opencl_backend-v3.0.0-ubuntu22.04.so` | GCN/RDNA/CDNA |
-| **CUDA 11.8** | `n0s-ryo-miner-v3.0.0-cuda11.8` | `libn0s_cuda_backend-v3.0.0-cuda11.8.so` | Pascal→Ada (sm_61-89) |
-| **CUDA 12.6** | `n0s-ryo-miner-v3.0.0-cuda12.6` | `libn0s_cuda_backend-v3.0.0-cuda12.6.so` | Pascal→Hopper (sm_61-90) |
-| **CUDA 12.8** | `n0s-ryo-miner-v3.0.0-cuda12.8` | `libn0s_cuda_backend-v3.0.0-cuda12.8.so` | Pascal→Blackwell (sm_61-120) |
+| **OpenCL (AMD)** | `n0s-ryo-miner-v3.1.0-opencl-ubuntu22.04` | `libn0s_opencl_backend-v3.1.0-ubuntu22.04.so` | GCN/RDNA/CDNA |
+| **CUDA 11.8** | `n0s-ryo-miner-v3.1.0-cuda11.8` | `libn0s_cuda_backend-v3.1.0-cuda11.8.so` | Pascal→Ada (sm_61-89) |
+| **CUDA 12.6** | `n0s-ryo-miner-v3.1.0-cuda12.6` | `libn0s_cuda_backend-v3.1.0-cuda12.6.so` | Pascal→Hopper (sm_61-90) |
+| **CUDA 12.8** | `n0s-ryo-miner-v3.1.0-cuda12.8` | `libn0s_cuda_backend-v3.1.0-cuda12.8.so` | Pascal→Blackwell (sm_61-120) |
 
 **Note:** Download BOTH the binary and backend library, place them in the same directory.
 
