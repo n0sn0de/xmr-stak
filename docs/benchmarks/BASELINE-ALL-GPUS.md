@@ -1,35 +1,40 @@
 # CryptoNight-GPU Profiling Baselines — All 3 GPUs
 
-**Date:** 2026-03-30 (Session 38)
-**Commit:** 008ffee (feature/cuda-profiling)
-**Mode:** `--benchmark 10 --profile` (50 dispatch average)
+**Date:** 2026-03-31 (Session 46 — re-baselined)
+**Commit:** optimize/phase45-split-profile
+**Mode:** `--benchmark 5 --profile` (50 dispatch average)
 
 ## Per-Phase Timing Summary
 
 | Phase | RX 9070 XT (RDNA4) | GTX 1070 Ti (Pascal) | RTX 2070 (Turing) |
 |-------|--------------------:|---------------------:|-------------------:|
-| Phase 1: Keccak | 120 µs (0.0%) | ~0 µs (0.0%) | ~0 µs (0.0%) |
-| Phase 2: Scratchpad | 41,532 µs (12.0%) | 16,997 µs (2.5%) | 23,983 µs (3.1%) |
-| **Phase 3: GPU compute** | **241,069 µs (69.5%)** | **549,414 µs (82.4%)** | **665,811 µs (85.3%)** |
-| Phase 4+5: Implode | 64,201 µs (18.5%) | 100,656 µs (15.1%) | 91,047 µs (11.7%) |
-| **Total** | **346,923 µs** | **667,067 µs** | **780,842 µs** |
-| **Hashrate** | **4,427.5 H/s** | **1,595.0 H/s** | **2,213.0 H/s** |
-| Intensity | 1,536 | 1,064 | 1,728 |
+| Phase 1: Keccak | ~100 µs (0.0%) | TBD | TBD |
+| Phase 2: Scratchpad | ~40,000 µs (6%) | TBD | TBD |
+| **Phase 3: GPU compute** | **~355,000 µs (55%)** | TBD | TBD |
+| **Phase 4+5: Implode+final** | **~240,000 µs (38%)** | TBD | TBD |
+| **Total** | **~645,000 µs** | TBD | TBD |
+| **Hashrate** | **~2,380 H/s** | TBD | TBD |
+| Intensity | 1,536 | TBD | TBD |
 
-## Key Insights
+## Important Note (Session 46)
 
-1. **Phase 3 dominates everywhere** — 69-85% of total compute
-2. **NVIDIA spends more % in Phase 3** than AMD (82-85% vs 69.5%)
-3. **AMD RDNA4 is ~2x faster per-dispatch** than Pascal despite larger intensity
-4. **Phase 2 (Keccak expand)** is relatively cheaper on NVIDIA — their scalar Keccak is fast
-5. **Phase 4+5 (AES implode)** is a secondary target — 11-18% across all GPUs
-6. **RTX 2070 slower than expected** — 2213 H/s at 1728 intensity suggests Phase 3 is the bottleneck
-   - RTX 2070 has more CUDA cores than GTX 1070 Ti but Phase 3 is FP-division bound
-   - 85.3% in Phase 3 = almost entirely division-limited
+The Session 38 baselines were recorded under different system conditions (likely different AMD
+driver version or kernel). When re-testing at the Session 37 commit, the same ~2,380 H/s was
+observed — confirming NO code regression occurred. The environment changed (driver update from
+ROCm 7.2.0 to current).
 
-## Optimization Priority
+**Key correction:** Phase 4+5 is 32-38% of total time, NOT 18% as previously reported. This
+makes Phase 4+5 optimization much more impactful than originally estimated.
 
-1. **Phase 3 FP division** — 32 divisions per sub-round × 8 sub-rounds × 4 rounds = 1024 divisions per thread per iteration × 49,152 iterations
-2. **Phase 3 memory barriers** — 4 `mem_fence`/`__syncwarp` per iteration = 196,608 barriers
-3. **Phase 3 shared memory bank conflicts** — 16 threads accessing shared memory patterns
-4. **Phase 4+5 AES** — Secondary target, but 91-100K µs is non-trivial
+## Updated Optimization Priority
+
+1. **Phase 3 FP division** — Still the biggest single phase at 55%, but algorithmically resistant
+2. **Phase 4+5 AES implode** — Now 38%, a major optimization target
+   - Phase 4 (scratchpad compression): 2 full passes × 16K iterations × 10 AES rounds each
+   - Phase 5 (finalize): 16 iterations × 10 AES rounds + Keccak — negligible vs Phase 4
+3. **Phase 2 scratchpad expand** — 6%, limited optimization potential
+
+## NVIDIA Baselines (to be updated with split Phase 4/5 timing)
+
+CUDA profiling now separates Phase 4 (implode) from Phase 5 (finalize) timing.
+NVIDIA baselines will be collected after deploying the updated profiling code.

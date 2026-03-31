@@ -130,11 +130,12 @@ void cryptonight_core_gpu_hash_profile(nvid_ctx* ctx, uint32_t nonce, const n0s_
 	const size_t intensity = ctx->device_blocks * ctx->device_threads;
 
 	// Create CUDA events for timing
-	cudaEvent_t ev_start, ev_p2, ev_p3, ev_p4, ev_end;
+	cudaEvent_t ev_start, ev_p2, ev_p3, ev_p4, ev_p5, ev_end;
 	cudaEventCreate(&ev_start);
 	cudaEventCreate(&ev_p2);
 	cudaEventCreate(&ev_p3);
 	cudaEventCreate(&ev_p4);
+	cudaEventCreate(&ev_p5);
 	cudaEventCreate(&ev_end);
 
 	// Phase 1 timing is done externally (prepare is a separate call)
@@ -198,25 +199,34 @@ void cryptonight_core_gpu_hash_profile(nvid_ctx* ctx, uint32_t nonce, const n0s_
 				ctx->d_ctx_state, ctx->d_ctx_key2));
 	}
 
+	cudaEventRecord(ev_p4);
+
+	// ---- Phase 5: Finalize (launched separately by caller, but we time it here) ----
+	// Note: Phase 5 is launched by cryptonight_extra_cpu_final() which is called
+	// after this function returns. So ev_p4→ev_end only captures Phase 4.
+	// We record ev_end = ev_p4 for backward compat, and let the caller time Phase 5.
+
 	cudaEventRecord(ev_end);
 	cudaEventSynchronize(ev_end);
 
 	// Read timing
-	float ms_p2 = 0, ms_p3 = 0, ms_p45 = 0;
+	float ms_p2 = 0, ms_p3 = 0, ms_p4 = 0;
 	cudaEventElapsedTime(&ms_p2, ev_start, ev_p2);
 	cudaEventElapsedTime(&ms_p3, ev_p2, ev_p3);
-	cudaEventElapsedTime(&ms_p45, ev_p3, ev_end);
+	cudaEventElapsedTime(&ms_p4, ev_p3, ev_p4);
 
 	profile.phase2_us += static_cast<int64_t>(ms_p2 * 1000.0f);
 	profile.phase3_us += static_cast<int64_t>(ms_p3 * 1000.0f);
-	profile.phase45_us += static_cast<int64_t>(ms_p45 * 1000.0f);
-	profile.total_us += static_cast<int64_t>((ms_p2 + ms_p3 + ms_p45) * 1000.0f);
+	profile.phase4_us += static_cast<int64_t>(ms_p4 * 1000.0f);
+	profile.phase45_us += static_cast<int64_t>(ms_p4 * 1000.0f);  // Phase 5 added by caller
+	profile.total_us += static_cast<int64_t>((ms_p2 + ms_p3 + ms_p4) * 1000.0f);
 	profile.iterations++;
 
 	cudaEventDestroy(ev_start);
 	cudaEventDestroy(ev_p2);
 	cudaEventDestroy(ev_p3);
 	cudaEventDestroy(ev_p4);
+	cudaEventDestroy(ev_p5);
 	cudaEventDestroy(ev_end);
 }
 

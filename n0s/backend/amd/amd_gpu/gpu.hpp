@@ -209,7 +209,9 @@ struct KernelProfile
 	int64_t phase1_us = 0;   ///< Phase 1: Keccak prepare (microseconds)
 	int64_t phase2_us = 0;   ///< Phase 2: Scratchpad expand
 	int64_t phase3_us = 0;   ///< Phase 3: GPU compute (main loop)
-	int64_t phase45_us = 0;  ///< Phase 4+5: Implode + finalize
+	int64_t phase4_us = 0;   ///< Phase 4: Implode (not split on OpenCL — combined kernel)
+	int64_t phase5_us = 0;   ///< Phase 5: Finalize (not split on OpenCL — combined kernel)
+	int64_t phase45_us = 0;  ///< Phase 4+5: Implode + finalize (combined)
 	int64_t total_us = 0;    ///< Total dispatch time
 	int iterations = 0;      ///< Number of dispatch calls profiled
 

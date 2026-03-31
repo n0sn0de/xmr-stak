@@ -271,7 +271,20 @@ void minethd::work_main()
 				cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, 0 /* cn_r_ctx removed */);
 			}
 
-			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+			if(profiling)
+			{
+				auto t5_start = std::chrono::high_resolution_clock::now();
+				cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+				auto t5_end = std::chrono::high_resolution_clock::now();
+				int64_t p5_us = std::chrono::duration_cast<std::chrono::microseconds>(t5_end - t5_start).count();
+				cudaProfile.phase5_us += p5_us;
+				cudaProfile.phase45_us += p5_us;  // Add Phase 5 to combined
+				cudaProfile.total_us += p5_us;
+			}
+			else
+			{
+				cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+			}
 
 			for(size_t i = 0; i < foundCount; i++)
 			{
