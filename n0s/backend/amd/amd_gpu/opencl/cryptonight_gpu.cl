@@ -194,11 +194,6 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 		return;
 #endif
 
-	// Minimal printf to act as memory barrier / synchronization point
-	if (gIdx == 0) {
-		printf(".");
-	}
-
 	uint chunk = get_local_id(0) / 16;
 
 	__global int* scratchpad = (__global int*)((__global char*)scratchpad_in + MEMORY * (gIdx/16));
@@ -267,7 +262,7 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 		float xx = va_tmp1 * 16777216.0f;  /* FP_NORMALIZE_SCALE */
 		int xx_int = (int)xx;
 		((__local int*)smem->computation_output)[tid] = out2 ^ xx_int;
-		((__local float*)smem->fp_accumulators)[tid] = va_tmp1 / 64.0f;  /* FP_RANGE_DIVISOR */
+		((__local float*)smem->fp_accumulators)[tid] = va_tmp1 * 0.015625f;  /* 1/64 — exact in IEEE 754 */
 
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
