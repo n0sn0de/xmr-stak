@@ -318,16 +318,8 @@ __kernel void cn_gpu_phase4_finalize (__global uint4 *Scratchpad, __global ulong
         states += 25 * gIdx;
         Scratchpad += gIdx * (MEMORY >> 4);
 
-        #if defined(__Tahiti__) || defined(__Pitcairn__)
-
-        for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey2)[i] = states[i + 4];
-        text = vload4(lIdx + 4, (__global uint *)states);
-
-        #else
         text = vload4(lIdx + 4, (__global uint *)states);
         ((uint8 *)ExpandedKey2)[0] = vload8(1, (__global uint *)states);
-
-        #endif
 
         AESExpandKey256(ExpandedKey2);
     }
