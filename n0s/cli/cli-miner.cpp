@@ -70,6 +70,16 @@ void help()
 	cout << "  --benchwork WORK_SEC             ... benchmark work time" << endl;
 	cout << "  --benchmark-json FILE            ... write benchmark results as JSON" << endl;
 	cout << "  --profile                        enable per-kernel timing (use with --benchmark)" << endl;
+	cout << "  --autotune                       auto-discover optimal GPU settings" << endl;
+	cout << "  --autotune-mode MODE             quick, balanced, or exhaustive (default: balanced)" << endl;
+	cout << "  --autotune-backend BACKEND       amd, nvidia, or all (default: all)" << endl;
+	cout << "  --autotune-gpu GPUS              GPU indices to tune (e.g., 0,1)" << endl;
+	cout << "  --autotune-reset                 ignore cached autotune results" << endl;
+	cout << "  --autotune-resume                resume interrupted autotune" << endl;
+	cout << "  --autotune-benchmark-seconds N   per-candidate benchmark duration (default: 30)" << endl;
+	cout << "  --autotune-stability-seconds N   stability validation duration (default: 60)" << endl;
+	cout << "  --autotune-target TARGET         hashrate, efficiency, or balanced (default: hashrate)" << endl;
+	cout << "  --autotune-export PATH           export autotune results to file" << endl;
 #ifndef CONF_NO_OPENCL
 	cout << "  --noAMD                    disable the AMD miner backend" << endl;
 	cout << "  --amdGpus GPUS             indices of AMD GPUs to use. Example: 0,2,3" << endl;
@@ -760,6 +770,61 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--profile") == 0)
 		{
 			params::inst().profileKernels = true;
+		}
+		else if(opName.compare("--autotune") == 0)
+		{
+			params::inst().autotune = true;
+		}
+		else if(opName.compare("--autotune-mode") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-mode'"); n0s_exit(); return 1; }
+			params::inst().autotune = true;
+			params::inst().autotune_mode = argv[i];
+		}
+		else if(opName.compare("--autotune-backend") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-backend'"); n0s_exit(); return 1; }
+			params::inst().autotune_backend = argv[i];
+		}
+		else if(opName.compare("--autotune-gpu") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-gpu'"); n0s_exit(); return 1; }
+			params::inst().autotune_gpus = argv[i];
+		}
+		else if(opName.compare("--autotune-reset") == 0)
+		{
+			params::inst().autotune_reset = true;
+		}
+		else if(opName.compare("--autotune-resume") == 0)
+		{
+			params::inst().autotune_resume = true;
+		}
+		else if(opName.compare("--autotune-benchmark-seconds") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-benchmark-seconds'"); n0s_exit(); return 1; }
+			params::inst().autotune_benchmark_sec = std::stoi(argv[i]);
+		}
+		else if(opName.compare("--autotune-stability-seconds") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-stability-seconds'"); n0s_exit(); return 1; }
+			params::inst().autotune_stability_sec = std::stoi(argv[i]);
+		}
+		else if(opName.compare("--autotune-target") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-target'"); n0s_exit(); return 1; }
+			params::inst().autotune_target = argv[i];
+		}
+		else if(opName.compare("--autotune-export") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-export'"); n0s_exit(); return 1; }
+			params::inst().autotune_export = argv[i];
 		}
 		else
 		{

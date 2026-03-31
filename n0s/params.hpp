@@ -67,6 +67,19 @@ struct params
 	std::string benchmark_json;
 	bool profileKernels = false;
 
+	// Autotune parameters
+	bool autotune = false;
+	std::string autotune_mode = "balanced";     // quick, balanced, exhaustive
+	std::string autotune_backend = "all";       // amd, nvidia, all
+	std::string autotune_gpus;                  // comma-separated GPU indices (empty = all)
+	bool autotune_reset = false;                // Ignore cached results
+	bool autotune_resume = false;               // Resume interrupted run
+	int autotune_benchmark_sec = 30;
+	int autotune_stability_sec = 60;
+	std::string autotune_target = "hashrate";   // hashrate, efficiency, balanced
+	std::string autotune_export;                // Optional export path
+	std::string autotune_file = "autotune.json";
+
 	params() :
 		executablePrefix(""),
 		binaryName("n0s-ryo-miner"),

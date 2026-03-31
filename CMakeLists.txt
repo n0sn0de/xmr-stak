@@ -284,6 +284,7 @@ endif()
 # Core backend library
 file(GLOB BACKEND_CPP
     "n0s/*.cpp"
+    "n0s/autotune/*.cpp"
     "n0s/backend/cpu/*.cpp"
     "n0s/backend/*.cpp"
     "n0s/backend/cpu/crypto/*.cpp"
