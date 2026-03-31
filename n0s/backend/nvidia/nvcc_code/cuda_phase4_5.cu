@@ -17,37 +17,19 @@
 #include <cstdint>
 
 // ============================================================
-// Index type: 64-bit for large grids on sm_30+
+// Index type: always 64-bit (minimum target is sm_60 Pascal)
 // ============================================================
 
-#if defined(N0S_LARGEGRID) && (__CUDA_ARCH__ >= 300)
-typedef uint64_t IndexType;
-#else
-typedef int IndexType;
-#endif
-
-template <typename T>
-__forceinline__ __device__ void unusedVar(const T&) {}
+using IndexType = uint64_t;
 
 // ============================================================
-// Warp-level shuffle helper
+// Warp-level shuffle helper (sm_60+ always has native shuffle)
 // ============================================================
 
 template <size_t group_n>
-__forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr, const uint32_t sub, const int val, const uint32_t src)
+__forceinline__ __device__ uint32_t shuffle(const int val, const uint32_t src)
 {
-#if(__CUDA_ARCH__ < 300)
-	ptr[sub] = val;
-	return ptr[src & (group_n - 1)];
-#else
-	unusedVar(ptr);
-	unusedVar(sub);
-#if(__CUDACC_VER_MAJOR__ >= 9)
 	return __shfl_sync(__activemask(), val, src, group_n);
-#else
-	return __shfl(val, src, group_n);
-#endif
-#endif
 }
 
 // ============================================================
@@ -110,14 +92,6 @@ __global__ void kernel_implode_scratchpad(
 
 	__syncthreads();
 
-	// Pre-sm_30 shuffle fallback memory
-#if(__CUDA_ARCH__ < 300)
-	extern __shared__ uint32_t shuffleMem[];
-	volatile uint32_t* sPtr = (volatile uint32_t*)(shuffleMem + (threadIdx.x & 0xFFFFFFF8));
-#else
-	volatile uint32_t* sPtr = NULL;
-#endif
-
 	// Main compression loop: iterate over scratchpad in 32-byte steps
 	for(int i = start; i < end; i += 32)
 	{
@@ -136,7 +110,7 @@ __global__ void kernel_implode_scratchpad(
 			uint32_t tmp[4];
 			#pragma unroll 4
 			for(int j = 0; j < 4; ++j)
-				tmp[j] = shuffle<8>(sPtr, subv, text[j], (subv + 1) & 7);
+				tmp[j] = shuffle<8>(text[j], (subv + 1) & 7);
 			#pragma unroll 4
 			for(int j = 0; j < 4; ++j)
 				text[j] ^= tmp[j];

@@ -17,9 +17,9 @@ const
 		0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
 		0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
 
-#if __CUDA_ARCH__ >= 350
-/** @param offset must be < 32
- */
+// Optimized 64-bit rotation using funnel shift (sm_60+ always available)
+
+/** @param offset must be < 32 */
 __forceinline__ __device__ uint64_t cuda_rotl64(const uint32_t v0, const uint32_t v1, const int offset)
 {
 	uint2 result;
@@ -33,6 +33,7 @@ __forceinline__ __device__ uint64_t cuda_rotl64(const uint32_t v0, const uint32_
 
 	return *((uint64_t*)&result);
 }
+
 __device__ __forceinline__ uint64_t rotl64_1(const uint64_t x, const int y)
 {
 	return cuda_rotl64(((uint32_t*)&x)[0], ((uint32_t*)&x)[1], (y));
@@ -42,19 +43,6 @@ __device__ __forceinline__ uint64_t rotl64_2(const uint64_t x, const int y)
 {
 	return cuda_rotl64(((uint32_t*)&x)[1], ((uint32_t*)&x)[0], (y));
 }
-
-#else
-
-#define rotl64_1(x, y) ((x) << (y) | ((x) >> (64 - (y))))
-__device__ __forceinline__ uint64_t rotl64_2(const uint64_t x, const int y)
-{
-	uint64_t tmp;
-	((uint32_t*)&tmp)[0] = ((uint32_t*)&x)[1];
-	((uint32_t*)&tmp)[1] = ((uint32_t*)&x)[0];
-
-	return rotl64_1(tmp, (y));
-}
-#endif
 
 
 #define bitselect(a, b, c) ((a) ^ ((c) & ((b) ^ (a))))

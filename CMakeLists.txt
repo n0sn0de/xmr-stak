@@ -69,10 +69,7 @@ if(CUDA_ENABLE)
 
         list(APPEND BACKEND_TYPES "nvidia")
 
-        option(N0S_LARGEGRID "Support large CUDA block count > 128" ON)
-        if(N0S_LARGEGRID)
-            add_definitions("-DN0S_LARGEGRID=${N0S_LARGEGRID}")
-        endif()
+        # Large grid support always enabled (64-bit index, sm_60+ minimum)
 
         # GPU Architecture Targets
         # Minimum: Pascal (sm_61). Maximum depends on CUDA version.

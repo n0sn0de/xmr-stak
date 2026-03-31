@@ -448,11 +448,7 @@ __constant__ float THREAD_CONSTANTS[16] = {
 
 __forceinline__ __device__ void warp_sync()
 {
-#if(__CUDACC_VER_MAJOR__ >= 9)
 	__syncwarp();
-#else
-	__syncthreads();
-#endif
 }
 
 // ============================================================

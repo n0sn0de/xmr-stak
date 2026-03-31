@@ -100,7 +100,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const n0s_algo& al
 			kernel_implode_scratchpad<ALGO><<<
 				phase4_grid,
 				phase4_block,
-				phase4_block * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+				0>>>(  // No dynamic shared memory needed (sm_60+ has native shuffle)
 				ITERATIONS,
 				MEM / 4,
 				ctx->device_blocks * ctx->device_threads,
@@ -189,7 +189,7 @@ void cryptonight_core_gpu_hash_profile(nvid_ctx* ctx, uint32_t nonce, const n0s_
 			kernel_implode_scratchpad<ALGO><<<
 				phase4_grid,
 				phase4_block,
-				phase4_block * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+				0>>>(  // No dynamic shared memory needed (sm_60+ has native shuffle)
 				ITERATIONS,
 				MEM / 4,
 				ctx->device_blocks * ctx->device_threads,

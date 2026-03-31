@@ -90,7 +90,10 @@
 #define C32(x) ((uint32_t)(x##U))
 #define T32(x) ((x)&C32(0xFFFFFFFF))
 
-#if __CUDA_ARCH__ >= 350
+// ============================================================
+// Bit rotation intrinsics (sm_60+ always has funnel shift + byte perm)
+// ============================================================
+
 __forceinline__ __device__ uint64_t cuda_ROTL64(const uint64_t value, const int offset)
 {
 	uint2 result;
@@ -115,38 +118,19 @@ __forceinline__ __device__ uint64_t cuda_ROTL64(const uint64_t value, const int 
 	return __double_as_longlong(__hiloint2double(result.y, result.x));
 }
 
-#	define ROTL64(x, n) (cuda_ROTL64(x, n))
-#else
-#	define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
-#endif
+#define ROTL64(x, n) (cuda_ROTL64(x, n))
 
-#if __CUDA_ARCH__ < 350
-#define ROTL32(x, n) T32(((x) << (n)) | ((x) >> (32 - (n))))
-#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
-#else
 #define ROTL32(x, n) __funnelshift_l((x), (x), (n))
 #define ROTR32(x, n) __funnelshift_r((x), (x), (n))
-#endif
 
-#if __CUDA_ARCH__ >= 500
-#	define BYTE_0(x) __byte_perm(x, 0u, 0x4440)
-#	define BYTE_1(x) __byte_perm(x, 0u, 0x4441)
-#	define BYTE_2(x) __byte_perm(x, 0u, 0x4442)
-#	define BYTE_3(x) __byte_perm(x, 0u, 0x4443)
+#define BYTE_0(x) __byte_perm(x, 0u, 0x4440)
+#define BYTE_1(x) __byte_perm(x, 0u, 0x4441)
+#define BYTE_2(x) __byte_perm(x, 0u, 0x4442)
+#define BYTE_3(x) __byte_perm(x, 0u, 0x4443)
 
-#	define ROTL32_8(x) __byte_perm(x, x, 0x2103)
-#	define ROTL32_16(x) __byte_perm(x, x, 0x1032)
-#	define ROTL32_24(x) __byte_perm(x, x, 0x0321)
-#else
-#	define BYTE_0(x) (((x)      ) & 0xff)
-#	define BYTE_1(x) (((x) >>  8) & 0xff)
-#	define BYTE_2(x) (((x) >> 16) & 0xff)
-#	define BYTE_3(x) (((x) >> 24))
-
-#	define ROTL32_8(x)  ROTL32(x, 8)
-#	define ROTL32_16(x) ROTL32(x, 16)
-#	define ROTL32_24(x) ROTL32(x, 24)
-#endif
+#define ROTL32_8(x) __byte_perm(x, x, 0x2103)
+#define ROTL32_16(x) __byte_perm(x, x, 0x1032)
+#define ROTL32_24(x) __byte_perm(x, x, 0x0321)
 
 #define MEMSET8(dst, what, cnt)                          \
 	{                                                    \
