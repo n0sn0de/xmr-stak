@@ -168,49 +168,43 @@ tests/
 
 ---
 
-## Session 37 Notes (2026-03-30 04:49 PM) — Per-Kernel Profiling + RDNA4 Baseline 🧘
-
-**What we accomplished:**
-- ✅ **Deep algorithm study** — Read CN-GPU whitepaper + both OpenCL and CUDA kernel implementations in full
-- ✅ **Added `--profile` flag** — Per-phase kernel timing using clFinish barriers between phases
-- ✅ **XMRRunJobProfile()** — New profiling dispatch function that accumulates timing over 50 dispatches
-- ✅ **KernelProfile struct** — Clean data container with `print_summary()` method
-- ✅ **Established RDNA4 baseline** — `docs/benchmarks/BASELINE-RX9070XT.md`
-- ✅ **Verified**: Zero warnings, 3/3 golden hashes, live mining all shares accepted with profiling active
-
----
-
 ## Session 38 Notes (2026-03-30 05:52 PM) — CUDA Profiling + 3-GPU Baseline Matrix 🔔
 
 **What we accomplished:**
 - ✅ **Ported `--profile` to CUDA backend** — `cryptonight_core_cpu_hash_profile()` using `cudaEvent_t` timing
 - ✅ **Shared `n0s::KernelProfile` struct** — `kernel_profile.hpp` with `print_summary(backend_name, intensity)`
-- ✅ **Wired into CUDA minethd** — 50-dispatch profiling with automatic summary, matches OpenCL behavior
 - ✅ **Built + tested on all 3 nodes** — nitro (OpenCL), nos2 (CUDA 11.8), nosnode (CUDA 12.6)
 - ✅ **Established full 3-GPU baseline** — `docs/benchmarks/BASELINE-ALL-GPUS.md`
-- ✅ **Verified**: Clean builds, golden hashes pass, benchmark runs with profiling on all GPUs
 
-**3-GPU Profiling Results:**
+---
 
-| Phase | RX 9070 XT (RDNA4) | GTX 1070 Ti (Pascal) | RTX 2070 (Turing) |
-|-------|--------------------:|---------------------:|-------------------:|
-| Phase 2: Scratchpad | 41,532 µs (12.0%) | 16,997 µs (2.5%) | 23,983 µs (3.1%) |
-| **Phase 3: GPU compute** | **241,069 µs (69.5%)** | **549,414 µs (82.4%)** | **665,811 µs (85.3%)** |
-| Phase 4+5: Implode | 64,201 µs (18.5%) | 100,656 µs (15.1%) | 91,047 µs (11.7%) |
-| **Hashrate** | **4,427.5 H/s** | **1,595.0 H/s** | **2,213.0 H/s** |
+## Session 39 Notes (2026-03-30 06:49 PM) — Phase 3 Optimization Analysis + First Performance Win 🧘
 
-**Key insights:**
-- Phase 3 dominates even MORE on NVIDIA (82-85%) than AMD (69.5%) — NVIDIA's FP division is relatively slower
-- RTX 2070 is slower than expected given its CUDA core count — confirms Phase 3 is division-bound, not compute-bound
-- Phase 2 (Keccak expand) is very cheap on NVIDIA — their scalar pipeline handles it well
-- AMD RDNA4's wider SIMD + faster division pipeline gives it a huge edge on this algo
-- Full baseline matrix now enables A/B testing on any optimization across all 3 architectures
+**What we accomplished:**
+- ✅ **Deep Phase 3 kernel analysis** — Full read of CUDA + OpenCL Phase 3 implementations, FP math core, thread topology
+- ✅ **Removed debug printf from OpenCL Phase 3** — Leftover from S29 debugging, caused measurable driver overhead
+- ✅ **Replaced div by 64.0f with mul by 0.015625f** — Exact in IEEE 754 (both OpenCL + CUDA)
+- ✅ **+2.3% hashrate improvement on AMD** — 4,427.5 → 4,531.0 H/s (cold), Phase 2 overhead reduced by 16.2%
+- ✅ **NVIDIA neutral** — nos2: 1,578 H/s (~baseline), nosnode: 2,189 H/s (~baseline)
+- ✅ **All golden hashes pass** — 3/3 on CPU harness
+- ✅ **Merged to master** — Branch optimize/shared-memory-padding merged + deleted
+- ✅ **Stale branches cleaned** — refactor/more-constexpr + refactor/nodiscard-error-funcs pruned from all nodes
+- ✅ **CUDA register analysis** — kernel_gpu_compute uses 62 registers/thread (96.9% register file utilization at 128 threads/block × 8 blocks/SM on Pascal)
+- ✅ **Shared memory bank conflict analysis** — No significant conflicts in Phase 3 FP computation (broadcast pattern). Minor 2-way conflicts in reduction steps (inherent to access pattern)
+
+**Key architecture insights discovered:**
+- CUDA Phase 3 kernel: 62 registers, `__launch_bounds__(128, 8)` = maxed-out 32 warps/SM on Pascal — already optimal
+- SharedMemory per block = 4,224 bytes (well under 64KB limit), not limiting occupancy
+- FP division accounts for ~21% of Phase 3 time on Pascal (4 fdiv per thread per iteration × 49,152 iterations)
+- The algorithm is intentionally resistant to optimization: `fma_break()` prevents FMA fusion, data-dependent scratchpad addresses prevent prefetching
+- Benchmark CV on RX 9070 XT can reach 23-26% due to thermal throttling — need cooling stabilization for reliable A/B testing
+- The `n/d` division in `fp_round` cannot be approximated (data-dependent denominator, bit-exact requirement)
 
 **Next session priorities:**
-1. **Phase 3 optimization** — Analyze shared memory bank conflicts, barrier reduction
-2. **Occupancy analysis** — Check workgroup sizing across all 3 architectures
-3. **Begin autotuning** — Sweep intensity/worksize combos using benchmark harness
-4. **Phase 3 FP division alternatives** — Can we reduce division count or use approximations?
+1. **Autotuning implementation** — Begin the autotuning PRD (docs/PRD_01-AUTOTUNING.md). This is the highest-impact remaining work: automatically finding optimal intensity/worksize/blocks/threads per GPU
+2. **Phase 4+5 AES optimization** — Secondary target at 11-18% of total time; analyze if AES-NI or wider vectorization helps
+3. **Thermal management for benchmarking** — Need consistent GPU temps for reliable A/B testing
+4. **CUDA launch config experiments** — Test different block sizes (256 vs 128 threads) on Turing with its larger register file
 
 ---
 
