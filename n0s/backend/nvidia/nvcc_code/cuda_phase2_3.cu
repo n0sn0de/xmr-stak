@@ -197,7 +197,7 @@ __global__ void kernel_gpu_compute(
 		out2 = _mm_xor_si128(xx_int, out2);
 
 		// Normalize accumulator to [0, 1) for next iteration
-		fp_accumulator = _mm_div_ps(fp_accumulator, __m128(64.0f));  // FP_RANGE_DIVISOR
+		fp_accumulator = _mm_mul_ps(fp_accumulator, __m128(0.015625f));  // 1/64 — exact in IEEE 754
 
 		// New scratchpad index = XOR of all 4 output words
 		s = out2.x ^ out2.y ^ out2.z ^ out2.w;
