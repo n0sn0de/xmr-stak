@@ -161,6 +161,48 @@ Artifacts land in `dist/opencl-ubuntu22.04/` or `dist/cuda-{version}/`.
 ./build/bin/n0s-ryo-miner -o pool:port -u wallet_address -p x
 ```
 
+### Autotune (Recommended for First Run)
+
+Find optimal GPU settings automatically before mining:
+
+```bash
+# Quick autotune — tests ~3-9 candidates, takes 2-6 minutes
+./build/bin/n0s-ryo-miner --autotune
+
+# Balanced — more candidates, better coverage (~5-10 minutes)
+./build/bin/n0s-ryo-miner --autotune --autotune-mode balanced
+
+# AMD only or NVIDIA only
+./build/bin/n0s-ryo-miner --autotune --autotune-backend amd
+./build/bin/n0s-ryo-miner --autotune --autotune-backend nvidia
+
+# Re-tune (ignore cached results)
+./build/bin/n0s-ryo-miner --autotune --autotune-reset
+```
+
+Autotune writes optimized settings to `amd.txt` / `nvidia.txt` and caches results in `autotune.json`. Subsequent runs reuse cached settings automatically unless hardware or drivers change.
+
+**How it works:**
+1. Discovers GPUs and collects device fingerprints
+2. Generates candidate parameter sets based on GPU architecture
+3. Benchmarks each candidate in an isolated subprocess (crash-safe)
+4. Scores candidates by hashrate stability (penalizes variance and errors)
+5. Runs extended stability validation on the winner
+6. Writes optimal config files ready for mining
+
+| Autotune Flag | Description |
+|---|---|
+| `--autotune` | Enable autotune mode |
+| `--autotune-mode quick\|balanced\|exhaustive` | Search depth (default: `balanced`) |
+| `--autotune-backend amd\|nvidia\|all` | Which GPUs to tune (default: `all`) |
+| `--autotune-gpu 0,1` | Specific GPU indices to tune |
+| `--autotune-reset` | Ignore cached results, re-tune from scratch |
+| `--autotune-resume` | Resume an interrupted autotune run |
+| `--autotune-benchmark-seconds N` | Per-candidate benchmark time (default: 30) |
+| `--autotune-stability-seconds N` | Final stability validation time (default: 60) |
+| `--autotune-target hashrate\|efficiency\|balanced` | Optimization target (default: `hashrate`) |
+| `--autotune-export PATH` | Export results to a specific file |
+
 ### Command-Line Options
 
 | Flag | Description |
@@ -171,13 +213,17 @@ Artifacts land in `dist/opencl-ubuntu22.04/` or `dist/cuda-{version}/`.
 | `--noAMD` | Disable AMD GPU backend |
 | `--noNVIDIA` | Disable NVIDIA GPU backend |
 | `--noAMDCache` | Don't cache compiled OpenCL kernels |
+| `--benchmark N` | Run benchmark for block version N and exit |
+| `--benchmark-json FILE` | Write benchmark results as JSON |
+| `--profile` | Enable per-kernel phase timing (use with `--benchmark`) |
 
 ### Configuration Files
 
-Generated on first run in the working directory:
+Generated on first run (or by `--autotune`) in the working directory:
 - **`pools.txt`** — Pool connection settings
 - **`amd.txt`** — AMD GPU settings (intensity, worksize per GPU)
 - **`nvidia.txt`** — NVIDIA GPU settings (threads, blocks, bfactor per GPU)
+- **`autotune.json`** — Cached autotune results with device fingerprints
 
 ### HTTP Monitoring API
 
@@ -188,7 +234,38 @@ http://localhost:<port>/api.json
 
 Returns JSON with hashrate, pool stats, and GPU status. Port is configured in the miner's config.
 
+## Benchmarks
+
+Tested on 3 GPU architectures with autotuned settings:
+
+| GPU | Architecture | VRAM | Optimal Settings | Hashrate |
+|---|---|---|---|---|
+| AMD RX 9070 XT | RDNA 4 (gfx1201) | 16 GB | intensity=1536, worksize=8 | **4,531 H/s** |
+| NVIDIA RTX 2070 | Turing (sm_75) | 8 GB | threads=8, blocks=216 | **2,160 H/s** |
+| NVIDIA GTX 1070 Ti | Pascal (sm_61) | 8 GB | threads=8, blocks=114 | **1,687 H/s** |
+
+*Settings discovered via `--autotune --autotune-mode quick`. Your results may vary by ±5% due to thermal conditions, driver version, and system load.*
+
+### Per-Phase Kernel Profiling
+
+Use `--benchmark 10 --profile` to see where time is spent:
+
+| Phase | Description | RX 9070 XT | GTX 1070 Ti | RTX 2070 |
+|---|---|---|---|---|
+| Phase 1 | Keccak init | <0.1% | <0.1% | <0.1% |
+| Phase 2 | Scratchpad fill | 12.0% | 2.5% | 3.1% |
+| **Phase 3** | **GPU compute (FP math)** | **69.5%** | **82.4%** | **85.3%** |
+| Phase 4+5 | AES implode + finalize | 18.5% | 15.1% | 11.7% |
+
+Phase 3 (cooperative floating-point computation with data-dependent memory access) dominates on all architectures. The algorithm is designed to be GPU-friendly but resistant to algorithmic shortcuts.
+
 ## Testing
+
+### Unit Tests
+```bash
+bash tests/build_harness.sh && ./tests/cn_gpu_harness   # Golden hash verification
+bash tests/build_autotune_test.sh                       # Autotune framework (21 tests)
+```
 
 ### Local AMD Test
 ```bash
@@ -223,6 +300,7 @@ REMOTE=nos2 ./test-mine-remote.sh      # Build on remote, mine for 40s
 │   └── test-nosnode.sh         # nosnode-specific test script
 ├── n0s/
 │   ├── cli/                    # CLI entry point
+│   ├── autotune/               # GPU autotuning framework
 │   ├── backend/
 │   │   ├── amd/                # AMD OpenCL backend
 │   │   │   └── amd_gpu/opencl/ # OpenCL kernels (.cl)
