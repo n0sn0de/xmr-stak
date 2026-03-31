@@ -14,7 +14,16 @@ enum out_colours
 	K_CYAN,
 	K_MAGENTA,
 	K_WHITE,
-	K_NONE
+	K_NONE,
+	// Extended colors for RYO branding
+	K_BRIGHT_BLUE,
+	K_BRIGHT_CYAN,
+	K_BRIGHT_WHITE,
+	K_BRIGHT_GREEN,
+	K_BRIGHT_YELLOW,
+	K_BRIGHT_RED,
+	K_DIM,
+	K_BOLD
 };
 
 // Warning - on Linux get_key will detect control keys.
@@ -53,6 +62,8 @@ class printer
 	inline void set_verbose_level(size_t level) { verbose_level = (verbosity)level; }
 	void print_msg(verbosity verbose, const char* fmt, ...);
 	void print_str(const char* str);
+	/// Print a string with color (color is NOT written to logfile)
+	void print_str_color(out_colours cl, const char* str);
 	bool open_logfile(const char* file);
 
   private:

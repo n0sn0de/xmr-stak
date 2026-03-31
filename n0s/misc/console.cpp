@@ -69,6 +69,30 @@ void set_colour(out_colours cl)
 	case K_WHITE:
 		fputs("\x1B[1;37m", stdout);
 		break;
+	case K_BRIGHT_BLUE:
+		fputs("\x1B[94m", stdout);
+		break;
+	case K_BRIGHT_CYAN:
+		fputs("\x1B[96m", stdout);
+		break;
+	case K_BRIGHT_WHITE:
+		fputs("\x1B[97m", stdout);
+		break;
+	case K_BRIGHT_GREEN:
+		fputs("\x1B[92m", stdout);
+		break;
+	case K_BRIGHT_YELLOW:
+		fputs("\x1B[93m", stdout);
+		break;
+	case K_BRIGHT_RED:
+		fputs("\x1B[91m", stdout);
+		break;
+	case K_DIM:
+		fputs("\x1B[2m", stdout);
+		break;
+	case K_BOLD:
+		fputs("\x1B[1m", stdout);
+		break;
 	default:
 		break;
 	}
@@ -127,6 +151,22 @@ void printer::print_str(const char* str)
 	fputs(str, stdout);
 	fflush(stdout);
 
+	if(logfile != nullptr)
+	{
+		fputs(str, logfile);
+		fflush(logfile);
+	}
+}
+
+void printer::print_str_color(out_colours cl, const char* str)
+{
+	std::unique_lock<std::mutex> lck(print_mutex);
+	set_colour(cl);
+	fputs(str, stdout);
+	reset_colour();
+	fflush(stdout);
+
+	// Write uncolored to logfile
 	if(logfile != nullptr)
 	{
 		fputs(str, logfile);
