@@ -156,11 +156,12 @@ tests/
 - ✅ Profile on AMD RDNA4 (S37: --profile flag, per-phase timing, baseline established)
 - ✅ Profile on NVIDIA Pascal/Turing (S38: --profile ported to CUDA, baselines established)
 - ⏳ Optimize shared memory usage in Phase 3 kernel
-- ⏳ Explore occupancy improvements
+- ✅ Explore occupancy improvements (S47: intensity formula scaled by worksize, +2.6%)
 - ⏳ Consider CUDA Graphs for kernel chaining
 - ✅ Algorithm/Kernel Autotuning framework — Phase 1 complete (S40: types, scoring, candidates, persistence, CLI, 20 unit tests)
 - ✅ Algorithm/Kernel Autotuning — Phase 2: End-to-end `--autotune` (S41: subprocess benchmark eval, fingerprinting, config writing, 3-GPU validated)
-- ⏳ Profile hotspots on AMD RDNA4 + NVIDIA Pascal/Turing/Ampere
+- ✅ Phase 2 OpenCL workgroup optimization (S47: WG 64→512, −76% Phase 2 time, +15.7% hashrate)
+- ✅ OpenCL Keccak Rho/Pi inlined (S47: matches CUDA, eliminates constant memory lookups)
 - ✅ Fix or rebuild benchmark harness for reproducible measurements (S36: --benchmark-json + stability CV% + tests/benchmark.sh)
 
 ---
@@ -177,32 +178,6 @@ tests/
 - ✅ Config/algo system simplified (single-algorithm focus)
 - ✅ OpenCL dead kernel branches removed
 - ✅ Modern C++ headers everywhere (`<cstdint>` not `<stdint.h>`)
-
----
-
-## Session 44 Notes (2026-03-30 11:01 PM) — Live Mining Validation + Release Binaries 🎯🚀
-
-**What we accomplished:**
-- ✅ **Container build matrix — ALL 4 backends pass:**
-  - OpenCL (Ubuntu 22.04): 1.6 MiB — verified 4,506 H/s benchmark
-  - CUDA 11.8 (Pascal→Ada): 3.6 MiB
-  - CUDA 12.6 (Pascal→Hopper): 4.0 MiB
-  - CUDA 12.8 (Pascal→Blackwell): 4.7 MiB
-- ✅ **LIVE MINING — 100% accepted shares on all 3 GPUs:**
-  - **AMD RX 9070 XT** (nitro): 120 seconds, ~200+ shares accepted, diff 1000→1500→2250, **zero rejections**
-  - **NVIDIA GTX 1070 Ti** (nos2): 60 seconds, 72 shares accepted, CUDA 11.8 container binary, **zero rejections**
-  - **NVIDIA RTX 2070** (nosnode): 60 seconds, 88 shares accepted, CUDA 12.6 binary in forward-compat mode (driver 12.2), **zero rejections**
-- ✅ **All 8 release binaries uploaded to GitHub** (v3.1.0 release)
-- ✅ **Autotuned configs validated in production** — pool difficulty ramp confirms real hashrate
-
-**This is the first time the entire pipeline has been validated end-to-end:**
-`autotune → config write → container build → deploy → live mine → 100% accepted shares`
-
-**Next session priorities (Session 45):**
-1. **Autotune balanced mode on NVIDIA** — Test wider block count sweep
-2. **Phase 4+5 optimization experiments** — Profile AES rounds on 3 GPUs
-3. **Multi-GPU autotune** — Test `--autotune-gpu 0,1` scenarios
-4. **Interactive hashrate display** — Periodic GPU telemetry updates during mining
 
 ---
 
@@ -316,8 +291,77 @@ The code is ours now. The dead weight is gone, the names make sense, and the pat
 | **Total** | **627K µs** | **686K µs** | **781K µs** |
 | **H/s** | **2,432** | **1,552** | **2,211** |
 
-**Next session priorities (Session 47):**
-1. **Autotune integration of worksize sweep** — Add worksize 16/32 to AMD candidate generator
-2. **Phase 2 investigation on AMD** — Phase 2 jumped to 25% with worksize 16 (was 6% with ws=8)
-3. **NVIDIA worksize/block tuning** — Apply similar profiling to CUDA backend
-4. **Container builds with worksize fix** — Release v3.2.0 with RDNA optimization
+---
+
+## Session 47 Notes (2026-03-31 8:40 PM) — Phase 2 OpenCL Optimization + Intensity Scaling 🔥⚡
+
+**What we accomplished:**
+
+### 1. OpenCL Keccak Rho/Pi Inlining
+- ✅ Replaced loop-based Rho/Pi step (used `keccakf_piln[]` and `keccakf_rotc[]` constant memory lookups) with direct register-to-register assignments
+- ✅ Both `keccakf1600_1` (private memory) and `keccakf1600_2` (local memory) versions updated
+- ✅ Verified: permutation cycle and rotation amounts match CUDA backend exactly (mathematically proven via Python trace)
+- ✅ Removed dead `keccakf_rotc[]` and `keccakf_piln[]` constant arrays (−240 bytes constant memory)
+- **Impact:** AMD OpenCL compiler was already optimizing this via `#pragma unroll`, so no measurable perf difference. But explicit inlining ensures consistent performance across all OpenCL compiler versions.
+
+### 2. Phase 2 Workgroup Size Optimization (THE BIG WIN 🏆)
+- ✅ Phase 2 (scratchpad expansion) workgroup size increased from 64 → 512
+- CUDA uses 128, but AMD RDNA4 benefits from even higher parallelism
+
+| Phase 2 WG Size | Phase 2 Time | Total Time | H/s | Change |
+|:---:|---:|---:|---:|:---:|
+| 64 (old) | 66.7K µs (18.3%) | 362K µs | 4,224 | baseline |
+| 128 | 60.4K µs (17.0%) | 356K µs | 4,301 | +1.8% |
+| 256 | 49.9K µs (14.4%) | 347K µs | 4,454 | +5.4% |
+| **512** | **16.0K µs (5.1%)** | **315K µs** | **4,889** | **+15.7%** |
+| 1024 | 13.8K µs (4.4%) | 313K µs | 4,915 | +16.4% (diminishing) |
+
+- ✅ Chose 512 as optimal: massive improvement, minimal register pressure risk
+
+### 3. AutoAdjust Intensity Formula Fix
+- ✅ Old formula: `CUs × 6 × 8 = 1536` (hardcoded, ignored worksize)
+- ✅ New formula: `CUs × 6 × worksize = 3072` (scales with worksize 16)
+- GPU occupancy jumped from 38% to 75%
+
+| Intensity | Occupancy | H/s | Change |
+|:---:|:---:|---:|:---:|
+| 1536 (old) | 38% | 4,889 | baseline |
+| 2048 | 50% | 4,949 | +1.2% |
+| **3072 (new)** | **75%** | **5,017** | **+2.6%** |
+| 4608 | 113% | 4,992 | +2.1% (thermal) |
+
+- ✅ Also updated autotune candidate generator to use same formula
+
+### 4. Validation Results
+- ✅ **Golden hashes:** All 3 CPU test vectors pass ✅
+- ✅ **AMD RX 9070 XT (nitro):** 5,017 H/s, 146 accepted shares, zero rejections ✅
+- ✅ **NVIDIA GTX 1070 Ti (nos2):** 1,525 H/s — no regression (CUDA unaffected) ✅
+- ✅ **NVIDIA RTX 2070 (nosnode):** 2,189 H/s — no regression (CUDA unaffected) ✅
+
+### 5. Updated 3-GPU Baselines (Session 47)
+
+| Phase | RX 9070 XT (ws=16, i=3072) | GTX 1070 Ti | RTX 2070 |
+|-------|---:|---:|---:|
+| Phase 1 | 123 µs (0.0%) | ~0 µs | ~0 µs |
+| Phase 2 | 32K µs (5.3%) | 17K µs (2.5%) | 24K µs (3.1%) |
+| Phase 3 | 465K µs (76.3%) | 568K µs (82.5%) | 665K µs (85.2%) |
+| Phase 4+5 | 112K µs (18.4%) | 103K µs (15.0%) | 91K µs (11.7%) |
+| **Total** | **609K µs** | **688K µs** | **780K µs** |
+| **H/s** | **5,017** | **1,525** | **2,189** |
+
+**Key insights:**
+- Phase 2 was a **hidden bottleneck on AMD** — the 64-thread workgroup left most RDNA4 CUs idle during Keccak expansion
+- 512 threads per workgroup gives each thread only 8 chunks to process (vs 64 with WG=64), keeping all CUs active
+- Phase 3 is now 76% of total time — purely compute-bound (FP dependency chains), inherent to the algorithm
+- Phase 4 (AES implode) is 18% — already optimized with `ds_bpermute` on AMD
+
+**Combined Session 46+47 AMD improvement:**
+- Session 45 baseline: 2,304 H/s (ws=8, intensity=1536, WG=64)
+- Session 47 final: **5,017 H/s** (ws=16, intensity=3072, WG=512)
+- **Total improvement: +117.8%** 🚀
+
+**Next session priorities (Session 48):**
+1. **Container builds with all optimizations** — Release v3.2.0 (OpenCL + CUDA matrix)
+2. **Phase 3 analysis** — Roofline model analysis, can we reduce FP dependency chain depth?
+3. **NVIDIA intensity tuning** — Apply similar occupancy analysis to CUDA backend
+4. **Worksize 32 investigation** — RDNA4 has wave32, does worksize 32 help Phase 3?
