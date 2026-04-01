@@ -237,12 +237,15 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		if(useCryptonight_gpu)
 		{
 			constexpr size_t threads = 8;
-			// Optimal block count by architecture (from CUDA occupancy calculator)
+			// Optimal block count by architecture
+			// Empirically determined via profiling sweep (Session 48):
+			//   Pascal:  6×SMs optimal — Phase 4 hits memory cliff at 7× (+4.7% vs 7×)
+			//   Turing+: 8×SMs optimal — handles higher intensity well (+1.7% vs 6×)
 			size_t blockOptimal;
 			if(gpuArch / 10 == 6)       // Pascal (sm_6x)
-				blockOptimal = 7 * ctx->device_mpcount;
-			else                         // Turing+ (sm_7x and above)
 				blockOptimal = 6 * ctx->device_mpcount;
+			else                         // Turing+ (sm_7x and above)
+				blockOptimal = 8 * ctx->device_mpcount;
 
 			if(blockOptimal * threads * hashMemSize < limitedMemory)
 				ctx->device_blocks = blockOptimal;
