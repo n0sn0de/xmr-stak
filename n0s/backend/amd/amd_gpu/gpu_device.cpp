@@ -147,6 +147,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
 		options += " -DALGO=" + std::to_string(miner_algo.Id());
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
+		options += " -DPHASE2_WORKSIZE=512";
 		/* AMD driver output is something like: `1445.5 (VM)`
 		 * and is mapped to `14` only. The value is only used for a compiler
 		 * workaround.

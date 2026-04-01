@@ -352,9 +352,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	// cn_gpu: run scratchpad preparation kernel (Kernel 7), then main kernel (Kernel 1)
 	{
-		size_t thd = 64;
-		size_t intens = g_intensity * thd;
-		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &thd, 0, nullptr, nullptr)) != CL_SUCCESS)
+		constexpr size_t phase2_wg = 512;  // matches PHASE2_WORKSIZE in kernel
+		size_t intens = g_intensity * phase2_wg;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &phase2_wg, 0, nullptr, nullptr)) != CL_SUCCESS)
 		{
 			printer::inst()->print_msg(L1, "Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 7);
 			return ERR_OCL_API;
@@ -430,9 +430,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	// Phase 2: Scratchpad expand
 	{
-		size_t thd = 64;
-		size_t intens = g_intensity * thd;
-		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &thd, 0, nullptr, nullptr)) != CL_SUCCESS)
+		constexpr size_t phase2_wg = 512;  // matches PHASE2_WORKSIZE in kernel
+		size_t intens = g_intensity * phase2_wg;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[3], 1, 0, &intens, &phase2_wg, 0, nullptr, nullptr)) != CL_SUCCESS)
 			return ERR_OCL_API;
 	}
 	clFinish(ctx->CommandQueues);

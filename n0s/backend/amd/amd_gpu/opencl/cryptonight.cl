@@ -68,15 +68,20 @@ static const __constant uint keccakf_piln[24] =
 	15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1
 };
 
-// keccakf1600_1: private memory version, used by cn0_cn_gpu kernel (Phase 1)
+// keccakf1600_1: private memory version, used by cn0_cn_gpu kernel (Phase 1) and Phase 2 (expand)
+//
+// OPTIMIZED: Rho/Pi step fully inlined as direct register assignments.
+// Eliminates 24 constant memory lookups per round (keccakf_piln + keccakf_rotc)
+// and the serial loop-carried dependency through `t`.
+// Matches the approach used in the CUDA backend (cuda_keccak.hpp).
 inline void keccakf1600_1(ulong st[25])
 {
-	int i, round;
-	ulong t, bc[5];
+	ulong bc[5], tmp1, tmp2;
 
 	#pragma unroll 1
-	for (round = 0; round < 24; ++round)
+	for (int round = 0; round < 24; ++round)
 	{
+		// Theta
 		bc[0] = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20] ^ rotate(st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22], 1UL);
 		bc[1] = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21] ^ rotate(st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23], 1UL);
 		bc[2] = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22] ^ rotate(st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24], 1UL);
@@ -113,41 +118,65 @@ inline void keccakf1600_1(ulong st[25])
 		st[19] ^= bc[3];
 		st[24] ^= bc[3];
 
-		// Rho Pi
-		t = st[1];
-		#pragma unroll
-		for (i = 0; i < 24; ++i) {
-			bc[0] = st[keccakf_piln[i]];
-			st[keccakf_piln[i]] = rotate(t, (ulong)keccakf_rotc[i]);
-			t = bc[0];
-		}
+		// Rho Pi — fully inlined, no constant memory lookups
+		// piln[0]=10,rotc[0]=1:   st[10] = rotate(st[1], 1)   (save old st[1] first)
+		// piln[1]=7, rotc[1]=3:   st[7]  = rotate(st[10],3)   (but st[10] was just written!)
+		// ... and so on for all 24 permutation steps.
+		// The key insight: we trace the permutation cycle and resolve all dependencies.
+		tmp1 = st[1];
+		st[1]  = rotate(st[6],  44UL);
+		st[6]  = rotate(st[9],  20UL);
+		st[9]  = rotate(st[22], 61UL);
+		st[22] = rotate(st[14], 39UL);
+		st[14] = rotate(st[20], 18UL);
+		st[20] = rotate(st[2],  62UL);
+		st[2]  = rotate(st[12], 43UL);
+		st[12] = rotate(st[13], 25UL);
+		st[13] = rotate(st[19],  8UL);
+		st[19] = rotate(st[23], 56UL);
+		st[23] = rotate(st[15], 41UL);
+		st[15] = rotate(st[4],  27UL);
+		st[4]  = rotate(st[24], 14UL);
+		st[24] = rotate(st[21],  2UL);
+		st[21] = rotate(st[8],  55UL);
+		st[8]  = rotate(st[16], 45UL);
+		st[16] = rotate(st[5],  36UL);
+		st[5]  = rotate(st[3],  28UL);
+		st[3]  = rotate(st[18], 21UL);
+		st[18] = rotate(st[17], 15UL);
+		st[17] = rotate(st[11], 10UL);
+		st[11] = rotate(st[7],   6UL);
+		st[7]  = rotate(st[10],  3UL);
+		st[10] = rotate(tmp1,    1UL);
 
+		// Chi
 		#pragma unroll
 		for(int i = 0; i < 25; i += 5)
 		{
-			ulong tmp1 = st[i], tmp2 = st[i + 1];
+			tmp1 = st[i]; tmp2 = st[i + 1];
 
-			st[i] = bitselect(st[i] ^ st[i + 2], st[i], st[i + 1]);
+			st[i]     = bitselect(st[i]     ^ st[i + 2], st[i],     st[i + 1]);
 			st[i + 1] = bitselect(st[i + 1] ^ st[i + 3], st[i + 1], st[i + 2]);
 			st[i + 2] = bitselect(st[i + 2] ^ st[i + 4], st[i + 2], st[i + 3]);
-			st[i + 3] = bitselect(st[i + 3] ^ tmp1, st[i + 3], st[i + 4]);
-			st[i + 4] = bitselect(st[i + 4] ^ tmp2, st[i + 4], tmp1);
+			st[i + 3] = bitselect(st[i + 3] ^ tmp1,      st[i + 3], st[i + 4]);
+			st[i + 4] = bitselect(st[i + 4] ^ tmp2,      st[i + 4], tmp1);
 		}
 
-		//  Iota
+		// Iota
 		st[0] ^= keccakf_rndc[round];
 	}
 }
 
 // keccakf1600_2: local memory version, used by cn2 kernel (Phase 5: Finalize)
+// OPTIMIZED: Same inlined Rho/Pi as keccakf1600_1.
 void keccakf1600_2(__local ulong *st)
 {
-	int i, round;
-	ulong t, bc[5];
+	ulong bc[5], tmp1, tmp2;
 
 	#pragma unroll 1
-	for (round = 0; round < 24; ++round)
+	for (int round = 0; round < 24; ++round)
 	{
+		// Theta
 		bc[0] = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20] ^ rotate(st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22], 1UL);
 		bc[1] = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21] ^ rotate(st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23], 1UL);
 		bc[2] = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22] ^ rotate(st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24], 1UL);
@@ -184,28 +213,47 @@ void keccakf1600_2(__local ulong *st)
 		st[19] ^= bc[3];
 		st[24] ^= bc[3];
 
-		// Rho Pi
-		t = st[1];
-		#pragma unroll
-		for (i = 0; i < 24; ++i) {
-			bc[0] = st[keccakf_piln[i]];
-			st[keccakf_piln[i]] = rotate(t, (ulong)keccakf_rotc[i]);
-			t = bc[0];
-		}
+		// Rho Pi — fully inlined
+		tmp1 = st[1];
+		st[1]  = rotate(st[6],  44UL);
+		st[6]  = rotate(st[9],  20UL);
+		st[9]  = rotate(st[22], 61UL);
+		st[22] = rotate(st[14], 39UL);
+		st[14] = rotate(st[20], 18UL);
+		st[20] = rotate(st[2],  62UL);
+		st[2]  = rotate(st[12], 43UL);
+		st[12] = rotate(st[13], 25UL);
+		st[13] = rotate(st[19],  8UL);
+		st[19] = rotate(st[23], 56UL);
+		st[23] = rotate(st[15], 41UL);
+		st[15] = rotate(st[4],  27UL);
+		st[4]  = rotate(st[24], 14UL);
+		st[24] = rotate(st[21],  2UL);
+		st[21] = rotate(st[8],  55UL);
+		st[8]  = rotate(st[16], 45UL);
+		st[16] = rotate(st[5],  36UL);
+		st[5]  = rotate(st[3],  28UL);
+		st[3]  = rotate(st[18], 21UL);
+		st[18] = rotate(st[17], 15UL);
+		st[17] = rotate(st[11], 10UL);
+		st[11] = rotate(st[7],   6UL);
+		st[7]  = rotate(st[10],  3UL);
+		st[10] = rotate(tmp1,    1UL);
 
+		// Chi
 		#pragma unroll
 		for(int i = 0; i < 25; i += 5)
 		{
-			ulong tmp1 = st[i], tmp2 = st[i + 1];
+			tmp1 = st[i]; tmp2 = st[i + 1];
 
-			st[i] = bitselect(st[i] ^ st[i + 2], st[i], st[i + 1]);
+			st[i]     = bitselect(st[i]     ^ st[i + 2], st[i],     st[i + 1]);
 			st[i + 1] = bitselect(st[i + 1] ^ st[i + 3], st[i + 1], st[i + 2]);
 			st[i + 2] = bitselect(st[i + 2] ^ st[i + 4], st[i + 2], st[i + 3]);
-			st[i + 3] = bitselect(st[i + 3] ^ tmp1, st[i + 3], st[i + 4]);
-			st[i + 4] = bitselect(st[i + 4] ^ tmp2, st[i + 4], tmp1);
+			st[i + 3] = bitselect(st[i + 3] ^ tmp1,      st[i + 3], st[i + 4]);
+			st[i + 4] = bitselect(st[i + 4] ^ tmp2,      st[i + 4], tmp1);
 		}
 
-		//  Iota
+		// Iota
 		st[0] ^= keccakf_rndc[round];
 	}
 }

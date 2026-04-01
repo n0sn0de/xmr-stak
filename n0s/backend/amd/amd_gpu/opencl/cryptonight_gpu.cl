@@ -355,11 +355,19 @@ __kernel void cn_gpu_phase1_keccak(__global ulong *input, __global int *Scratchp
 
 /*
  * Phase 2 Kernel: Expand 200-byte state into 2MB scratchpad (Keccak-based)
+ *
+ * PHASE2_WORKSIZE threads cooperate to fill the 2MB scratchpad.
+ * Each thread generates (MEMORY/512)/PHASE2_WORKSIZE chunks independently.
+ * Higher values increase parallelism but also register pressure.
+ * Default: 64 (original), CUDA uses 128.
  */
-__attribute__((reqd_work_group_size(64, 1, 1)))
+#ifndef PHASE2_WORKSIZE
+#define PHASE2_WORKSIZE 64
+#endif
+__attribute__((reqd_work_group_size(PHASE2_WORKSIZE, 1, 1)))
 __kernel void cn_gpu_phase2_expand(__global int *Scratchpad, __global ulong *states)
 {
-    const uint gIdx = getIdx() / 64;
+    const uint gIdx = getIdx() / PHASE2_WORKSIZE;
     __local ulong State[25];
 
 	states += 25 * gIdx;
