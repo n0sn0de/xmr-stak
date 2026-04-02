@@ -269,7 +269,6 @@ endif()
 # Static linking option
 if(CMAKE_LINK_STATIC)
     set(BUILD_SHARED_LIBRARIES OFF)
-    set(DL_LIB ${CMAKE_DL_LIBS})
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
@@ -292,27 +291,27 @@ add_library(n0s-backend STATIC ${BACKEND_CPP})
 if(MICROHTTPD_ENABLE)
     target_link_libraries(n0s-backend ${MHTD})
 endif()
-target_link_libraries(n0s-backend ${CMAKE_DL_LIBS} ${LIBS})
+target_link_libraries(n0s-backend ${LIBS})
 
-# CUDA backend (shared library, loaded via dlopen)
+# CUDA backend (static library, linked directly into executable)
 if(CUDA_FOUND)
     file(GLOB CUDASRCFILES
         "n0s/backend/nvidia/nvcc_code/*.cu"
         "n0s/backend/nvidia/*.cpp")
 
-    cuda_add_library(n0s_cuda_backend SHARED ${CUDASRCFILES})
+    cuda_add_library(n0s_cuda_backend STATIC ${CUDASRCFILES})
 
     set(CUDA_LIBRARIES ${CUDA_LIB} ${CUDA_LIBRARIES} ${CUDA_NVRTC_LIB})
     target_link_libraries(n0s_cuda_backend ${CUDA_LIBRARIES})
     target_link_libraries(n0s_cuda_backend n0s-backend)
 endif()
 
-# OpenCL backend (shared library, loaded via dlopen)
+# OpenCL backend (static library, linked directly into executable)
 if(OpenCL_FOUND)
     file(GLOB OPENCLSRCFILES
         "n0s/backend/amd/amd_gpu/*.cpp"
         "n0s/backend/amd/*.cpp")
-    add_library(n0s_opencl_backend SHARED ${OPENCLSRCFILES})
+    add_library(n0s_opencl_backend STATIC ${OPENCLSRCFILES})
     target_link_libraries(n0s_opencl_backend ${OpenCL_LIBRARY})
     target_link_libraries(n0s_opencl_backend n0s-backend)
 endif()
@@ -326,6 +325,12 @@ set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to executables relative to $
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
 target_link_libraries(n0s-ryo-miner ${LIBS} n0s-backend)
+if(CUDA_FOUND)
+    target_link_libraries(n0s-ryo-miner n0s_cuda_backend)
+endif()
+if(OpenCL_FOUND)
+    target_link_libraries(n0s-ryo-miner n0s_opencl_backend)
+endif()
 
 ################################################################################
 # Install
@@ -333,12 +338,6 @@ target_link_libraries(n0s-ryo-miner ${LIBS} n0s-backend)
 
 if(NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR)
     install(TARGETS n0s-ryo-miner RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
-    if(CUDA_FOUND)
-        install(TARGETS n0s_cuda_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
-    endif()
-    if(OpenCL_FOUND)
-        install(TARGETS n0s_opencl_backend LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
-    endif()
 else()
     install(CODE "MESSAGE(\"n0s-ryo-miner installed to folder 'bin'\")")
 endif()

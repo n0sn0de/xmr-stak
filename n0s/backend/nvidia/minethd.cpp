@@ -43,7 +43,6 @@
 #include <thread>
 #include <vector>
 
-#include <dlfcn.h>
 #include <iostream>
 #include <sys/types.h>
 
@@ -98,15 +97,6 @@ bool minethd::self_test()
 {
 	return true;
 }
-
-extern "C"
-{
-	std::vector<std::unique_ptr<iBackend>> n0s_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
-	{
-		environment::inst(&env);
-		return cuda::minethd::thread_starter(threadOffset, pWork);
-	}
-} // extern "C"
 
 std::vector<std::unique_ptr<iBackend>> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
 {

@@ -78,14 +78,16 @@ podman run --rm \
         # Build
         cmake --build . -j\$(nproc) 2>&1 | tail -10
 
-        # Verify
-        test -f bin/n0s-ryo-miner && test -f bin/libn0s_cuda_backend.so
+        # Verify — single binary, no .so files needed
+        test -f bin/n0s-ryo-miner
+        # Confirm no shared backend libs were produced
+        ! test -f bin/libn0s_cuda_backend.so || echo 'WARNING: unexpected .so found'
+        ! test -f bin/libn0s_opencl_backend.so || echo 'WARNING: unexpected .so found'
 
-        # Copy artifacts
+        # Copy single binary artifact
         cp bin/n0s-ryo-miner /out/
-        cp bin/libn0s_cuda_backend.so /out/
         echo ''
-        echo '=== Build artifacts ==='
+        echo '=== Build artifact (single binary) ==='
         ls -lh /out/
         echo ''
         echo 'CUDA architectures compiled:'

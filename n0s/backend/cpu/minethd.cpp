@@ -500,7 +500,7 @@ void minethd::multiway_work_main()
 		cryptonight_free_ctx(ctx[i]);
 }
 
-// Explicit template instantiations required by OpenCL/CUDA .so plugins (loaded via dlopen)
+// Explicit template instantiations required by OpenCL/CUDA backends
 template void minethd::func_multi_selector<1>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
 template void minethd::func_multi_selector<2>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
 template void minethd::func_multi_selector<3>(cryptonight_ctx**, minethd::cn_on_new_job&, bool, bool, const n0s_algo&);
