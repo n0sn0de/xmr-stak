@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Planning. Optimization phase complete (Sessions 37–49). Three pillars remain: single-binary packaging, GUI dashboard, Windows release.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 REST API foundation laid (Session 50). GUI frontend next.*
 
 ---
 
@@ -539,3 +539,66 @@ Things explicitly **not** in scope:
 | Windows parity | Same hashrate as Linux on identical hardware |
 | Zero regressions | All existing golden hash tests + live mining pass |
 | CLI independence | Every GUI feature also accessible via CLI flags |
+
+---
+
+## Session Notes
+
+### Session 50 (2026-04-02) — Pillar 1 Complete + REST API Foundation 🏗️⚡
+
+**Pillar 1: Single Executable — COMPLETE ✅**
+
+Eliminated the entire `dlopen`/`dlsym` plugin system. Both CUDA and OpenCL backends now compile as static libraries and link directly into the main executable. One file, zero companion `.so` files.
+
+| Change | Detail |
+|--------|--------|
+| CUDA backend | `SHARED` → `STATIC` library |
+| OpenCL backend | `SHARED` → `STATIC` library |
+| `backendConnector.cpp` | Direct calls to `cuda::minethd::thread_starter()` / `opencl::minethd::thread_starter()` |
+| `plugin.hpp` | **Deleted** — 81 lines of dlopen/dlsym/dlclose abstraction removed |
+| `extern "C"` wrappers | Removed from both backend entry points |
+| `CMAKE_DL_LIBS` | Removed — no more libdl dependency |
+| Install rules | Simplified to single binary |
+| Container build | Updated for single-binary output |
+
+**Binary sizes:**
+- OpenCL-only (nitro): **1.0 MB**
+- CUDA 11.8 (nos2): **3.0 MB**
+- CUDA 12.6 (nosnode): **3.5 MB**
+- Container build (CUDA 11.8): **2.2 MB**
+
+**3-GPU validation:**
+- nitro (RX 9070 XT, OpenCL): 40+ shares, 0 rejected ✅
+- nos2 (GTX 1070 Ti, CUDA 11.8): 24+ shares, 0 rejected ✅
+- nosnode (RTX 2070, CUDA 12.6): 18+ shares, 0 rejected ✅
+
+**Pillar 2: REST API v1 — Foundation Laid ✅**
+
+Built 5 clean JSON API endpoints as the backbone for the GUI dashboard:
+
+| Endpoint | Data |
+|----------|------|
+| `GET /api/v1/status` | Mining state, uptime, pool connection, active backends |
+| `GET /api/v1/hashrate` | Per-GPU + total hashrate (10s/60s/15m windows), backend type |
+| `GET /api/v1/gpus` | GPU list with live telemetry (temp/power/fan/clocks) |
+| `GET /api/v1/pool` | Shares accepted/rejected, difficulty, ping, top difficulties |
+| `GET /api/v1/version` | Version string, build info, enabled backends |
+
+Implementation notes:
+- Uses rapidjson for clean JSON serialization
+- Thread-safe: all endpoints dispatch through executor event loop
+- NaN/Infinity sanitization for telemetry values
+- CORS headers for local GUI development
+- Legacy `/api.json` endpoint preserved for backward compatibility
+
+**Key learnings:**
+- OpenCL `.cl` kernel sources were already embedded as C++ raw string literals — no embedding work needed
+- `calc_telemetry_data()` returns `nan("")` when insufficient data — must sanitize before JSON serialization
+- rapidjson `Writer` silently truncates output on NaN doubles — always sanitize
+- The `extern "C"` / `dlopen` pattern was pure legacy from xmr-stak's multi-algorithm days — clean removal
+
+**Next session priorities (Session 51):**
+1. **Hashrate history ring buffer** — Circular buffer for time-series data, `/api/v1/hashrate/history` endpoint
+2. **Frontend SPA** — `gui/index.html` + `gui/style.css` + `gui/app.js` — dashboard with hashrate chart
+3. **Asset embedding** — CMake pipeline: minify → gzip → xxd → embedded C++ header
+4. **`--gui` flag** — Launch browser to `localhost:{port}` with `xdg-open`
