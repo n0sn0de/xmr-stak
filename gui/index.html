@@ -14,7 +14,7 @@
 <header id="header">
   <div class="header-left">
     <div class="logo">N0S-RYO</div>
-    <div class="logo-sub">GPU MINER</div>
+    <div class="logo-sub">CRYPTONIGHT-GPU MINER</div>
   </div>
   <div class="header-right">
     <span id="pool-addr" class="pool-addr">—</span>
@@ -25,82 +25,112 @@
   </div>
 </header>
 
-<!-- Stats Row -->
-<div class="stats-row">
-  <div class="stat-card accent">
-    <div class="stat-label">Total Hashrate</div>
-    <div class="stat-value" id="total-hs">—</div>
-    <div class="stat-sub" id="total-hs-sub">&nbsp;</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Shares</div>
-    <div class="stat-value" id="shares-val">— / —</div>
-    <div class="stat-sub" id="shares-sub">accepted / rejected</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Difficulty</div>
-    <div class="stat-value" id="diff-val">—</div>
-    <div class="stat-sub" id="diff-sub">&nbsp;</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Pool Ping</div>
-    <div class="stat-value" id="ping-val">—</div>
-    <div class="stat-sub" id="ping-sub">&nbsp;</div>
-  </div>
-</div>
+<!-- Navigation Tabs -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-page="monitor">Monitor</button>
+  <button class="tab-btn" data-page="config">Configuration</button>
+</nav>
 
-<!-- Hashrate Chart -->
-<div class="chart-container">
-  <div class="chart-header">
-    <span class="chart-title">Hashrate</span>
-    <span class="chart-legend" id="chart-legend"></span>
+<!-- ==================== MONITOR PAGE ==================== -->
+<div id="page-monitor" class="page active">
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card accent">
+      <div class="stat-label">Total Hashrate</div>
+      <div class="stat-value" id="total-hs">—</div>
+      <div class="stat-sub" id="total-hs-sub">&nbsp;</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Shares</div>
+      <div class="stat-value" id="shares-val">— / —</div>
+      <div class="stat-sub" id="shares-sub">accepted / rejected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Difficulty</div>
+      <div class="stat-value" id="diff-val">—</div>
+      <div class="stat-sub" id="diff-sub">&nbsp;</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pool Ping</div>
+      <div class="stat-value" id="ping-val">—</div>
+      <div class="stat-sub" id="ping-sub">&nbsp;</div>
+    </div>
   </div>
-  <canvas id="hashrate-chart"></canvas>
-</div>
 
-<!-- GPU Table -->
-<div class="gpu-section">
-  <div class="section-title">GPU Details</div>
-  <table id="gpu-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Backend</th>
-        <th class="num">H/s</th>
-        <th class="num">Temp</th>
-        <th class="num">Power</th>
-        <th class="num">Fan</th>
-        <th class="num">GPU Clk</th>
-        <th class="num">Mem Clk</th>
-      </tr>
-    </thead>
-    <tbody id="gpu-tbody"></tbody>
-  </table>
-</div>
+  <!-- Hashrate Chart -->
+  <div class="chart-container">
+    <div class="chart-header">
+      <span class="chart-title">Hashrate</span>
+      <span class="chart-legend" id="chart-legend"></span>
+    </div>
+    <canvas id="hashrate-chart"></canvas>
+  </div>
 
-<!-- Bottom Row: Pool + Config + Top Diffs -->
-<div class="bottom-row">
-  <div class="pool-section">
-    <div class="section-title">Pool</div>
+  <!-- GPU Table -->
+  <div class="gpu-section">
+    <div class="section-title">GPU Details</div>
+    <table id="gpu-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Card</th>
+          <th class="num">H/s</th>
+          <th class="num">Power</th>
+          <th class="num">H/W</th>
+          <th class="num">Temp</th>
+          <th class="num">Fan</th>
+          <th class="num">GPU Clk</th>
+          <th class="num">Mem Clk</th>
+        </tr>
+      </thead>
+      <tbody id="gpu-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Top Difficulties -->
+  <div class="top-diff-section">
+    <div class="section-title">Top Difficulties</div>
+    <div id="top-diffs" class="top-diffs"></div>
+  </div>
+
+</div><!-- #page-monitor -->
+
+<!-- ==================== CONFIG PAGE ==================== -->
+<div id="page-config" class="page">
+
+  <!-- Pool Configuration -->
+  <div class="config-section">
+    <div class="section-title">Pool Configuration</div>
     <div class="info-grid" id="pool-info">
       <span class="info-label">Address</span><span class="info-value" id="pi-addr">—</span>
       <span class="info-label">Wallet</span><span class="info-value" id="pi-wallet">—</span>
       <span class="info-label">Rig ID</span><span class="info-value" id="pi-rigid">—</span>
       <span class="info-label">TLS</span><span class="info-value" id="pi-tls">—</span>
+      <span class="info-label">Nicehash</span><span class="info-value" id="pi-nicehash">—</span>
       <span class="info-label">Hashes</span><span class="info-value" id="pi-hashes">—</span>
-      <span class="info-label">Avg Share</span><span class="info-value" id="pi-avg-share">—</span>
-      <span class="info-label">Uptime</span><span class="info-value" id="pi-uptime">—</span>
+      <span class="info-label">Avg Share Time</span><span class="info-value" id="pi-avg-share">—</span>
+      <span class="info-label">Connection Uptime</span><span class="info-value" id="pi-uptime">—</span>
     </div>
   </div>
-  <div class="top-diff-section">
-    <div class="section-title">Top Difficulties</div>
-    <div id="top-diffs" class="top-diffs"></div>
-    <div class="autotune-section" id="autotune-box" style="display:none">
-      <div class="section-title" style="margin-top:16px">Autotune Results</div>
-      <div id="autotune-info"></div>
+
+  <!-- Autotune Results -->
+  <div class="config-section" id="autotune-box" style="display:none">
+    <div class="section-title">Autotune Results</div>
+    <div id="autotune-info"></div>
+  </div>
+
+  <!-- Miner Configuration -->
+  <div class="config-section">
+    <div class="section-title">Miner</div>
+    <div class="info-grid" id="miner-info">
+      <span class="info-label">Algorithm</span><span class="info-value" id="mi-algo">—</span>
+      <span class="info-label">Backends</span><span class="info-value" id="mi-backends">—</span>
+      <span class="info-label">HTTP Port</span><span class="info-value" id="mi-httpd">—</span>
     </div>
   </div>
-</div>
+
+</div><!-- #page-config -->
 
 </div><!-- #app -->
 <script src="/gui/app.js"></script>

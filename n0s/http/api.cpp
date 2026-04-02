@@ -211,6 +211,13 @@ void executor::api_gpus_report(std::string& out)
 		else if(gi.type == n0s::iBackend::NVIDIA)
 			hasTelemetry = n0s::queryNvidiaTelemetry(gi.gpuIndex, tel);
 
+		// GPU name from telemetry (nvidia-smi or amd-smi)
+		if(!tel.name.empty())
+		{
+			Value name(tel.name.c_str(), alloc);
+			gpu.AddMember("name", name, alloc);
+		}
+
 		if(hasTelemetry)
 		{
 			Value telemetry(kObjectType);
@@ -220,6 +227,11 @@ void executor::api_gpus_report(std::string& out)
 			if(tel.fan_rpm >= 0) telemetry.AddMember("fan_rpm", tel.fan_rpm, alloc);
 			if(tel.gpu_clock_mhz >= 0) telemetry.AddMember("gpu_clock_mhz", tel.gpu_clock_mhz, alloc);
 			if(tel.mem_clock_mhz >= 0) telemetry.AddMember("mem_clock_mhz", tel.mem_clock_mhz, alloc);
+
+			// H/W (hashrate per watt)
+			if(tel.power_w > 0 && gi.hashrate > 0)
+				telemetry.AddMember("hw_ratio", sanitize_double(gi.hashrate / tel.power_w), alloc);
+
 			gpu.AddMember("telemetry", telemetry, alloc);
 		}
 

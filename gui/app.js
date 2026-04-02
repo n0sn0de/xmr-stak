@@ -3,14 +3,13 @@
 
 const API = '/api/v1';
 const POLL_MS = 2000;       // Poll interval for live data
-const HISTORY_POLL_MS = 10000; // Poll history less often (chart has live append)
+const HISTORY_POLL_MS = 10000; // Poll history less often
 const CHART_WINDOW = 3600;  // 1 hour of chart data (seconds)
 
 // Color palette for per-GPU lines
 const GPU_COLORS = [
   '#00d7ff', '#3fb950', '#d29922', '#f85149',
   '#a371f7', '#79c0ff', '#f778ba', '#ffa657',
-  '#7ee787', '#ff7b72', '#d2a8ff', '#56d4dd',
 ];
 
 // ─── State ───
@@ -18,6 +17,7 @@ let chartCtx = null;
 let chartData = { timestamps: [], total: [], perGpu: [] };
 let gpuCount = 0;
 let prevTotal10s = null;
+let activePage = 'monitor';
 
 // ─── Helpers ───
 function fmt(n) {
@@ -25,6 +25,13 @@ function fmt(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(2) + ' MH/s';
   if (n >= 1e3) return (n / 1e3).toFixed(1) + ' kH/s';
   return n.toFixed(1) + ' H/s';
+}
+
+function fmtShort(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  return n.toFixed(0);
 }
 
 function fmtInt(n) {
@@ -68,6 +75,7 @@ const el = {
   piWallet:   $('pi-wallet'),
   piRigid:    $('pi-rigid'),
   piTls:      $('pi-tls'),
+  piNicehash: $('pi-nicehash'),
   piHashes:   $('pi-hashes'),
   piAvgShare: $('pi-avg-share'),
   piUptime:   $('pi-uptime'),
@@ -75,7 +83,23 @@ const el = {
   chartLegend:$('chart-legend'),
   autotuneBox:$('autotune-box'),
   autotuneInfo:$('autotune-info'),
+  miAlgo:     $('mi-algo'),
+  miBackends: $('mi-backends'),
+  miHttpd:    $('mi-httpd'),
 };
+
+// ─── Tab Navigation ───
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    $('page-' + page).classList.add('active');
+    activePage = page;
+    if (page === 'monitor') { initChart(); drawChart(); }
+  });
+});
 
 // ─── Update Functions ───
 
@@ -112,12 +136,11 @@ async function updateHashrate() {
   }
   prevTotal10s = h10;
 
-  // Append to chart data from live poll
+  // Append to chart data
   const now = Date.now();
   chartData.timestamps.push(now);
   chartData.total.push(h10);
 
-  // Per-GPU from threads
   const threads = d.threads || [];
   gpuCount = Math.max(gpuCount, threads.length);
   while (chartData.perGpu.length < gpuCount) chartData.perGpu.push([]);
@@ -133,7 +156,7 @@ async function updateHashrate() {
     for (let i = 0; i < chartData.perGpu.length; i++) chartData.perGpu[i].shift();
   }
 
-  drawChart();
+  if (activePage === 'monitor') drawChart();
 }
 
 async function updatePool() {
@@ -170,15 +193,26 @@ async function updateGpus() {
   let html = '';
   for (const g of gpus) {
     const t = g.telemetry || {};
+    const name = g.name || g.backend || '—';
+    const hs = Math.round(g.hashrate || 0);
+    const hw = t.hw_ratio != null ? t.hw_ratio.toFixed(1) : '—';
+    const power = t.power_w != null ? t.power_w + 'W' : '—';
+    const temp = t.temp_c != null ? t.temp_c + '°C' : '—';
+    const tempColor = t.temp_c != null ? (t.temp_c >= 80 ? 'var(--red)' : t.temp_c >= 70 ? 'var(--yellow)' : '') : '';
+    const fan = t.fan_pct != null ? t.fan_pct + '%' : (t.fan_rpm != null ? t.fan_rpm + ' RPM' : '—');
+    const gclk = t.gpu_clock_mhz != null ? t.gpu_clock_mhz : '—';
+    const mclk = t.mem_clock_mhz != null ? t.mem_clock_mhz : '—';
+
     html += `<tr>
       <td>${g.index}</td>
-      <td>${g.backend || '—'}</td>
-      <td class="num">${fmtInt(Math.round(g.hashrate || 0))}</td>
-      <td class="num">${t.temp_c != null ? t.temp_c + '°C' : '—'}</td>
-      <td class="num">${t.power_w != null ? t.power_w + 'W' : '—'}</td>
-      <td class="num">${t.fan_pct != null ? t.fan_pct + '%' : (t.fan_rpm != null ? t.fan_rpm + ' RPM' : '—')}</td>
-      <td class="num">${t.gpu_clock_mhz != null ? t.gpu_clock_mhz + ' MHz' : '—'}</td>
-      <td class="num">${t.mem_clock_mhz != null ? t.mem_clock_mhz + ' MHz' : '—'}</td>
+      <td class="card-name">${name}</td>
+      <td class="num">${fmtInt(hs)}</td>
+      <td class="num">${power}</td>
+      <td class="num">${hw}</td>
+      <td class="num"${tempColor ? ` style="color:${tempColor}"` : ''}>${temp}</td>
+      <td class="num">${fan}</td>
+      <td class="num">${gclk}</td>
+      <td class="num">${mclk}</td>
     </tr>`;
   }
   el.gpuTbody.innerHTML = html;
@@ -195,7 +229,18 @@ async function updateConfig() {
     el.piRigid.textContent = p.rig_id || '(none)';
     el.piTls.textContent = p.tls ? '✓ enabled' : '✗ disabled';
     el.piTls.style.color = p.tls ? 'var(--green)' : 'var(--text-dim)';
+    el.piNicehash.textContent = p.nicehash ? '✓ enabled' : '✗ disabled';
+    el.piNicehash.style.color = p.nicehash ? 'var(--yellow)' : 'var(--text-dim)';
   }
+
+  // Miner info
+  el.miAlgo.textContent = d.algorithm || '—';
+  const be = d.backends || {};
+  const parts = [];
+  if (be.amd) parts.push('OpenCL');
+  if (be.nvidia) parts.push('CUDA');
+  el.miBackends.textContent = parts.join(' + ') || '—';
+  el.miHttpd.textContent = d.httpd_port || '—';
 }
 
 async function updateAutotune() {
@@ -230,7 +275,6 @@ async function loadHistory() {
   const d = await api('/hashrate/history');
   if (!d || !d.samples || d.samples.length === 0) return;
 
-  // Replace chart data with history
   chartData.timestamps = d.samples.map(s => s.t);
   chartData.total = d.samples.map(s => s.total);
   gpuCount = d.gpu_count || 0;
@@ -238,13 +282,14 @@ async function loadHistory() {
   for (let g = 0; g < gpuCount; g++) {
     chartData.perGpu.push(d.samples.map(s => (s.gpus && s.gpus[g]) || 0));
   }
-  drawChart();
+  if (activePage === 'monitor') drawChart();
 }
 
-// ─── Chart Drawing (pure Canvas, no deps) ───
+// ─── Chart Drawing (pure Canvas) ───
 
 function initChart() {
   const canvas = $('hashrate-chart');
+  if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
@@ -269,14 +314,13 @@ function drawChart() {
   const n = chartData.timestamps.length;
   if (n < 2) return;
 
-  // Y range from total hashrate
+  // Y range
   let yMin = Infinity, yMax = -Infinity;
   for (let i = 0; i < n; i++) {
     const v = chartData.total[i];
     if (v < yMin) yMin = v;
     if (v > yMax) yMax = v;
   }
-  // Add 10% padding
   const yRange = yMax - yMin || 1;
   yMin = Math.max(0, yMin - yRange * 0.1);
   yMax = yMax + yRange * 0.1;
@@ -292,6 +336,7 @@ function drawChart() {
   chartCtx.strokeStyle = 'rgba(48, 54, 61, 0.6)';
   chartCtx.lineWidth = 0.5;
   const ySteps = 4;
+  const monoFont = '10px ' + getComputedStyle(document.body).getPropertyValue('--mono');
   for (let i = 0; i <= ySteps; i++) {
     const y = pad.top + (cH / ySteps) * i;
     chartCtx.beginPath();
@@ -299,15 +344,14 @@ function drawChart() {
     chartCtx.lineTo(W - pad.right, y);
     chartCtx.stroke();
 
-    // Y-axis labels
     const val = yMax - (i / ySteps) * (yMax - yMin);
     chartCtx.fillStyle = '#8b949e';
-    chartCtx.font = '10px ' + getComputedStyle(document.body).getPropertyValue('--mono');
+    chartCtx.font = monoFont;
     chartCtx.textAlign = 'right';
-    chartCtx.fillText(fmt(val).replace(' H/s',''), pad.left - 6, y + 3);
+    chartCtx.fillText(fmtShort(val), pad.left - 6, y + 3);
   }
 
-  // X-axis time labels
+  // X-axis labels
   chartCtx.textAlign = 'center';
   const xSteps = Math.min(6, Math.floor(cW / 80));
   for (let i = 0; i <= xSteps; i++) {
@@ -319,7 +363,7 @@ function drawChart() {
     chartCtx.fillText(label, x, H - 4);
   }
 
-  // Helper: draw a line series
+  // Draw line series
   function drawLine(data, color, width) {
     chartCtx.beginPath();
     chartCtx.strokeStyle = color;
@@ -335,15 +379,15 @@ function drawChart() {
     chartCtx.stroke();
   }
 
-  // Per-GPU lines (thin, behind total)
+  // Per-GPU lines
   for (let g = 0; g < chartData.perGpu.length; g++) {
     drawLine(chartData.perGpu[g], GPU_COLORS[g % GPU_COLORS.length] + '80', 1);
   }
 
-  // Total line (thick, on top)
+  // Total line
   drawLine(chartData.total, '#00d7ff', 2);
 
-  // Glow effect under total line
+  // Gradient fill
   chartCtx.beginPath();
   for (let i = 0; i < n; i++) {
     const x = xPos(chartData.timestamps[i]);
@@ -372,21 +416,18 @@ function drawChart() {
 
 async function init() {
   initChart();
-  window.addEventListener('resize', () => { initChart(); drawChart(); });
+  window.addEventListener('resize', () => { if (activePage === 'monitor') { initChart(); drawChart(); } });
 
-  // Initial data load
   await Promise.all([updateVersion(), updateConfig(), updateAutotune(), loadHistory()]);
 
-  // Main poll loop
   async function tick() {
     await Promise.all([updateStatus(), updateHashrate(), updatePool(), updateGpus()]);
     setTimeout(tick, POLL_MS);
   }
   tick();
 
-  // Less frequent refreshes
   setInterval(loadHistory, HISTORY_POLL_MS);
-  setInterval(updateConfig, 30000);  // Config rarely changes
+  setInterval(updateConfig, 30000);
   setInterval(updateAutotune, 30000);
 }
 

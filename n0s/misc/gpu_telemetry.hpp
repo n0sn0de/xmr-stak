@@ -11,6 +11,7 @@ namespace n0s
 
 struct GpuTelemetry
 {
+	std::string name;       // GPU device name (e.g., "AMD Radeon RX 9070 XT")
 	int temp_c = -1;        // Temperature in °C (-1 = unavailable)
 	int power_w = -1;       // Power draw in watts (-1 = unavailable)
 	int fan_rpm = -1;       // Fan speed in RPM (-1 = unavailable)

@@ -5,6 +5,8 @@
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
+#include <map>
+#include <mutex>
 #include <sstream>
 #include <string>
 
@@ -13,6 +15,100 @@ namespace n0s
 
 namespace
 {
+
+/// Cached GPU name lookup (populated on first query per device)
+std::map<uint32_t, std::string> amdNameCache;
+std::map<uint32_t, std::string> nvidiaNameCache;
+std::mutex nameCacheMutex;
+
+/// Query AMD GPU name via amd-smi (cached)
+std::string getAmdGpuName(uint32_t device_index)
+{
+	std::lock_guard<std::mutex> lck(nameCacheMutex);
+	auto it = amdNameCache.find(device_index);
+	if(it != amdNameCache.end()) return it->second;
+
+	// Try amd-smi
+	char cmd[256];
+	snprintf(cmd, sizeof(cmd),
+		"amd-smi static --gpu %u 2>/dev/null | grep MARKET_NAME | head -1",
+		device_index);
+	FILE* pipe = popen(cmd, "r");
+	if(pipe)
+	{
+		char buf[256];
+		if(fgets(buf, sizeof(buf), pipe))
+		{
+			std::string line(buf);
+			auto pos = line.find(':');
+			if(pos != std::string::npos)
+			{
+				std::string name = line.substr(pos + 1);
+				// Trim
+				while(!name.empty() && (name.front() == ' ')) name.erase(0, 1);
+				while(!name.empty() && (name.back() == '\n' || name.back() == ' ')) name.pop_back();
+				if(!name.empty() && name != "N/A")
+				{
+					amdNameCache[device_index] = name;
+					pclose(pipe);
+					return name;
+				}
+			}
+		}
+		pclose(pipe);
+	}
+
+	// Fallback: try PATH lookup for amd-smi in /opt/rocm*/bin
+	snprintf(cmd, sizeof(cmd),
+		"ls /opt/rocm*/bin/amd-smi 2>/dev/null | head -1");
+	pipe = popen(cmd, "r");
+	if(pipe)
+	{
+		char path[256] = {};
+		if(fgets(path, sizeof(path), pipe))
+		{
+			// Trim newline
+			for(char* p = path; *p; p++) if(*p == '\n') *p = '\0';
+
+			char cmd2[512];
+			snprintf(cmd2, sizeof(cmd2),
+				"%s static --gpu %u 2>/dev/null | grep MARKET_NAME | head -1",
+				path, device_index);
+			pclose(pipe);
+
+			pipe = popen(cmd2, "r");
+			if(pipe)
+			{
+				char buf2[256];
+				if(fgets(buf2, sizeof(buf2), pipe))
+				{
+					std::string line(buf2);
+					auto pos = line.find(':');
+					if(pos != std::string::npos)
+					{
+						std::string name = line.substr(pos + 1);
+						while(!name.empty() && name.front() == ' ') name.erase(0, 1);
+						while(!name.empty() && (name.back() == '\n' || name.back() == ' ')) name.pop_back();
+						if(!name.empty() && name != "N/A")
+						{
+							amdNameCache[device_index] = name;
+							pclose(pipe);
+							return name;
+						}
+					}
+				}
+				pclose(pipe);
+			}
+		}
+		else
+		{
+			pclose(pipe);
+		}
+	}
+
+	amdNameCache[device_index] = "AMD GPU " + std::to_string(device_index);
+	return amdNameCache[device_index];
+}
 
 /// Read an integer from a sysfs file
 int readSysfsInt(const std::string& path)
@@ -109,6 +205,9 @@ bool queryAmdTelemetry(uint32_t device_index, GpuTelemetry& telem)
 	// Memory clock
 	telem.mem_clock_mhz = parseDpmClock(drmBase + "pp_dpm_mclk");
 
+	// GPU name (cached)
+	telem.name = getAmdGpuName(device_index);
+
 	return (telem.temp_c > 0 || telem.power_w > 0);
 }
 
@@ -116,7 +215,7 @@ bool queryNvidiaTelemetry(uint32_t device_index, GpuTelemetry& telem)
 {
 	char cmd[256];
 	snprintf(cmd, sizeof(cmd),
-		"nvidia-smi -i %u --query-gpu=temperature.gpu,power.draw,fan.speed,"
+		"nvidia-smi -i %u --query-gpu=name,temperature.gpu,power.draw,fan.speed,"
 		"clocks.current.graphics,clocks.current.memory "
 		"--format=csv,noheader,nounits 2>/dev/null",
 		device_index);
@@ -130,12 +229,23 @@ bool queryNvidiaTelemetry(uint32_t device_index, GpuTelemetry& telem)
 		output += buf.data();
 	pclose(pipe);
 
-	// Parse CSV: "temp, power, fan%, gpu_clock, mem_clock"
-	// e.g. "65, 120.50, 60, 1800, 7000"
+	// Parse CSV: "name, temp, power, fan%, gpu_clock, mem_clock"
+	// e.g. "NVIDIA GeForce GTX 1070 Ti, 65, 120.50, 60, 1800, 7000"
+	// Extract name (everything before first comma that precedes a digit)
+	auto firstComma = output.find(',');
+	if(firstComma == std::string::npos) return false;
+
+	telem.name = output.substr(0, firstComma);
+	// Trim whitespace from name
+	while(!telem.name.empty() && (telem.name.back() == ' ' || telem.name.back() == '\n'))
+		telem.name.pop_back();
+
+	// Parse remaining numeric fields after the name
+	const char* numStart = output.c_str() + firstComma + 1;
 	float power_f = 0;
 	int temp = -1, fan = -1, gpu_clk = -1, mem_clk = -1;
 
-	if(sscanf(output.c_str(), "%d, %f, %d, %d, %d",
+	if(sscanf(numStart, " %d, %f, %d, %d, %d",
 		&temp, &power_f, &fan, &gpu_clk, &mem_clk) >= 2)
 	{
 		telem.temp_c = temp;
