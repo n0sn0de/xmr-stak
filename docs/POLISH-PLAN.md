@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Active. Pillar 1 complete (Session 50). Pillar 2 dashboard phase 2 complete (Session 53). Container builds validated.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 dashboard phase 3 complete (Session 53). Tab nav, GPU names, H/W, config page.*
 
 ---
 
@@ -672,9 +672,30 @@ The `gui_assets` custom command was depended on by `n0s-ryo-miner` (executable) 
 | 8 | `/api/v1/version` | GET | Version, backends, algorithm |
 | 9 | `/gui/*` | GET | Embedded dashboard SPA (6.8 KB gzipped) |
 
+### Session 53b (2026-04-02 evening) — GUI Phase 3: Tab Nav, GPU Names, H/W, Config Page 🖥️⚡
+
+**Dashboard UI overhaul per Jason's feedback.**
+
+| Change | Detail |
+|--------|--------|
+| **Tab navigation** | Monitor + Configuration pages via tab buttons |
+| **Monitor page** | Hashrate chart, GPU table, top difficulties |
+| **Configuration page** | Pool config (address, wallet, rig ID, TLS, nicehash), autotune results, miner info |
+| **GPU table reorder** | #, Card, H/s, Power, H/W, Temp, Fan, GPU Clk, Mem Clk |
+| **Card name column** | Replaces "Backend" — shows "AMD Radeon RX 9070 XT", "NVIDIA GeForce GTX 1070 Ti" etc |
+| **H/W efficiency** | Hash per watt ratio in GPU table and API |
+| **Temperature coloring** | Green < 70°C < Yellow < 80°C < Red |
+| **Branding** | Subtext changed to "CRYPTONIGHT-GPU MINER" |
+| **GPU name query** | NVIDIA: from nvidia-smi CSV; AMD: from amd-smi MARKET_NAME (cached) |
+| **GpuTelemetry::name** | New field in telemetry struct for GPU device name |
+
+**3-GPU validation:**
+- nitro (AMD Radeon RX 9070 XT): name + H/W + telemetry ✅
+- nos2 (NVIDIA GeForce GTX 1070 Ti): name + H/W + telemetry ✅
+- nosnode (RTX 2070): build clean ✅
+
 **Next session priorities (Session 54):**
 1. **Pool config write API** — `PUT /api/v1/config/pool` with reconnect
-2. **Responsive polish** — Test on mobile browsers, refine spacing/typography
-3. **Error state handling** — Dashboard behavior when pool disconnects
-4. **Container build matrix** — Full CUDA 11.8/12.6/12.8 validation
-5. **Version bump** — v3.2.0 release prep (Pillar 1 + Pillar 2 phase 1)
+2. **Responsive polish** — Test on mobile browsers, refine spacing
+3. **Container build matrix** — Full CUDA 11.8/12.6/12.8 validation
+4. **Version bump** — v3.2.0 release prep
