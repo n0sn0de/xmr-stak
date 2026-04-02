@@ -360,8 +360,34 @@ The code is ours now. The dead weight is gone, the names make sense, and the pat
 - Session 47 final: **5,017 H/s** (ws=16, intensity=3072, WG=512)
 - **Total improvement: +117.8%** 🚀
 
-**Next session priorities (Session 48):**
-1. **Container builds with all optimizations** — Release v3.2.0 (OpenCL + CUDA matrix)
-2. **Phase 3 analysis** — Roofline model analysis, can we reduce FP dependency chain depth?
-3. **NVIDIA intensity tuning** — Apply similar occupancy analysis to CUDA backend
-4. **Worksize 32 investigation** — RDNA4 has wave32, does worksize 32 help Phase 3?
+---
+
+## Session 48 Notes (2026-04-01 12:30 AM) — CUDA Intensity Tuning (Pascal/Turing) 🎯⚡
+
+**What we accomplished:**
+- ✅ **Empirical profiling sweep on Pascal GTX 1070 Ti:** Tested block multipliers 6×, 7×, 8× SMs
+  - Found **Phase 4 memory cliff at 7+ blocks/SM** — AES compression time jumps 97 µs → 59 µs
+  - 6×SMs optimal: **1623 H/s (+4.7%)** vs old default 7×SMs (1550 H/s)
+  - Pascal L2 cache (1.4 MB) can't sustain 7+ concurrent AES operations
+  
+- ✅ **Empirical profiling sweep on Turing RTX 2070:** Tested 5×, 6×, 7×, 8×, 9× SMs
+  - Turing handles higher intensity better (4 MB L2 cache vs Pascal 1.4 MB)
+  - 8×SMs optimal: **2263 H/s (+1.7%)** vs old default 6×SMs (2226 H/s)
+  - No Phase 4 cliff until 9×SMs (thermal limits first)
+  
+- ✅ **Updated CUDA device init:** Pascal 7→6, Turing 6→8 block multipliers
+- ✅ **Updated autotune candidate generator** to match new optimal multipliers
+- ✅ **Live mining validation:** 100% share acceptance on both GPUs
+- ✅ **Documented in `docs/benchmarks/SESSION-48-CUDA-INTENSITY.md`**
+
+**Key insight:** Pascal's smaller L2 cache creates a sharp Phase 4 memory bottleneck at high intensity. Turing's improved memory subsystem benefits from higher occupancy. Architecture-specific tuning matters more than raw SM count.
+
+**Performance gains (Session 48):**
+- GTX 1070 Ti: **+4.7%** (1550 → 1623 H/s)
+- RTX 2070: **+1.7%** (2226 → 2263 H/s)
+
+**Next session priorities (Session 49):**
+1. **Merge to master** — Create PR for `optimize/cuda-intensity-tuning` branch
+2. **Container builds with all optimizations** — Release v3.2.0 (OpenCL + CUDA matrix)
+3. **Test on Ampere (sm_8x)** — Does 8×SMs remain optimal? Does 10× work?
+4. **Phase 3 analysis** — Roofline model, can we reduce FP dependency chain depth?

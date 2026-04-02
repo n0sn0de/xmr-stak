@@ -137,11 +137,11 @@ inline std::vector<NvidiaCandidate> generateNvidiaCandidates(
 	constexpr uint32_t cn_gpu_threads = 8;
 
 	// Block multipliers: blocks = SM_count × multiplier
-	// Architecture-optimal ranges from CUDA init code:
-	//   Pascal (sm_6x): 7 × SM_count is optimal
-	//   Turing+ (sm_7x+): 6 × SM_count is optimal
+	// Architecture-optimal ranges (empirically validated Session 48):
+	//   Pascal (sm_6x): 6×SMs — Phase 4 hits memory cliff at 7× (+4.7% vs 7×)
+	//   Turing+ (sm_7x+): 8×SMs — benefits from higher intensity (+1.7% vs 6×)
 	// We sweep around these values to find the true best.
-	uint32_t arch_optimal_mult = (compute_cap >= 70) ? 6 : 7;
+	uint32_t arch_optimal_mult = (compute_cap >= 70) ? 8 : 6;
 
 	std::vector<uint32_t> block_multipliers;
 	if(mode == TuneMode::Quick)
