@@ -316,10 +316,33 @@ if(OpenCL_FOUND)
     target_link_libraries(n0s_opencl_backend n0s-backend)
 endif()
 
+################################################################################
+# GUI Asset Embedding
+################################################################################
+
+set(GUI_ASSETS
+    ${CMAKE_SOURCE_DIR}/gui/index.html
+    ${CMAKE_SOURCE_DIR}/gui/style.css
+    ${CMAKE_SOURCE_DIR}/gui/app.js
+)
+set(EMBEDDED_ASSETS_HPP ${CMAKE_SOURCE_DIR}/n0s/http/embedded_assets.hpp)
+
+add_custom_command(
+    OUTPUT ${EMBEDDED_ASSETS_HPP}
+    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh
+            ${CMAKE_SOURCE_DIR}/gui
+            ${EMBEDDED_ASSETS_HPP}
+    DEPENDS ${GUI_ASSETS} ${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh
+    COMMENT "Embedding GUI assets into embedded_assets.hpp"
+    VERBATIM
+)
+add_custom_target(gui_assets DEPENDS ${EMBEDDED_ASSETS_HPP})
+
 # Main executable
 file(GLOB SRCFILES_CPP "n0s/cli/*.cpp")
 set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 add_executable(n0s-ryo-miner ${SRCFILES_CPP})
+add_dependencies(n0s-ryo-miner gui_assets)
 
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to libraries relative to ${CMAKE_INSTALL_PREFIX}")

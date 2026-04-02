@@ -24,16 +24,20 @@
 #ifndef CONF_NO_HTTPD
 
 #include "httpd.hpp"
+#include "embedded_assets.hpp"
 #include "webdesign.hpp"
 #include "n0s/jconf.hpp"
 #include "n0s/misc/console.hpp"
 #include "n0s/misc/executor.hpp"
 #include "n0s/net/msgstruct.hpp"
+#include "n0s/params.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
+#include <sstream>
 
 #include <microhttpd.h>
 httpd* httpd::oInst = nullptr;
@@ -102,6 +106,8 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 		const char* endpoint = url + 8;
 		if(strcasecmp(endpoint, "status") == 0)
 			return serve_api_json(EV_API_STATUS);
+		else if(strcasecmp(endpoint, "hashrate/history") == 0)
+			return serve_api_json(EV_API_HASHRATE_HISTORY);
 		else if(strcasecmp(endpoint, "hashrate") == 0)
 			return serve_api_json(EV_API_HASHRATE);
 		else if(strcasecmp(endpoint, "gpus") == 0)
@@ -121,14 +127,72 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 			return ret;
 		}
 	}
+	// GUI dashboard assets: /gui/* and root /
+	else if(strcasecmp(url, "/") == 0 || strcasecmp(url, "/gui") == 0 || strcasecmp(url, "/gui/") == 0)
+	{
+		// Redirect to /gui/index.html
+		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(rsp, "Location", "/gui/index.html");
+		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
+		MHD_destroy_response(rsp);
+		return ret;
+	}
+	else if(strncasecmp(url, "/gui/", 5) == 0)
+	{
+		// Dev mode: serve from filesystem
+		if(n0s::params::inst().guiDev)
+		{
+			std::string filepath = n0s::params::inst().guiDevPath + "/" + (url + 5);
+			std::ifstream file(filepath, std::ios::binary);
+			if(file.good())
+			{
+				std::ostringstream ss;
+				ss << file.rdbuf();
+				str = ss.str();
+
+				const char* ctype = "application/octet-stream";
+				if(filepath.find(".html") != std::string::npos) ctype = "text/html; charset=utf-8";
+				else if(filepath.find(".css") != std::string::npos) ctype = "text/css; charset=utf-8";
+				else if(filepath.find(".js") != std::string::npos) ctype = "application/javascript; charset=utf-8";
+
+				rsp = MHD_create_response_from_buffer(str.size(), const_cast<char*>(str.c_str()), MHD_RESPMEM_MUST_COPY);
+				MHD_add_response_header(rsp, "Content-Type", ctype);
+				MHD_add_response_header(rsp, "Cache-Control", "no-cache");
+				MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
+				MHD_destroy_response(rsp);
+				return ret;
+			}
+		}
+
+		// Embedded mode: serve pre-gzipped assets
+		const auto* asset = n0s::gui::findAsset(url);
+		if(asset != nullptr)
+		{
+			rsp = MHD_create_response_from_buffer(asset->size,
+				const_cast<uint8_t*>(asset->data), MHD_RESPMEM_PERSISTENT);
+			MHD_add_response_header(rsp, "Content-Type", asset->content_type);
+			MHD_add_response_header(rsp, "Content-Encoding", "gzip");
+			MHD_add_response_header(rsp, "Cache-Control", "public, max-age=86400");
+			MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
+			MHD_destroy_response(rsp);
+			return ret;
+		}
+
+		// 404 for unknown GUI paths
+		const char* notFound = "<h1>404 Not Found</h1>";
+		rsp = MHD_create_response_from_buffer(strlen(notFound), const_cast<char*>(notFound), MHD_RESPMEM_PERSISTENT);
+		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, rsp);
+		MHD_destroy_response(rsp);
+		return ret;
+	}
+	// Legacy endpoints preserved
 	else if(strcasecmp(url, "/style.css") == 0)
 	{
 		const char* req_etag = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "If-None-Match");
 
 		if(req_etag != nullptr && strcmp(req_etag, sHtmlCssEtag) == 0)
-		{ //Cache hit
+		{
 			rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
-
 			MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
 			MHD_destroy_response(rsp);
 			return ret;
@@ -168,18 +232,10 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 	}
 	else
 	{
-		//Do a 302 redirect to /h
-		char loc_path[256];
-		const char* host_val = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host");
-
-		if(host_val != nullptr)
-			snprintf(loc_path, sizeof(loc_path), "http://%s/h", host_val);
-		else
-			snprintf(loc_path, sizeof(loc_path), "/h");
-
+		// Unknown path — redirect to GUI dashboard
 		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(rsp, "Location", "/gui/index.html");
 		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
-		MHD_add_response_header(rsp, "Location", loc_path);
 		MHD_destroy_response(rsp);
 		return ret;
 	}

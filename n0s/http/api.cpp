@@ -308,6 +308,36 @@ void executor::api_pool_report(std::string& out)
 	out = json_to_string(doc);
 }
 
+void executor::api_hashrate_history_report(std::string& out)
+{
+	Document doc(kObjectType);
+	auto& alloc = doc.GetAllocator();
+
+	size_t gpuCount = 0;
+	auto samples = hashrateHistory.get_all(gpuCount);
+
+	doc.AddMember("gpu_count", static_cast<uint64_t>(gpuCount), alloc);
+	doc.AddMember("sample_count", static_cast<uint64_t>(samples.size()), alloc);
+
+	Value arr(kArrayType);
+	for(const auto& s : samples)
+	{
+		Value entry(kObjectType);
+		entry.AddMember("t", s.timestamp_ms, alloc);
+		entry.AddMember("total", sanitize_double(s.total_hs), alloc);
+
+		Value gpus(kArrayType);
+		for(size_t i = 0; i < gpuCount; i++)
+			gpus.PushBack(sanitize_double(s.per_gpu_hs[i]), alloc);
+		entry.AddMember("gpus", gpus, alloc);
+
+		arr.PushBack(entry, alloc);
+	}
+	doc.AddMember("samples", arr, alloc);
+
+	out = json_to_string(doc);
+}
+
 void executor::api_version_report(std::string& out)
 {
 	Document doc(kObjectType);

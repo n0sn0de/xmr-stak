@@ -80,6 +80,11 @@ struct params
 	std::string autotune_export;                // Optional export path
 	std::string autotune_file = "autotune.json";
 
+	// GUI dashboard parameters
+	bool gui = false;            // --gui: start mining + open browser
+	bool guiDev = false;         // --gui-dev: serve from filesystem for hot reload
+	std::string guiDevPath;      // Path to gui/ directory for dev mode
+
 	params() :
 		executablePrefix(""),
 		binaryName("n0s-ryo-miner"),

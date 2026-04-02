@@ -612,6 +612,27 @@ void executor::ex_main()
 				if(normal && fHighestHps < fHps)
 					fHighestHps = fHps;
 			}
+
+			// Record hashrate history every 2 ticks (1 second)
+			if((cnt & 0x1) == 0 && !pvThreads.empty())
+			{
+				double per_gpu[n0s::HashrateHistory::MAX_GPUS] = {};
+				double total = 0.0;
+				for(i = 0; i < pvThreads.size() && i < n0s::HashrateHistory::MAX_GPUS; i++)
+				{
+					double h = telem->calc_telemetry_data(10000, i);
+					if(std::isnormal(h))
+					{
+						per_gpu[i] = h;
+						total += h;
+					}
+				}
+				auto now_ms = static_cast<uint64_t>(
+					std::chrono::duration_cast<std::chrono::milliseconds>(
+						std::chrono::system_clock::now().time_since_epoch())
+						.count());
+				hashrateHistory.push(now_ms, total, per_gpu, pvThreads.size());
+			}
 			break;
 
 		case EV_USR_HASHRATE:
@@ -626,6 +647,7 @@ void executor::ex_main()
 		case EV_HTML_JSON:
 		case EV_API_STATUS:
 		case EV_API_HASHRATE:
+		case EV_API_HASHRATE_HISTORY:
 		case EV_API_GPUS:
 		case EV_API_POOL:
 		case EV_API_VERSION:
@@ -1323,6 +1345,10 @@ void executor::http_report(ex_event_name ev)
 		api_hashrate_report(*pHttpString);
 		break;
 
+	case EV_API_HASHRATE_HISTORY:
+		api_hashrate_history_report(*pHttpString);
+		break;
+
 	case EV_API_GPUS:
 		api_gpus_report(*pHttpString);
 		break;
@@ -1349,7 +1375,8 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 
 	assert(pHttpString == nullptr);
 	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON ||
-		ev_id == EV_API_STATUS || ev_id == EV_API_HASHRATE || ev_id == EV_API_GPUS || ev_id == EV_API_POOL || ev_id == EV_API_VERSION);
+		ev_id == EV_API_STATUS || ev_id == EV_API_HASHRATE || ev_id == EV_API_HASHRATE_HISTORY ||
+		ev_id == EV_API_GPUS || ev_id == EV_API_POOL || ev_id == EV_API_VERSION);
 
 	pHttpString = &data;
 	httpReady = std::promise<void>();

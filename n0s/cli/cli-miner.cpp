@@ -46,6 +46,11 @@
 #include <cmath>
 #include <ctime>
 
+// For --gui browser launch (fork + exec)
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #ifndef CONF_NO_TLS
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -100,6 +105,8 @@ void help()
 	cout << "  --h-print-time SEC         interval for printing hashrate, in seconds" << endl;
 #ifndef CONF_NO_HTTPD
 	cout << "  -i --httpd HTTP_PORT       HTTP interface port" << endl;
+	cout << "  --gui                      start mining + open dashboard in browser" << endl;
+	cout << "  --gui-dev DIR              serve GUI from filesystem for development" << endl;
 #endif
 	cout << " " << endl;
 	cout << "The following options can be used for automatic start without a guided config," << endl;
@@ -773,6 +780,24 @@ int main(int argc, char* argv[])
 		{
 			params::inst().profileKernels = true;
 		}
+		else if(opName.compare("--gui") == 0)
+		{
+			params::inst().gui = true;
+			// Enable HTTP daemon with default port if not already set
+			if(params::inst().httpd_port == params::httpd_port_unset)
+				params::inst().httpd_port = 9090;
+		}
+		else if(opName.compare("--gui-dev") == 0)
+		{
+			++i;
+			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--gui-dev'"); n0s_exit(); return 1; }
+			params::inst().guiDev = true;
+			params::inst().guiDevPath = argv[i];
+			// Also enable GUI mode
+			params::inst().gui = true;
+			if(params::inst().httpd_port == params::httpd_port_unset)
+				params::inst().httpd_port = 9090;
+		}
 		else if(opName.compare("--autotune") == 0)
 		{
 			params::inst().autotune = true;
@@ -896,6 +921,25 @@ int main(int argc, char* argv[])
 		{
 			n0s_exit();
 			return 1;
+		}
+
+		// --gui: open dashboard in default browser
+		if(params::inst().gui)
+		{
+			char url[128];
+			snprintf(url, sizeof(url), "http://localhost:%d/gui/index.html", jconf::inst()->GetHttpdPort());
+			printer::inst()->print_msg(L0, "Opening dashboard: %s", url);
+
+			// Fork + xdg-open (Linux). Non-blocking.
+			pid_t pid = fork();
+			if(pid == 0)
+			{
+				// Child: redirect stdout/stderr to /dev/null
+				int devnull = open("/dev/null", O_WRONLY);
+				if(devnull >= 0) { dup2(devnull, 1); dup2(devnull, 2); close(devnull); }
+				execlp("xdg-open", "xdg-open", url, nullptr);
+				_exit(1); // execlp failed
+			}
 		}
 #endif
 	}

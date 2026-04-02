@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hashrate_history.hpp"
 #include "telemetry.hpp"
 #include "thdq.hpp"
 #include "n0s/backend/iBackend.hpp"
@@ -100,6 +101,7 @@ class executor
 
 	void api_status_report(std::string& out);
 	void api_hashrate_report(std::string& out);
+	void api_hashrate_history_report(std::string& out);
 	void api_gpus_report(std::string& out);
 	void api_pool_report(std::string& out);
 	void api_version_report(std::string& out);
@@ -182,6 +184,9 @@ class executor
 	}
 
 	double fHighestHps = 0.0;
+
+	// Hashrate history ring buffer for time-series chart
+	n0s::HashrateHistory hashrateHistory;
 
 	void log_socket_error(jpsock* pool, std::string&& sError);
 	void log_result_error(std::string&& sError);

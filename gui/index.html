@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N0S-RYO GPU Miner</title>
+<link rel="stylesheet" href="/gui/style.css">
+</head>
+<body>
+<div id="app">
+
+<!-- Header -->
+<header id="header">
+  <div class="header-left">
+    <div class="logo">N0S-RYO</div>
+    <div class="logo-sub">GPU MINER</div>
+  </div>
+  <div class="header-right">
+    <span id="pool-addr" class="pool-addr">—</span>
+    <span id="conn-dot" class="conn-dot disconnected"></span>
+    <div class="version-line">
+      <span id="version-str">—</span> &bull; <span id="uptime-str">0s</span>
+    </div>
+  </div>
+</header>
+
+<!-- Stats Row -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Total Hashrate</div>
+    <div class="stat-value" id="total-hs">—</div>
+    <div class="stat-sub" id="total-hs-sub">&nbsp;</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Shares</div>
+    <div class="stat-value" id="shares-val">— / —</div>
+    <div class="stat-sub" id="shares-sub">accepted / rejected</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Difficulty</div>
+    <div class="stat-value" id="diff-val">—</div>
+    <div class="stat-sub" id="diff-sub">&nbsp;</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pool Ping</div>
+    <div class="stat-value" id="ping-val">—</div>
+    <div class="stat-sub" id="ping-sub">&nbsp;</div>
+  </div>
+</div>
+
+<!-- Hashrate Chart -->
+<div class="chart-container">
+  <div class="chart-header">
+    <span class="chart-title">Hashrate</span>
+    <span class="chart-legend" id="chart-legend"></span>
+  </div>
+  <canvas id="hashrate-chart"></canvas>
+</div>
+
+<!-- GPU Table -->
+<div class="gpu-section">
+  <div class="section-title">GPU Details</div>
+  <table id="gpu-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Backend</th>
+        <th class="num">H/s</th>
+        <th class="num">Temp</th>
+        <th class="num">Power</th>
+        <th class="num">Fan</th>
+        <th class="num">GPU Clk</th>
+        <th class="num">Mem Clk</th>
+      </tr>
+    </thead>
+    <tbody id="gpu-tbody"></tbody>
+  </table>
+</div>
+
+<!-- Pool Info + Top Diffs -->
+<div class="bottom-row">
+  <div class="pool-section">
+    <div class="section-title">Pool</div>
+    <div class="info-grid" id="pool-info">
+      <span class="info-label">Address</span><span class="info-value" id="pi-addr">—</span>
+      <span class="info-label">Hashes</span><span class="info-value" id="pi-hashes">—</span>
+      <span class="info-label">Avg Share</span><span class="info-value" id="pi-avg-share">—</span>
+      <span class="info-label">Uptime</span><span class="info-value" id="pi-uptime">—</span>
+    </div>
+  </div>
+  <div class="top-diff-section">
+    <div class="section-title">Top Difficulties</div>
+    <div id="top-diffs" class="top-diffs"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+<script src="/gui/app.js"></script>
+</body>
+</html>
