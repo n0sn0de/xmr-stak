@@ -98,6 +98,12 @@ class executor
 	void http_connection_report(std::string& out);
 	void http_json_report(std::string& out);
 
+	void api_status_report(std::string& out);
+	void api_hashrate_report(std::string& out);
+	void api_gpus_report(std::string& out);
+	void api_pool_report(std::string& out);
+	void api_version_report(std::string& out);
+
 	void http_report(ex_event_name ev);
 	void print_report(ex_event_name ev);
 

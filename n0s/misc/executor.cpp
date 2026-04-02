@@ -624,6 +624,11 @@ void executor::ex_main()
 		case EV_HTML_RESULTS:
 		case EV_HTML_CONNSTAT:
 		case EV_HTML_JSON:
+		case EV_API_STATUS:
+		case EV_API_HASHRATE:
+		case EV_API_GPUS:
+		case EV_API_POOL:
+		case EV_API_VERSION:
 			http_report(ev.iName);
 			break;
 
@@ -1310,6 +1315,26 @@ void executor::http_report(ex_event_name ev)
 		http_json_report(*pHttpString);
 		break;
 
+	case EV_API_STATUS:
+		api_status_report(*pHttpString);
+		break;
+
+	case EV_API_HASHRATE:
+		api_hashrate_report(*pHttpString);
+		break;
+
+	case EV_API_GPUS:
+		api_gpus_report(*pHttpString);
+		break;
+
+	case EV_API_POOL:
+		api_pool_report(*pHttpString);
+		break;
+
+	case EV_API_VERSION:
+		api_version_report(*pHttpString);
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -1323,7 +1348,8 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 	std::lock_guard<std::mutex> lck(httpMutex);
 
 	assert(pHttpString == nullptr);
-	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON);
+	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON ||
+		ev_id == EV_API_STATUS || ev_id == EV_API_HASHRATE || ev_id == EV_API_GPUS || ev_id == EV_API_POOL || ev_id == EV_API_VERSION);
 
 	pHttpString = &data;
 	httpReady = std::promise<void>();

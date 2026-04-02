@@ -83,7 +83,45 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 
 	*ptr = nullptr;
 	std::string str;
-	if(strcasecmp(url, "/style.css") == 0)
+
+	// Helper lambda: serve JSON API response with CORS headers
+	auto serve_api_json = [&](ex_event_name ev) -> MHD_Result {
+		executor::inst()->get_http_report(ev, str);
+		rsp = MHD_create_response_from_buffer(str.size(), const_cast<char*>(str.c_str()), MHD_RESPMEM_MUST_COPY);
+		MHD_add_response_header(rsp, "Content-Type", "application/json; charset=utf-8");
+		MHD_add_response_header(rsp, "Access-Control-Allow-Origin", "*");
+		MHD_add_response_header(rsp, "Cache-Control", "no-cache");
+		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
+		MHD_destroy_response(rsp);
+		return ret;
+	};
+
+	// REST API v1 endpoints
+	if(strncasecmp(url, "/api/v1/", 8) == 0)
+	{
+		const char* endpoint = url + 8;
+		if(strcasecmp(endpoint, "status") == 0)
+			return serve_api_json(EV_API_STATUS);
+		else if(strcasecmp(endpoint, "hashrate") == 0)
+			return serve_api_json(EV_API_HASHRATE);
+		else if(strcasecmp(endpoint, "gpus") == 0)
+			return serve_api_json(EV_API_GPUS);
+		else if(strcasecmp(endpoint, "pool") == 0)
+			return serve_api_json(EV_API_POOL);
+		else if(strcasecmp(endpoint, "version") == 0)
+			return serve_api_json(EV_API_VERSION);
+		else
+		{
+			// Unknown API endpoint — 404
+			const char* notFound = "{\"error\":\"not_found\"}";
+			rsp = MHD_create_response_from_buffer(strlen(notFound), const_cast<char*>(notFound), MHD_RESPMEM_PERSISTENT);
+			MHD_add_response_header(rsp, "Content-Type", "application/json; charset=utf-8");
+			MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, rsp);
+			MHD_destroy_response(rsp);
+			return ret;
+		}
+	}
+	else if(strcasecmp(url, "/style.css") == 0)
 	{
 		const char* req_etag = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "If-None-Match");
 
