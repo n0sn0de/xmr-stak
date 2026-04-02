@@ -118,6 +118,15 @@ __global__ void kernel_gpu_compute(
 	const uint32_t tid = threadIdx.x % 16;
 	const uint32_t idxHash = blockIdx.x * numHashPerBlock + threadIdx.x / 16;
 
+	// Pre-load per-thread constants into registers
+	// Avoids 16-way constant memory serialization on every iteration
+	// (constant cache broadcasts 32 bytes — 16 threads × different addresses = serial reads)
+	const uint32_t shuf0 = SHUFFLE_PATTERN[tid][0];
+	const uint32_t shuf1 = SHUFFLE_PATTERN[tid][1];
+	const uint32_t shuf2 = SHUFFLE_PATTERN[tid][2];
+	const uint32_t shuf3 = SHUFFLE_PATTERN[tid][3];
+	const float my_thread_constant = THREAD_CONSTANTS[tid];
+
 	// Initial scratchpad index from hash state
 	uint32_t s = 0;
 
@@ -150,14 +159,15 @@ __global__ void kernel_gpu_compute(
 		warp_sync();
 
 		// Step 2: Compute FP chain using cross-thread shuffled data
+		// Uses register-cached shuffle pattern and thread constant
 		__m128 rc = fp_accumulator;
 		compute_fp_chain_rotated(
 			lane_index,
-			*(smem->computation_output + SHUFFLE_PATTERN[tid][0]),
-			*(smem->computation_output + SHUFFLE_PATTERN[tid][1]),
-			*(smem->computation_output + SHUFFLE_PATTERN[tid][2]),
-			*(smem->computation_output + SHUFFLE_PATTERN[tid][3]),
-			THREAD_CONSTANTS[tid], rc, smem->fp_accumulators[tid],
+			*(smem->computation_output + shuf0),
+			*(smem->computation_output + shuf1),
+			*(smem->computation_output + shuf2),
+			*(smem->computation_output + shuf3),
+			my_thread_constant, rc, smem->fp_accumulators[tid],
 			smem->computation_output[tid]);
 
 		warp_sync();
