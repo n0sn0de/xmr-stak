@@ -213,6 +213,16 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 	const uint lane_index = tid % 4;
 	const uint block = group_index * 16 + lane_index;
 
+	/* Pre-load per-thread constants into registers.
+	 * Avoids repeated scalar constant cache lookups on every iteration.
+	 * On RDNA, constant memory with non-uniform access serializes through
+	 * the scalar unit — hoisting to VGPRs ensures single-cycle access. */
+	const uint shuf0 = SHUFFLE_PATTERN[tid][0];
+	const uint shuf1 = SHUFFLE_PATTERN[tid][1];
+	const uint shuf2 = SHUFFLE_PATTERN[tid][2];
+	const uint shuf3 = SHUFFLE_PATTERN[tid][3];
+	const float my_thread_constant = THREAD_CONSTANTS[tid];
+
 	#pragma unroll CN_UNROLL
 	for(size_t i = 0; i < ITERATIONS; i++)
 	{
@@ -222,15 +232,15 @@ __kernel void cn_gpu_phase3_compute(__global int *scratchpad_in, __global int *s
 		((__local int*)(smem->computation_output))[tid] = tmp;
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
-		/* Step 2: Compute FP chain using cross-thread shuffled data */
+		/* Step 2: Compute FP chain using register-cached shuffle indices */
 		{
 			compute_fp_chain_rotated(
 				lane_index,
-				*(smem->computation_output + SHUFFLE_PATTERN[tid][0]),
-				*(smem->computation_output + SHUFFLE_PATTERN[tid][1]),
-				*(smem->computation_output + SHUFFLE_PATTERN[tid][2]),
-				*(smem->computation_output + SHUFFLE_PATTERN[tid][3]),
-				THREAD_CONSTANTS[tid], fp_accumulator, smem->fp_accumulators + tid,
+				*(smem->computation_output + shuf0),
+				*(smem->computation_output + shuf1),
+				*(smem->computation_output + shuf2),
+				*(smem->computation_output + shuf3),
+				my_thread_constant, fp_accumulator, smem->fp_accumulators + tid,
 				smem->computation_output + tid
 			);
 		}
