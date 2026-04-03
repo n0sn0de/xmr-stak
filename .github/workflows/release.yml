@@ -112,51 +112,31 @@ jobs:
           name: n0s-ryo-miner-linux-cuda12-opencl
           path: build/bin/n0s-ryo-miner
 
-  # ─── Windows Build ─────────────────────────────────────────────────────────
+  # ─── Windows Build (MinGW cross-compile on Linux) ───────────────────────────
   build-windows-opencl:
-    name: Windows OpenCL
-    runs-on: windows-2022
-    env:
-      VCPKG_DEFAULT_TRIPLET: x64-windows-static
+    name: Windows OpenCL (MinGW)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '52f5569a8e867859fac967c1e3f10ca0a8a3cc39'  # 2026.03.18
-          runVcpkgInstall: true
+      - name: Install MinGW-w64 cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            g++-mingw-w64-x86-64-posix \
+            cmake gzip xxd curl
 
       - name: Generate embedded GUI assets
-        shell: bash
         run: bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
 
-      - name: Build
-        shell: pwsh
-        run: |
-          cmake -G "Visual Studio 17 2022" -A x64 -S . -B build `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
-            -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON `
-            -DMICROHTTPD_ENABLE=ON -DHWLOC_ENABLE=OFF `
-            -DCMAKE_LINK_STATIC=ON -DN0S_COMPILE=generic
-          cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
-
-      - name: Collect binary
-        shell: pwsh
-        run: |
-          $bin = Get-ChildItem -Recurse -Filter "n0s-ryo-miner.exe" -Path build | Select-Object -First 1
-          if (-not $bin) { Write-Error "Binary not found!"; exit 1 }
-          # Copy to consistent location for artifact upload
-          New-Item -ItemType Directory -Force -Path "build/bin" | Out-Null
-          Copy-Item $bin.FullName "build/bin/n0s-ryo-miner.exe"
+      - name: Cross-build Windows binary
+        run: bash scripts/cross-build-windows.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: n0s-ryo-miner-windows-opencl
-          path: build/bin/n0s-ryo-miner.exe
+          path: dist/windows-opencl/n0s-ryo-miner.exe
 
   # ─── Create GitHub Release ─────────────────────────────────────────────────
   release:

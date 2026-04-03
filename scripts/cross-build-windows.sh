@@ -31,6 +31,10 @@ OPENSSL_VERSION="3.0.16"
 OPENSSL_URL="https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz"
 MICROHTTPD_VERSION="1.0.1"
 MICROHTTPD_URL="https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${MICROHTTPD_VERSION}.tar.gz"
+OPENCL_HEADERS_TAG="v2024.10.24"
+OPENCL_HEADERS_URL="https://github.com/KhronosGroup/OpenCL-Headers/archive/refs/tags/${OPENCL_HEADERS_TAG}.tar.gz"
+# OpenCL ICD loader: we create a MinGW import lib from a .def file instead of
+# cross-compiling the Khronos loader (resource compiler issues with MinGW)
 
 NJOBS="$(nproc 2>/dev/null || echo 4)"
 
@@ -85,6 +89,7 @@ echo "  Compiler: $($MINGW_GXX --version | head -1)"
 echo "  Sysroot:  ${MINGW_SYSROOT}"
 echo "  TLS:      $(${ENABLE_TLS} && echo 'ON (OpenSSL)' || echo 'OFF')"
 echo "  HTTP:     $(${ENABLE_HTTPD} && echo 'ON (microhttpd)' || echo 'OFF')"
+echo "  OpenCL:   auto (Khronos ICD loader)"
 echo "  Jobs:     ${NJOBS}"
 echo ""
 
@@ -180,10 +185,153 @@ build_microhttpd() {
     cd "$REPO_DIR"
 }
 
-if ! $SKIP_DEPS && ($ENABLE_TLS || $ENABLE_HTTPD); then
+build_opencl() {
+    local headers_dir="${DEPS_DIR}/src/OpenCL-Headers-${OPENCL_HEADERS_TAG#v}"
+    local stamp="${DEPS_PREFIX}/lib/libOpenCL.a"
+
+    if [[ -f "$stamp" ]]; then
+        echo "  ✓ OpenCL headers + import lib already built"
+        return 0
+    fi
+
+    echo "  Building OpenCL headers + import lib for MinGW..."
+
+    # Download and install Khronos OpenCL headers
+    if [[ ! -d "$headers_dir" ]]; then
+        echo "    Downloading OpenCL headers..."
+        curl -sL "$OPENCL_HEADERS_URL" | tar xz -C "${DEPS_DIR}/src/"
+    fi
+    mkdir -p "${DEPS_PREFIX}/include/CL"
+    cp "${headers_dir}"/CL/*.h "${DEPS_PREFIX}/include/CL/"
+
+    # Create a MinGW import library for OpenCL.dll
+    # This is the standard approach: a .def file listing OpenCL API exports,
+    # turned into a libOpenCL.a import lib via dlltool. At runtime on Windows,
+    # the GPU vendor's OpenCL.dll (AMD/NVIDIA) provides the actual implementation.
+    local def_file="${DEPS_DIR}/src/OpenCL.def"
+    cat > "$def_file" << 'DEFEOF'
+LIBRARY OpenCL.dll
+EXPORTS
+clBuildProgram
+clCompileProgram
+clCreateBuffer
+clCreateCommandQueue
+clCreateCommandQueueWithProperties
+clCreateContext
+clCreateContextFromType
+clCreateImage
+clCreateKernel
+clCreateKernelsInProgram
+clCreatePipe
+clCreateProgramWithBinary
+clCreateProgramWithBuiltInKernels
+clCreateProgramWithSource
+clCreateSampler
+clCreateSubBuffer
+clCreateSubDevices
+clCreateUserEvent
+clEnqueueBarrier
+clEnqueueBarrierWithWaitList
+clEnqueueCopyBuffer
+clEnqueueCopyBufferRect
+clEnqueueCopyBufferToImage
+clEnqueueCopyImage
+clEnqueueCopyImageToBuffer
+clEnqueueFillBuffer
+clEnqueueFillImage
+clEnqueueMapBuffer
+clEnqueueMapImage
+clEnqueueMarker
+clEnqueueMarkerWithWaitList
+clEnqueueMigrateMemObjects
+clEnqueueNDRangeKernel
+clEnqueueNativeKernel
+clEnqueueReadBuffer
+clEnqueueReadBufferRect
+clEnqueueReadImage
+clEnqueueSVMFree
+clEnqueueSVMMap
+clEnqueueSVMMemFill
+clEnqueueSVMMemcpy
+clEnqueueSVMUnmap
+clEnqueueTask
+clEnqueueUnmapMemObject
+clEnqueueWaitForEvents
+clEnqueueWriteBuffer
+clEnqueueWriteBufferRect
+clEnqueueWriteImage
+clFinish
+clFlush
+clGetCommandQueueInfo
+clGetContextInfo
+clGetDeviceIDs
+clGetDeviceInfo
+clGetEventInfo
+clGetEventProfilingInfo
+clGetExtensionFunctionAddress
+clGetExtensionFunctionAddressForPlatform
+clGetImageInfo
+clGetKernelArgInfo
+clGetKernelInfo
+clGetKernelWorkGroupInfo
+clGetMemObjectInfo
+clGetPipeInfo
+clGetPlatformIDs
+clGetPlatformInfo
+clGetProgramBuildInfo
+clGetProgramInfo
+clGetSamplerInfo
+clGetSupportedImageFormats
+clLinkProgram
+clReleaseCommandQueue
+clReleaseContext
+clReleaseDevice
+clReleaseEvent
+clReleaseKernel
+clReleaseMemObject
+clReleaseProgram
+clReleaseSampler
+clRetainCommandQueue
+clRetainContext
+clRetainDevice
+clRetainEvent
+clRetainKernel
+clRetainMemObject
+clRetainProgram
+clRetainSampler
+clSVMAlloc
+clSVMFree
+clSetCommandQueueProperty
+clSetEventCallback
+clSetKernelArg
+clSetKernelArgSVMPointer
+clSetKernelExecInfo
+clSetMemObjectDestructorCallback
+clSetUserEventStatus
+clUnloadCompiler
+clUnloadPlatformCompiler
+clWaitForEvents
+DEFEOF
+
+    x86_64-w64-mingw32-dlltool \
+        --def "$def_file" \
+        --output-lib "${DEPS_PREFIX}/lib/libOpenCL.a" \
+        --dllname OpenCL.dll \
+        -m i386:x86-64 2>&1
+
+    if [[ -f "${DEPS_PREFIX}/lib/libOpenCL.a" ]]; then
+        echo "  ✓ OpenCL headers + import lib built"
+    else
+        echo "  ⚠️  OpenCL import lib creation failed"
+    fi
+    cd "$REPO_DIR"
+}
+
+if ! $SKIP_DEPS; then
     echo "  ── Cross-compiling dependencies ──"
     $ENABLE_TLS && build_openssl
     $ENABLE_HTTPD && build_microhttpd
+    build_opencl
     echo ""
 fi
 
@@ -205,11 +353,23 @@ CMAKE_ARGS=(
     -DCMAKE_TOOLCHAIN_FILE="${REPO_DIR}/cmake/mingw-w64-x86_64.cmake"
     -DMINGW_DEPS_PREFIX="${DEPS_PREFIX}"
     -DCUDA_ENABLE=OFF
-    -DOpenCL_ENABLE=OFF
     -DHWLOC_ENABLE=OFF
     -DCMAKE_BUILD_TYPE=Release
     -DN0S_COMPILE=generic
 )
+
+# Enable OpenCL if ICD loader was built
+if [[ -f "${DEPS_PREFIX}/lib/libOpenCL.a" ]] && [[ -f "${DEPS_PREFIX}/include/CL/cl.h" ]]; then
+    CMAKE_ARGS+=(
+        -DOpenCL_ENABLE=ON
+        -DOpenCL_INCLUDE_DIR="${DEPS_PREFIX}/include"
+        -DOpenCL_LIBRARY="${DEPS_PREFIX}/lib/libOpenCL.a"
+    )
+    echo "  OpenCL: ON (Khronos ICD loader)"
+else
+    CMAKE_ARGS+=(-DOpenCL_ENABLE=OFF)
+    echo "  OpenCL: OFF (ICD loader not found)"
+fi
 
 if $ENABLE_TLS && [[ -d "${DEPS_PREFIX}" ]]; then
     CMAKE_ARGS+=(
