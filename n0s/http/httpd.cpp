@@ -176,7 +176,7 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 				const_cast<uint8_t*>(asset->data), MHD_RESPMEM_PERSISTENT);
 			MHD_add_response_header(rsp, "Content-Type", asset->content_type);
 			MHD_add_response_header(rsp, "Content-Encoding", "gzip");
-			MHD_add_response_header(rsp, "Cache-Control", "public, max-age=86400");
+			MHD_add_response_header(rsp, "Cache-Control", "no-cache");
 			MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
 			MHD_destroy_response(rsp);
 			return ret;
