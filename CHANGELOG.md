@@ -1,5 +1,57 @@
 # Changelog
 
+## v3.2.0 — Single Binary + GUI Dashboard (2026-04-02)
+
+### Single Executable (Pillar 1)
+
+- **One binary, zero companion files.** Eliminated the entire `dlopen`/`dlsym` plugin system.
+- Both CUDA and OpenCL backends compile as static libraries and link directly into the executable.
+- Removed `plugin.hpp` (81 lines of dlopen/dlsym/dlclose abstraction).
+- Removed `-ldl` dependency.
+- Simplified CMake install rules to single binary.
+
+### GUI Dashboard (Pillar 2)
+
+- **Embedded web dashboard** — modern dark-themed SPA served from the miner binary.
+- **9 REST API v1 endpoints** with clean JSON responses:
+  - `/api/v1/status` — Mining state, uptime, pool connection
+  - `/api/v1/hashrate` — Per-GPU + total hashrate (10s/60s/15m windows)
+  - `/api/v1/hashrate/history` — Time-series ring buffer (3600 samples, 1s resolution)
+  - `/api/v1/gpus` — GPU telemetry with device names, temp/power/fan/clocks, H/W efficiency
+  - `/api/v1/pool` — Shares, difficulty, ping, top difficulties
+  - `/api/v1/config` — Pool configuration (wallet masked for security)
+  - `/api/v1/autotune` — Cached autotune results per GPU
+  - `/api/v1/version` — Version, build info, enabled backends
+- **Hashrate history ring buffer** — 3600 samples, 1-second resolution, ~115 KB memory
+- **Real-time hashrate chart** — Pure `<canvas>` drawing, per-GPU lines + total with gradient fill
+- **GPU telemetry table** — Device names (nvidia-smi / amd-smi), temp coloring, H/W efficiency
+- **Tab navigation** — Monitor (live data) + Configuration pages
+- **Responsive design** — Mobile-friendly with horizontal scroll for GPU table
+- **Pre-gzipped embedded assets** — `Content-Encoding: gzip`, zero runtime compression
+- **Total frontend size: 6.1 KB gzipped** (12% of 50 KB budget)
+- **`--gui` flag** — Opens browser to dashboard; mining continues in CLI
+- **`--gui-dev DIR`** — Hot-reload development mode (serve from filesystem)
+- **Legacy endpoints preserved** — `/h`, `/c`, `/r`, `/api.json`, `/style.css` all still work
+
+### Performance (carried from v3.1.x optimization sessions)
+
+| GPU | Hashrate | vs v3.1.0 |
+|---|---|---|
+| AMD RX 9070 XT (OpenCL) | 5,069 H/s | +12% |
+| NVIDIA GTX 1070 Ti (CUDA 11.8) | 1,631 H/s | −3% (intensity rebalance) |
+| NVIDIA RTX 2070 (CUDA 12.6) | 2,236 H/s | +4% |
+
+### Build Sizes
+
+| Variant | Size |
+|---|---|
+| OpenCL-only | 1.0 MB |
+| CUDA 11.8 | 3.0 MB |
+| CUDA 12.6 | 3.5 MB |
+| Container (CUDA 11.8) | 2.3 MB |
+
+---
+
 ## v3.1.0 — GPU Autotune (2026-03-31)
 
 ### New Features
