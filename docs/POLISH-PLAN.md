@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Active. Pillar 1 complete (Session 50). Pillar 2 dashboard phase 3 complete (Session 53). Tab nav, GPU names, H/W, config page.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 dashboard shipped as v3.2.0 (Session 54). v3.2.0 released with single binary + GUI dashboard.*
 
 ---
 
@@ -694,8 +694,42 @@ The `gui_assets` custom command was depended on by `n0s-ryo-miner` (executable) 
 - nos2 (NVIDIA GeForce GTX 1070 Ti): name + H/W + telemetry ✅
 - nosnode (RTX 2070): build clean ✅
 
-**Next session priorities (Session 54):**
-1. **Pool config write API** — `PUT /api/v1/config/pool` with reconnect
-2. **Responsive polish** — Test on mobile browsers, refine spacing
-3. **Container build matrix** — Full CUDA 11.8/12.6/12.8 validation
-4. **Version bump** — v3.2.0 release prep
+### Session 54 (2026-04-02 late) — v3.2.0 Release: Version Bump, Responsive CSS, Container Validation 🚀⚡
+
+**Shipped v3.2.0 — single binary + GUI dashboard release.**
+
+| Change | Detail |
+|--------|--------|
+| **Version bump** | 3.1.0 → 3.2.0 in `version.cpp` and `banner.cpp` |
+| **Responsive CSS** | Mobile breakpoints (640px, 900px, 400px), GPU table horizontal scroll wrapper |
+| **Card name truncation** | `text-overflow: ellipsis` at 200px/150px/100px by breakpoint |
+| **Warning fixes** | 8 sign-compare warnings (`argc` → `argc_sz`), 1 unused variable removed |
+| **Zero-warning build** | All 3 platforms: AMD OpenCL, CUDA 11.8, CUDA 12.6 |
+| **CHANGELOG.md** | Comprehensive v3.2.0 entry with all features, sizes, perf numbers |
+| **Container build validation** | CUDA 11.8 (3.1 MB) ✅, CUDA 12.8 (4.2 MB) ✅ |
+
+**3-GPU live mining validation:**
+- nitro (RX 9070 XT, OpenCL): 200+ shares accepted, 0 rejected ✅ (~4,500 H/s)
+- nos2 (GTX 1070 Ti, CUDA 11.8): 20+ shares, 0 rejected ✅
+- nosnode (RTX 2070, CUDA 12.6): 20+ shares, 0 rejected ✅
+- Container binary (CUDA 11.8 → nos2): 67 shares in 60s, 0 rejected ✅
+
+**API validation (all 9 endpoints return valid JSON):**
+- `/api/v1/version` shows v3.2.0 ✅
+- `/api/v1/gpus` returns GPU name + full telemetry ✅
+- Embedded GUI assets served with `Content-Encoding: gzip` ✅
+
+**Binary sizes:**
+| Variant | Size |
+|---------|------|
+| OpenCL-only (nitro) | 1.1 MB |
+| CUDA 11.8 (nos2) | 3.1 MB |
+| CUDA 12.6 (nosnode) | 3.5 MB |
+| Container CUDA 11.8 | 3.1 MB |
+| Container CUDA 12.8 | 4.2 MB |
+
+**Next session priorities (Session 55):**
+1. **GitHub Release** — Tag v3.2.0, attach container build artifacts
+2. **Pool config write API** — `PUT /api/v1/config/pool` (deferred to v3.3.0)
+3. **Autotune start/stop from GUI** — `POST /api/v1/autotune/start` + `/stop`
+4. **Begin Pillar 3 assessment** — Windows support scoping
