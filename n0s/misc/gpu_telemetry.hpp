@@ -1,7 +1,8 @@
 #pragma once
 
 /// GPU telemetry data — temperature, power, fan, clocks
-/// Queried via sysfs (AMD) or nvidia-smi (NVIDIA)
+/// NVIDIA: NVML direct API (runtime loaded), nvidia-smi fallback
+/// AMD: sysfs (Linux), ADL SDK (Windows — future)
 
 #include <cstdint>
 #include <string>
@@ -26,7 +27,8 @@ struct GpuTelemetry
 /// @return true if at least some data was collected
 bool queryAmdTelemetry(uint32_t device_index, GpuTelemetry& telem);
 
-/// Query NVIDIA GPU telemetry via nvidia-smi
+/// Query NVIDIA GPU telemetry via NVML direct API (preferred) or nvidia-smi fallback.
+/// NVML is runtime-loaded (dlopen) — no compile-time dependency.
 /// @param device_index  GPU index
 /// @param telem         [out] Telemetry data
 /// @return true if at least some data was collected

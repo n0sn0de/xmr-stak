@@ -22,6 +22,7 @@
   */
 
 #include "n0s/misc/console.hpp"
+#include "n0s/misc/nvml_wrapper.hpp"
 #include "n0s/platform/platform.hpp"
 
 #include <cstdlib>
@@ -168,5 +169,8 @@ void printer::print_str_color(out_colours cl, const char* str)
 
 void n0s_exit(int code)
 {
+	// Clean up NVML if loaded (courtesy shutdown)
+	n0s::nvml::unloadNvml();
+	n0s::platform::sockCleanup();
 	std::exit(code);
 }
