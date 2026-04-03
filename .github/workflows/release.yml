@@ -149,9 +149,7 @@ jobs:
         id: cuda-toolkit
         with:
           cuda: '12.8.0'
-          method: 'network'
-          # Install only what we need: nvcc, runtime, dev libs
-          sub-packages: '["nvcc", "cudart", "visual_studio_integration"]'
+          method: 'local'
 
       - name: Verify CUDA
         run: nvcc -V

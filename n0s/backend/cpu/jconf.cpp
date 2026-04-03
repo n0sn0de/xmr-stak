@@ -30,7 +30,7 @@
 #include <cstdlib>
 #include <string>
 
-#include <cpuid.h>
+// cpuid.h removed — not used in this file (MSVC-incompatible)
 
 namespace n0s
 {
