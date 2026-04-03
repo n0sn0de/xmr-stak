@@ -63,7 +63,15 @@ class jpsock
 	const char* get_pool_addr() const { return net_addr.c_str(); }
 	const char* get_tls_fp() const { return tls_fp.c_str(); }
 	const char* get_rigid() const { return usr_rigid.c_str(); }
+	const char* get_wallet() const { return usr_login.c_str(); }
 	constexpr bool is_nicehash() const { return nicehash; }
+	bool is_tls() const;
+
+	/// Update pool connection settings and force reconnect.
+	/// Must be called from executor thread only.
+	void update_config(const std::string& addr, const std::string& wallet,
+		const std::string& rigid, const std::string& passwd,
+		bool use_tls, bool use_nicehash);
 
 	[[nodiscard]] bool get_pool_motd(std::string& strin);
 

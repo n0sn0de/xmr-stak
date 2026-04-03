@@ -260,6 +260,125 @@ tbody tr:hover { background: rgba(0, 215, 255, 0.04); }
   font-variant-numeric: tabular-nums;
 }
 
+/* Edit Button */
+.edit-btn {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent2);
+  border-radius: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background 0.2s, border-color 0.2s;
+  vertical-align: middle;
+}
+.edit-btn:hover {
+  background: rgba(0, 215, 255, 0.1);
+  border-color: var(--accent);
+}
+
+/* Edit Form */
+.edit-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.form-row {
+  margin-bottom: 12px;
+}
+.form-row label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.form-row input[type="text"] {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-row input[type="text"]:focus {
+  border-color: var(--accent);
+}
+.form-row input[type="text"]::placeholder {
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+.checkbox-row {
+  display: flex;
+  gap: 24px;
+}
+.checkbox-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.checkbox-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+.form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+.btn {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #33e0ff;
+}
+.btn-secondary {
+  background: var(--bg-card2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.save-status {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  margin-left: 8px;
+}
+.save-status.success { color: var(--green); }
+.save-status.error { color: var(--red); }
+
 /* Card name truncation */
 .card-name {
   max-width: 200px;

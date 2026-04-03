@@ -45,6 +45,11 @@ class executor
 
 	void get_http_report(ex_event_name ev_id, std::string& data);
 
+	/// Process a pool config update request. Thread-safe — dispatches to executor thread.
+	/// @param request_json  JSON body from PUT /api/v1/config/pool
+	/// @param response_json  [out] JSON response
+	void process_pool_update(const std::string& request_json, std::string& response_json);
+
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
 
@@ -107,11 +112,13 @@ class executor
 	void api_config_report(std::string& out);
 	void api_autotune_report(std::string& out);
 	void api_version_report(std::string& out);
+	void api_pool_update(std::string& out);
 
 	void http_report(ex_event_name ev);
 	void print_report(ex_event_name ev);
 
 	std::string* pHttpString = nullptr;
+	std::string* pHttpRequestBody = nullptr;
 	std::promise<void> httpReady;
 	std::mutex httpMutex;
 

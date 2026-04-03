@@ -46,19 +46,68 @@ httpd::httpd()
 {
 }
 
+/// Per-request context for accumulating PUT/POST body data
+struct request_context
+{
+	std::string body;
+	bool initialized = true;
+};
+
 MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 	MHD_Connection* connection,
 	const char* url,
 	const char* method,
 	[[maybe_unused]] const char* version,
-	[[maybe_unused]] const char* upload_data,
-	[[maybe_unused]] size_t* upload_data_size,
+	const char* upload_data,
+	size_t* upload_data_size,
 	void** ptr)
 {
 	struct MHD_Response* rsp;
 
-	if(strcmp(method, "GET") != 0)
+	bool is_get = (strcmp(method, "GET") == 0);
+	bool is_put = (strcmp(method, "PUT") == 0);
+	bool is_options = (strcmp(method, "OPTIONS") == 0);
+
+	if(!is_get && !is_put && !is_options)
 		return MHD_NO;
+
+	// Handle CORS preflight
+	if(is_options)
+	{
+		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(rsp, "Access-Control-Allow-Origin", "*");
+		MHD_add_response_header(rsp, "Access-Control-Allow-Methods", "GET, PUT, OPTIONS");
+		MHD_add_response_header(rsp, "Access-Control-Allow-Headers", "Content-Type, Authorization");
+		MHD_add_response_header(rsp, "Access-Control-Max-Age", "86400");
+		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NO_CONTENT, rsp);
+		MHD_destroy_response(rsp);
+		return ret;
+	}
+
+	// For PUT requests, accumulate body data across multiple callbacks
+	if(is_put)
+	{
+		if(*ptr == nullptr)
+		{
+			// First call — allocate context
+			auto* ctx = new request_context();
+			*ptr = ctx;
+			return MHD_YES; // Continue reading
+		}
+
+		auto* ctx = static_cast<request_context*>(*ptr);
+
+		if(*upload_data_size > 0)
+		{
+			// Accumulate body (limit to 64 KB for safety)
+			if(ctx->body.size() + *upload_data_size <= 65536)
+				ctx->body.append(upload_data, *upload_data_size);
+			*upload_data_size = 0;
+			return MHD_YES; // Continue reading
+		}
+
+		// upload_data_size == 0 means all data received — fall through to routing
+	}
 
 	if(strlen(jconf::inst()->GetHttpUsername()) != 0)
 	{
@@ -85,7 +134,8 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 		}
 	}
 
-	*ptr = nullptr;
+	if(!is_put)
+		*ptr = nullptr;
 	std::string str;
 
 	// Helper lambda: serve JSON API response with CORS headers
@@ -100,10 +150,52 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 		return ret;
 	};
 
+	// Helper lambda: clean up PUT request context
+	auto cleanup_put_context = [&]() {
+		if(is_put && *ptr != nullptr)
+		{
+			delete static_cast<request_context*>(*ptr);
+			*ptr = nullptr;
+		}
+	};
+
+	// Helper lambda: serve PUT API response
+	auto serve_put_response = [&](const std::string& body, unsigned int status_code = MHD_HTTP_OK) -> MHD_Result {
+		executor::inst()->process_pool_update(body, str);
+		rsp = MHD_create_response_from_buffer(str.size(), const_cast<char*>(str.c_str()), MHD_RESPMEM_MUST_COPY);
+		MHD_add_response_header(rsp, "Content-Type", "application/json; charset=utf-8");
+		MHD_add_response_header(rsp, "Access-Control-Allow-Origin", "*");
+		MHD_add_response_header(rsp, "Cache-Control", "no-cache");
+		MHD_Result ret = MHD_queue_response(connection, status_code, rsp);
+		MHD_destroy_response(rsp);
+		cleanup_put_context();
+		return ret;
+	};
+
 	// REST API v1 endpoints
 	if(strncasecmp(url, "/api/v1/", 8) == 0)
 	{
 		const char* endpoint = url + 8;
+
+		// PUT endpoints
+		if(is_put)
+		{
+			auto* ctx = static_cast<request_context*>(*ptr);
+			if(strcasecmp(endpoint, "config/pool") == 0)
+				return serve_put_response(ctx->body);
+			else
+			{
+				const char* notAllowed = "{\"error\":\"method_not_allowed\"}";
+				rsp = MHD_create_response_from_buffer(strlen(notAllowed), const_cast<char*>(notAllowed), MHD_RESPMEM_PERSISTENT);
+				MHD_add_response_header(rsp, "Content-Type", "application/json; charset=utf-8");
+				MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, rsp);
+				MHD_destroy_response(rsp);
+				cleanup_put_context();
+				return ret;
+			}
+		}
+
+		// GET endpoints
 		if(strcasecmp(endpoint, "status") == 0)
 			return serve_api_json(EV_API_STATUS);
 		else if(strcasecmp(endpoint, "hashrate/history") == 0)
@@ -116,6 +208,8 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 			return serve_api_json(EV_API_POOL);
 		else if(strcasecmp(endpoint, "config") == 0)
 			return serve_api_json(EV_API_CONFIG);
+		else if(strcasecmp(endpoint, "config/pool") == 0)
+			return serve_api_json(EV_API_CONFIG); // GET config/pool returns same as config
 		else if(strcasecmp(endpoint, "autotune") == 0)
 			return serve_api_json(EV_API_AUTOTUNE);
 		else if(strcasecmp(endpoint, "version") == 0)
@@ -249,12 +343,26 @@ MHD_Result httpd::req_handler([[maybe_unused]] void* cls,
 	return ret;
 }
 
+static void request_completed_callback([[maybe_unused]] void* cls,
+	[[maybe_unused]] MHD_Connection* connection,
+	void** con_cls,
+	[[maybe_unused]] enum MHD_RequestTerminationCode toe)
+{
+	if(*con_cls != nullptr)
+	{
+		delete static_cast<request_context*>(*con_cls);
+		*con_cls = nullptr;
+	}
+}
+
 bool httpd::start_daemon()
 {
 	d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
 		jconf::inst()->GetHttpdPort(), nullptr, nullptr,
 		&httpd::req_handler,
-		nullptr, MHD_OPTION_END);
+		nullptr,
+		MHD_OPTION_NOTIFY_COMPLETED, &request_completed_callback, nullptr,
+		MHD_OPTION_END);
 
 	if(d == nullptr)
 	{

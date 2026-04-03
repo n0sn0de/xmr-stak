@@ -103,7 +103,7 @@
 
   <!-- Pool Configuration -->
   <div class="config-section">
-    <div class="section-title">Pool Configuration</div>
+    <div class="section-title">Pool Configuration <button class="edit-btn" id="pool-edit-btn" title="Edit pool settings">✎ Edit</button></div>
     <div class="info-grid" id="pool-info">
       <span class="info-label">Address</span><span class="info-value" id="pi-addr">—</span>
       <span class="info-label">Wallet</span><span class="info-value" id="pi-wallet">—</span>
@@ -113,6 +113,35 @@
       <span class="info-label">Hashes</span><span class="info-value" id="pi-hashes">—</span>
       <span class="info-label">Avg Share Time</span><span class="info-value" id="pi-avg-share">—</span>
       <span class="info-label">Connection Uptime</span><span class="info-value" id="pi-uptime">—</span>
+    </div>
+
+    <!-- Pool Edit Form (hidden by default) -->
+    <div id="pool-edit-form" class="edit-form" style="display:none">
+      <div class="form-row">
+        <label for="pf-addr">Pool Address</label>
+        <input type="text" id="pf-addr" placeholder="host:port" spellcheck="false">
+      </div>
+      <div class="form-row">
+        <label for="pf-wallet">Wallet Address</label>
+        <input type="text" id="pf-wallet" placeholder="(keep current)" spellcheck="false">
+      </div>
+      <div class="form-row">
+        <label for="pf-rigid">Rig ID</label>
+        <input type="text" id="pf-rigid" placeholder="(keep current)" spellcheck="false">
+      </div>
+      <div class="form-row">
+        <label for="pf-passwd">Pool Password</label>
+        <input type="text" id="pf-passwd" placeholder="x" spellcheck="false">
+      </div>
+      <div class="form-row checkbox-row">
+        <label><input type="checkbox" id="pf-tls"> Use TLS</label>
+        <label><input type="checkbox" id="pf-nicehash"> NiceHash mode</label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="pool-save-btn">Apply & Reconnect</button>
+        <button class="btn btn-secondary" id="pool-cancel-btn">Cancel</button>
+        <span id="pool-save-status" class="save-status"></span>
+      </div>
     </div>
   </div>
 

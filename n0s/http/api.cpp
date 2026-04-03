@@ -18,6 +18,7 @@
  */
 
 #include "n0s/misc/executor.hpp"
+#include "n0s/misc/console.hpp"
 #include "n0s/jconf.hpp"
 #include "n0s/misc/gpu_telemetry.hpp"
 #include "n0s/net/jpsock.hpp"
@@ -480,6 +481,115 @@ void executor::api_autotune_report(std::string& out)
 		}
 		doc.AddMember("devices", devices, alloc);
 	}
+
+	out = json_to_string(doc);
+}
+
+void executor::api_pool_update(std::string& out)
+{
+	Document doc(kObjectType);
+	auto& alloc = doc.GetAllocator();
+
+	// pHttpRequestBody contains the JSON body from the PUT request
+	if(pHttpRequestBody == nullptr || pHttpRequestBody->empty())
+	{
+		doc.AddMember("success", false, alloc);
+		doc.AddMember("error", "Missing request body", alloc);
+		out = json_to_string(doc);
+		return;
+	}
+
+	// Parse the request body
+	Document reqDoc;
+	reqDoc.Parse(pHttpRequestBody->c_str());
+	if(reqDoc.HasParseError() || !reqDoc.IsObject())
+	{
+		doc.AddMember("success", false, alloc);
+		doc.AddMember("error", "Invalid JSON", alloc);
+		out = json_to_string(doc);
+		return;
+	}
+
+	// Validate required fields
+	if(!reqDoc.HasMember("pool_address") || !reqDoc["pool_address"].IsString())
+	{
+		doc.AddMember("success", false, alloc);
+		doc.AddMember("error", "Missing or invalid 'pool_address'", alloc);
+		out = json_to_string(doc);
+		return;
+	}
+
+	// Extract fields
+	std::string poolAddr = reqDoc["pool_address"].GetString();
+	std::string wallet;
+	std::string rigid;
+	std::string passwd;
+	bool tls = false;
+	bool nh = false;
+
+	// Validate pool address format (must contain ':')
+	if(poolAddr.find(':') == std::string::npos)
+	{
+		doc.AddMember("success", false, alloc);
+		doc.AddMember("error", "Invalid pool_address format (expected host:port)", alloc);
+		out = json_to_string(doc);
+		return;
+	}
+
+	if(reqDoc.HasMember("wallet_address") && reqDoc["wallet_address"].IsString())
+		wallet = reqDoc["wallet_address"].GetString();
+	if(reqDoc.HasMember("rig_id") && reqDoc["rig_id"].IsString())
+		rigid = reqDoc["rig_id"].GetString();
+	if(reqDoc.HasMember("pool_password") && reqDoc["pool_password"].IsString())
+		passwd = reqDoc["pool_password"].GetString();
+	if(reqDoc.HasMember("use_tls") && reqDoc["use_tls"].IsBool())
+		tls = reqDoc["use_tls"].GetBool();
+	if(reqDoc.HasMember("use_nicehash") && reqDoc["use_nicehash"].IsBool())
+		nh = reqDoc["use_nicehash"].GetBool();
+
+	// Default password to "x" if empty (common pool convention)
+	if(passwd.empty())
+		passwd = "x";
+
+	// Find the current active pool (pool_id 1 = first pool)
+	// We update the first pool in the list
+	jpsock* pool = nullptr;
+	for(auto& p : pools)
+	{
+		pool = &p;
+		break; // Update first pool
+	}
+
+	if(pool == nullptr)
+	{
+		doc.AddMember("success", false, alloc);
+		doc.AddMember("error", "No pools configured", alloc);
+		out = json_to_string(doc);
+		return;
+	}
+
+	// If wallet is empty, keep the existing one
+	if(wallet.empty())
+		wallet = pool->get_wallet();
+	if(rigid.empty())
+		rigid = pool->get_rigid();
+
+	printer::inst()->print_msg(L0, "API: Updating pool config: %s (TLS: %s, NiceHash: %s)",
+		poolAddr.c_str(), tls ? "yes" : "no", nh ? "yes" : "no");
+
+	// Update the pool — this disconnects and resets tracking
+	pool->update_config(poolAddr, wallet, rigid, passwd, tls, nh);
+
+	// Reset our stats since we're reconnecting to a new pool
+	reset_stats();
+
+	// Trigger immediate reconnect evaluation
+	push_event(ex_event(EV_EVAL_POOL_CHOICE));
+
+	doc.AddMember("success", true, alloc);
+	Value addr(poolAddr.c_str(), alloc);
+	doc.AddMember("pool_address", addr, alloc);
+	doc.AddMember("message", "Pool config updated. Reconnecting...", alloc);
 
 	out = json_to_string(doc);
 }

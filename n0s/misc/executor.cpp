@@ -653,6 +653,7 @@ void executor::ex_main()
 		case EV_API_CONFIG:
 		case EV_API_AUTOTUNE:
 		case EV_API_VERSION:
+		case EV_API_POOL_UPDATE:
 			http_report(ev.iName);
 			break;
 
@@ -1371,6 +1372,10 @@ void executor::http_report(ex_event_name ev)
 		api_version_report(*pHttpString);
 		break;
 
+	case EV_API_POOL_UPDATE:
+		api_pool_update(*pHttpString);
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -1386,7 +1391,8 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 	assert(pHttpString == nullptr);
 	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON ||
 		ev_id == EV_API_STATUS || ev_id == EV_API_HASHRATE || ev_id == EV_API_HASHRATE_HISTORY ||
-		ev_id == EV_API_GPUS || ev_id == EV_API_POOL || ev_id == EV_API_CONFIG || ev_id == EV_API_AUTOTUNE || ev_id == EV_API_VERSION);
+		ev_id == EV_API_GPUS || ev_id == EV_API_POOL || ev_id == EV_API_CONFIG || ev_id == EV_API_AUTOTUNE || ev_id == EV_API_VERSION ||
+		ev_id == EV_API_POOL_UPDATE);
 
 	pHttpString = &data;
 	httpReady = std::promise<void>();
@@ -1396,4 +1402,25 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 
 	ready.wait();
 	pHttpString = nullptr;
+}
+
+void executor::process_pool_update(const std::string& request_json, std::string& response_json)
+{
+	std::lock_guard<std::mutex> lck(httpMutex);
+
+	assert(pHttpString == nullptr);
+
+	// Store request body for the executor thread to read
+	std::string reqCopy = request_json;
+	pHttpRequestBody = &reqCopy;
+	pHttpString = &response_json;
+
+	httpReady = std::promise<void>();
+	std::future<void> ready = httpReady.get_future();
+
+	push_event(ex_event(EV_API_POOL_UPDATE));
+
+	ready.wait();
+	pHttpString = nullptr;
+	pHttpRequestBody = nullptr;
 }

@@ -412,6 +412,89 @@ function drawChart() {
   el.chartLegend.innerHTML = legend;
 }
 
+// ─── Pool Edit Form ───
+
+let poolEditVisible = false;
+
+function showPoolEditForm() {
+  const form = $('pool-edit-form');
+  const info = $('pool-info');
+  if (!form || !info) return;
+
+  // Pre-fill from current values
+  $('pf-addr').value = el.piAddr.textContent !== '—' ? el.piAddr.textContent : '';
+  $('pf-wallet').value = '';  // Don't pre-fill masked wallet
+  $('pf-rigid').value = el.piRigid.textContent !== '(none)' ? el.piRigid.textContent : '';
+  $('pf-passwd').value = '';
+  $('pf-tls').checked = el.piTls.textContent.includes('enabled');
+  $('pf-nicehash').checked = el.piNicehash.textContent.includes('enabled');
+
+  form.style.display = '';
+  poolEditVisible = true;
+  $('pool-save-status').textContent = '';
+  $('pf-addr').focus();
+}
+
+function hidePoolEditForm() {
+  const form = $('pool-edit-form');
+  if (form) form.style.display = 'none';
+  poolEditVisible = false;
+}
+
+async function savePoolConfig() {
+  const addr = $('pf-addr').value.trim();
+  if (!addr || !addr.includes(':')) {
+    $('pool-save-status').textContent = '✗ Invalid address (host:port)';
+    $('pool-save-status').className = 'save-status error';
+    return;
+  }
+
+  const body = { pool_address: addr };
+  const wallet = $('pf-wallet').value.trim();
+  const rigid = $('pf-rigid').value.trim();
+  const passwd = $('pf-passwd').value.trim();
+  if (wallet) body.wallet_address = wallet;
+  if (rigid) body.rig_id = rigid;
+  if (passwd) body.pool_password = passwd;
+  body.use_tls = $('pf-tls').checked;
+  body.use_nicehash = $('pf-nicehash').checked;
+
+  $('pool-save-btn').disabled = true;
+  $('pool-save-status').textContent = 'Applying...';
+  $('pool-save-status').className = 'save-status';
+
+  try {
+    const r = await fetch(API + '/config/pool', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (data.success) {
+      $('pool-save-status').textContent = '✓ ' + (data.message || 'Applied');
+      $('pool-save-status').className = 'save-status success';
+      setTimeout(() => {
+        hidePoolEditForm();
+        updateConfig();
+        updatePool();
+        updateStatus();
+      }, 1500);
+    } else {
+      $('pool-save-status').textContent = '✗ ' + (data.error || 'Failed');
+      $('pool-save-status').className = 'save-status error';
+    }
+  } catch (e) {
+    $('pool-save-status').textContent = '✗ Network error';
+    $('pool-save-status').className = 'save-status error';
+  }
+  $('pool-save-btn').disabled = false;
+}
+
+// Bind pool edit buttons
+$('pool-edit-btn')?.addEventListener('click', showPoolEditForm);
+$('pool-cancel-btn')?.addEventListener('click', hidePoolEditForm);
+$('pool-save-btn')?.addEventListener('click', savePoolConfig);
+
 // ─── Init & Poll Loop ───
 
 async function init() {
