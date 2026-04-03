@@ -44,3 +44,4 @@ tests/test_constants
 
 build-mingw/
 build-verify/
+deps-mingw/

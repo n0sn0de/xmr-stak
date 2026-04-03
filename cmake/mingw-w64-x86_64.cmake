@@ -25,6 +25,12 @@ else()
     set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32)
 endif()
 
+# Cross-compiled dependencies prefix (set via -DMINGW_DEPS_PREFIX=...)
+if(DEFINED MINGW_DEPS_PREFIX AND EXISTS "${MINGW_DEPS_PREFIX}")
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MINGW_DEPS_PREFIX}")
+    list(APPEND CMAKE_PREFIX_PATH "${MINGW_DEPS_PREFIX}")
+endif()
+
 # Adjust the default behavior of the FIND_XXX() commands:
 # search headers and libraries in the target environment,
 # search programs in the host environment
