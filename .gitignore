@@ -41,3 +41,6 @@ dist/
 tests/*.o
 tests/cn_gpu_harness
 tests/test_constants
+
+build-mingw/
+build-verify/

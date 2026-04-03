@@ -10,17 +10,30 @@
 
 #include "platform.hpp"
 
+// winsock2.h MUST come before windows.h to avoid redefinition errors
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
 #include <shlobj.h>
-#include <conio.h>
+#include <shellapi.h>
 #include <cstdio>
 #include <ctime>
 
+// MinGW may not have _kbhit/_getch in <conio.h> — check
+#if defined(_MSC_VER)
+#include <conio.h>
+#else
+// MinGW: use Windows console input APIs directly
+#endif
+
+#if defined(_MSC_VER)
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "shell32.lib")
+#endif
 
 namespace n0s
 {
@@ -67,8 +80,25 @@ std::string getCacheDir()
 
 int getKey()
 {
+#if defined(_MSC_VER)
 	if(_kbhit())
 		return _getch();
+#else
+	// MinGW: use Windows Console API
+	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD avail = 0;
+	INPUT_RECORD ir;
+	if(GetNumberOfConsoleInputEvents(hStdin, &avail) && avail > 0)
+	{
+		DWORD read = 0;
+		if(PeekConsoleInputA(hStdin, &ir, 1, &read) && read > 0 &&
+		   ir.EventType == KEY_EVENT && ir.Event.KeyEvent.bKeyDown)
+		{
+			ReadConsoleInputA(hStdin, &ir, 1, &read);
+			return ir.Event.KeyEvent.uChar.AsciiChar;
+		}
+	}
+#endif
 	return -1;
 }
 
@@ -161,13 +191,18 @@ int spawnProcess(const char* path, const char* const argv[])
 
 void setThreadName(const char* name)
 {
-	// SetThreadDescription requires Win10 1607+
-	// Convert to wide string
+	// SetThreadDescription requires Win10 1607+ — may not be in older MinGW headers
+	// Use runtime dynamic loading to be safe
+	typedef HRESULT(WINAPI* SetThreadDescriptionFn)(HANDLE, PCWSTR);
+	static auto fn = reinterpret_cast<SetThreadDescriptionFn>(
+		GetProcAddress(GetModuleHandleA("kernel32.dll"), "SetThreadDescription"));
+	if(!fn) return;
+
 	int wLen = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
 	if(wLen <= 0) return;
 	std::wstring wname(wLen, L'\0');
 	MultiByteToWideChar(CP_UTF8, 0, name, -1, &wname[0], wLen);
-	SetThreadDescription(GetCurrentThread(), wname.c_str());
+	fn(GetCurrentThread(), wname.c_str());
 }
 
 // ─── Sockets ─────────────────────────────────────────────────────────────────

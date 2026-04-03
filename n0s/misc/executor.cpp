@@ -880,7 +880,11 @@ char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point t
 	 * And of course C++ implements unsafe version because... reasons
 	 */
 
+#if defined(_WIN32)
+	localtime_s(&stime, &ctime);
+#else
 	localtime_r(&ctime, &stime);
+#endif
 	strftime(buf, len, "%F %T", &stime);
 
 	return buf;

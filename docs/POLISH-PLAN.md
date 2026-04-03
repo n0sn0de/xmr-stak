@@ -595,9 +595,10 @@ Things explicitly **not** in scope:
 - ✅ **3.1 Platform Abstraction** — 14 functions, Linux + Windows implementations
 - ✅ **3.2 Cross-Platform Compat** — All POSIX functions wrapped, CMake MSVC support
 - ✅ **3.3 NVML Telemetry** — Runtime-loaded NVML, nvidia-smi fallback
-- 🔲 **3.4 Build System (Windows)** — vcpkg integration, CI/CD matrix
+- ✅ **3.4a MinGW Cross-Build** — CMake toolchain, build script, Wine validation (Session 60)
+- 🔲 **3.4b Build System (Windows native)** — vcpkg integration, MSVC native builds
 - 🔲 **3.5 CI/CD Matrix** — GitHub Actions for Windows builds
-- 🔲 **3.6 Validation** — Windows live testing
+- 🔲 **3.6 Validation** — Windows live testing (GPU mining)
 
 ### Session 59 (2026-04-03) — CI/CD Workflows + API Bearer Auth 🚀🔐
 
@@ -656,8 +657,68 @@ Things explicitly **not** in scope:
 - [x] Pool config via API
 - [x] Authentication (digest + Bearer token)
 
-**Next session priorities (Session 60):**
-1. **Pillar 3.4: Build System (Windows)** — vcpkg integration for OpenSSL, microhttpd on Windows
-2. **Windows cross-compilation** — or native build on Windows runner
-3. **Release v3.3.0** — tag and ship with CI/CD
+### Session 60 (2026-04-03) — MinGW Cross-Build + Wine Validation 🏗️🍷
+
+**Pivoted from slow GHA Windows runners to local Wine + MinGW cross-compilation. First successful Windows binary!**
+
+| Component | Detail |
+|-----------|--------|
+| **`cmake/mingw-w64-x86_64.cmake`** | New: CMake toolchain file for MinGW-w64 cross-compilation (Linux → Windows x86_64) |
+| **`scripts/cross-build-windows.sh`** | New: automated cross-build + Wine validation script |
+| **`n0s/platform/compat.hpp`** | Fixed: distinguish MSVC vs MinGW — MinGW has POSIX functions (strcasecmp, popen, mkstemp) that MSVC lacks |
+| **`n0s/platform/platform_windows.cpp`** | Fixed: include winsock2.h before windows.h, runtime-load SetThreadDescription, MinGW-compatible getKey() |
+| **`n0s/misc/jext.hpp`** | Fixed: byteswap.h → _byteswap_ulong/_byteswap_uint64 on Windows |
+| **`n0s/misc/executor.cpp`** | Fixed: localtime_r → localtime_s on _WIN32 (not just _MSC_VER) |
+| **`n0s/backend/cpu/minethd.cpp`** | Fixed: pthread_setaffinity_np → SetThreadAffinityMask on Windows |
+| **`n0s/autotune/autotune_manager.cpp`** | Fixed: gmtime_r → gmtime_s on _WIN32 |
+| **`CMakeLists.txt`** | Fixed: -Wl,-z,noexecstack ELF-only (skip on WIN32), static link flags via CMAKE_EXE_LINKER_FLAGS |
+
+**Build results:**
+
+| Target | Binary Size | Status |
+|--------|-------------|--------|
+| Windows x86_64 (.exe, MinGW, generic, no TLS/HTTP) | 3.6 MB | ✅ |
+| Linux x86_64 (OpenCL, generic) | 3.1 MB | ✅ (regression test) |
+
+**Wine validation (3 tests):**
+
+| Test | Result |
+|------|--------|
+| `--version` | ✅ `Version: n0s-ryo-miner 3.3.0 eb2b27c` |
+| `--help` | ✅ Full 41-line help output |
+| `--version-long` | ✅ Platform shows `win` correctly |
+
+**MinGW vs MSVC compatibility lessons:**
+
+| Issue | MSVC-only | MinGW | Fix |
+|-------|-----------|-------|-----|
+| `strcasecmp` | `_stricmp` | available (POSIX) | Guard with `_MSC_VER`, not `_WIN32` |
+| `localtime_r` | use `localtime_s` | use `localtime_s` (no `localtime_r` on MinGW) | Guard with `_WIN32` |
+| `gmtime_r` | use `gmtime_s` | use `gmtime_s` | Guard with `_WIN32` |
+| `popen`/`pclose` | `_popen`/`_pclose` | available (POSIX) | Guard with `_MSC_VER` |
+| `mkstemp` | custom `_mktemp_s + _sopen_s` | available (POSIX) | Guard with `_MSC_VER` |
+| `<byteswap.h>` | N/A | not available | Use `_byteswap_ulong` from `<cstdlib>` on `_WIN32` |
+| `<pthread.h>` | N/A | available (posix thread model) | Guard with `_WIN32` |
+| `SetThreadDescription` | available in SDK | not in MinGW 13 headers | Runtime-load from kernel32.dll |
+| `-Wl,-z,noexecstack` | N/A | invalid for PE linker | Skip on `WIN32` |
+| `<conio.h>` `_kbhit`/`_getch` | available | may not be available | Use Windows Console API directly |
+
+**Wine setup notes:**
+- Wine 9.0 works for console app testing (no X11 needed)
+- Critical: `zlib1.dll` must be in Wine prefix's `system32/` (Wine's user32.dll depends on it)
+- Wine prefix needs `wine64-preloader` package alongside `wine64` and `libwine`
+- wineserver must be the actual ELF binary, not the shell script wrapper (dpkg extracts both)
+- `WINEDEBUG=-all` suppresses noisy initialization warnings
+
+**What this build DOESN'T have (yet):**
+- No OpenSSL (no TLS pool connections) — needs cross-compiled OpenSSL for MinGW
+- No microhttpd (no HTTP dashboard) — needs cross-compiled libmicrohttpd for MinGW
+- No OpenCL backend — needs OpenCL headers + ICD loader for Windows
+- No CUDA — requires native NVCC (CUDA doesn't support MinGW cross-compile)
+
+**Next session priorities (Session 61):**
+1. **Cross-compile OpenSSL for MinGW** — enable TLS pool connections
+2. **Cross-compile libmicrohttpd for MinGW** — enable HTTP dashboard
+3. **Add OpenCL headers for Windows** — enable OpenCL backend compilation
+4. **Or:** merge current work to master, tag v3.3.0, use GHA for full Windows builds with vcpkg
 
