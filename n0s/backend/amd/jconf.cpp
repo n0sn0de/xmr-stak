@@ -25,8 +25,6 @@
 #include "n0s/misc/console.hpp"
 #include "n0s/misc/jext.hpp"
 
-#include <cpuid.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

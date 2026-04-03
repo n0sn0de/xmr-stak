@@ -29,8 +29,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <cpuid.h>
-
 namespace n0s
 {
 namespace cuda

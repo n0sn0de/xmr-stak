@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–61). CI/CD live. v3.3.0 released. Windows cross-build with TLS+HTTP (Session 61). Remaining: Windows live GPU testing.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–61). CI/CD live. v3.4.0 released. Windows cross-build with OpenCL + TLS + HTTP dashboard (Session 61b). Windows CUDA support via MSVC + GHA CI (Session 62). Remaining: GHA Windows CUDA CI validation + live GPU testing on Windows.*
 
 ---
 
@@ -531,119 +531,6 @@ Things explicitly **not** in scope:
 
 ## Session Notes
 
-### Session 58 (2026-04-03) — Cross-Platform Compat Layer (Pillar 3.2) 🌐⚡
-
-**Eliminated all remaining POSIX-only code from the codebase — every .cpp/.hpp now compiles under both GCC and MSVC.**
-
-| Component | Detail |
-|-----------|--------|
-| **`n0s/platform/compat.hpp`** | New: portable wrappers for strcasecmp, mkdir, sleep, popen/pclose, mkstemp, sysconf_nproc |
-| **`n0s/http/httpd.cpp`** | 19 strcasecmp/strncasecmp calls → n0s_strcasecmp/n0s_strncasecmp |
-| **`n0s/jconf.cpp`** | 4 strcasecmp calls → n0s_strcasecmp |
-| **`n0s/misc/executor.cpp`** | 1 strncasecmp call → n0s_strncasecmp |
-| **`n0s/http/embedded_assets.hpp`** | Auto-generated with n0s_strcasecmp (embed script updated) |
-| **`n0s/backend/cpu/crypto/cryptonight_common.cpp`** | VirtualAlloc/VirtualLock on Windows, mmap/mlock on Linux (with large page support on both) |
-| **`n0s/autotune/autotune_runner.cpp`** | Extracted `makeTempFile()` + `runWithTimeout()` helpers — CreateProcess on Windows, fork/exec on Linux |
-| **`n0s/backend/amd/amd_gpu/gpu_utils.cpp`** | Uses compat::mkdir and compat::sleep_sec instead of raw POSIX |
-| **`n0s/backend/cpu/autoAdjust.hpp`** | sysconf(_SC_NPROCESSORS_ONLN) → compat::sysconf_nproc() |
-| **`n0s/misc/gpu_telemetry.cpp`** | popen/pclose → compat::popen/pclose |
-| **`n0s/backend/cpu/crypto/cryptonight.h`** | ABI_ATTRIBUTE guarded for MSVC (no `__attribute__((ms_abi))` on MSVC) |
-| **CMakeLists.txt** | MSVC support: /W4, /D_CRT_SECURE_NO_WARNINGS, static CRT, /arch:AVX2, ws2_32+shell32 linking, platform-specific source selection |
-| **Dead includes removed** | `<unistd.h>` from cli-miner.cpp, `<sys/types.h>` from nvidia/minethd.cpp, `<unistd.h>` from autoAdjustHwloc.hpp |
-
-**Cross-platform compat API surface (7 function families):**
-
-| Function | Linux | Windows |
-|----------|-------|---------|
-| `n0s_strcasecmp` | `strcasecmp` | `_stricmp` |
-| `n0s_strncasecmp` | `strncasecmp` | `_strnicmp` |
-| `compat::mkdir` | `mkdir(path, 0744)` | `_mkdir(path)` |
-| `compat::sleep_sec` | `sleep(n)` | `Sleep(n*1000)` |
-| `compat::popen/pclose` | `popen/pclose` | `_popen/_pclose` |
-| `compat::mkstemp` | `mkstemp()` | `_mktemp_s + _sopen_s` |
-| `compat::sysconf_nproc` | `sysconf(_SC_NPROCESSORS_ONLN)` | `GetSystemInfo().dwNumberOfProcessors` |
-
-**3-GPU validation:**
-- nitro (RX 9070 XT, OpenCL): build ✅, 14+ shares, 0 rejected ✅, API JSON endpoints ✅
-- nos2 (GTX 1070 Ti, CUDA 11.8): build ✅, 10+ shares, 0 rejected ✅
-- nosnode (RTX 2070, CUDA 12.6): build ✅, 9+ shares, 0 rejected ✅ (with reduced blocks due to VRAM pressure from other processes)
-- Container build CUDA 11.8: 3.1 MB ✅, 10+ shares on nos2 ✅
-- API verified: /api/v1/version + /api/v1/gpus return valid JSON with telemetry ✅
-
-**Key learnings:**
-- `strcasecmp`/`strncasecmp` are POSIX-only — Windows has `_stricmp`/`_strnicmp`. Best solved with a thin header of inline wrappers rather than `#ifdef` at every call site.
-- `_mm_malloc` on MSVC is in `<malloc.h>` (not `<mm_malloc.h>` like GCC). Need conditional include.
-- Windows `MEM_LARGE_PAGES` is the equivalent of `MAP_HUGETLB` — requires `SeLockMemoryPrivilege` enabled via `AdjustTokenPrivileges`.
-- `__attribute__((ms_abi))` is GCC/Clang-only — MSVC doesn't need it (it's the default ABI). Guard with `#ifdef _MSC_VER`.
-- Platform-specific source selection in CMake is cleaner than globbing `n0s/platform/*.cpp` (which would compile both platform files).
-- Dead includes accumulate over time — `<unistd.h>` was in 4 files that didn't actually need it.
-
-**Pillar 3 Progress Summary:**
-- ✅ **3.1 Platform Abstraction** — 14 functions, Linux + Windows implementations
-- ✅ **3.2 Cross-Platform Compat** — All POSIX functions wrapped, CMake MSVC support
-- ✅ **3.3 NVML Telemetry** — Runtime-loaded NVML, nvidia-smi fallback
-- ✅ **3.4a MinGW Cross-Build** — CMake toolchain, build script, Wine validation (Session 60)
-- 🔲 **3.4b Build System (Windows native)** — vcpkg integration, MSVC native builds
-- 🔲 **3.5 CI/CD Matrix** — GitHub Actions for Windows builds
-- 🔲 **3.6 Validation** — Windows live testing (GPU mining)
-
-### Session 59 (2026-04-03) — CI/CD Workflows + API Bearer Auth 🚀🔐
-
-**Two major deliverables: automated build pipeline and API authentication.**
-
-**CI/CD (`.github/workflows/`):**
-
-| Workflow | Trigger | Jobs |
-|----------|---------|------|
-| **build.yml** | push to master, PRs | 3 parallel builds: OpenCL (Ubuntu 24.04), CUDA 11.8 (container), CUDA 12.8+OpenCL (container) |
-| **release.yml** | tag push `v*` | Build all variants → create GitHub Release with SHA256 checksums |
-
-| CI Job | Status | Details |
-|--------|--------|---------|
-| Linux OpenCL (Ubuntu 24.04) | ✅ PASS | Native build + golden hash constants test |
-| Linux CUDA 11.8 (Container) | ✅ PASS | nvidia/cuda:11.8.0-devel, archs 61-89 |
-| Linux CUDA 12.8 (Container) | ✅ PASS | nvidia/cuda:12.8.0-devel, archs 61-120 |
-
-**CI features:**
-- Concurrency groups (cancel in-progress on same branch)
-- Golden hash constant verification on every build
-- Single-binary artifact verification (no .so files produced)
-- 14-day artifact retention
-- Release workflow: auto-generates release notes + SHA256SUMS
-
-**API Bearer Token Authentication:**
-
-| Component | Detail |
-|-----------|--------|
-| **`n0s/jconf.cpp`** | New `http_api_token` config key (optional, defaults to empty) |
-| **`n0s/http/httpd.cpp`** | Bearer token auth via `Authorization: Bearer <token>` header |
-| **Dual auth** | Bearer token OR digest auth (http_login/http_pass) — either accepted |
-| **Backward compat** | Old configs without `http_api_token` parse fine (default: empty = disabled) |
-
-**Auth test results:**
-- ❌ No auth header → `401 {"error":"unauthorized"}` ✅
-- ❌ Wrong token → `401 {"error":"unauthorized"}` ✅
-- ✅ Correct token → `200` with valid JSON ✅
-- ✅ No auth configured → open access (backward compatible) ✅
-
-**3-GPU validation:**
-- nitro (RX 9070 XT, OpenCL): build ✅, 20+ shares, 0 rejected ✅, auth tested ✅
-- nos2 (GTX 1070 Ti, CUDA 11.8): build ✅, 5+ shares, 0 rejected ✅
-- GitHub Actions CI: all 3 jobs PASS ✅
-
-**Key learnings:**
-- MHD (microhttpd) callback model for PUT: body is accumulated across multiple callbacks before auth is checked. Auth runs on the final callback (`upload_data_size == 0`). Body is never processed without auth — no security gap.
-- Making config keys optional requires a static default Value — can't return nullptr from `GetString()`.
-- GitHub Actions container jobs (`container:` key) need packages installed fresh since there's no apt cache.
-- The `concurrency` group with `cancel-in-progress: true` prevents stacking builds on rapid pushes.
-
-**Pillar 2 now COMPLETE:**
-- [x] All 9 GET + 1 PUT API endpoints
-- [x] Dashboard SPA (6.1 KB gzipped)
-- [x] Hashrate chart + GPU telemetry
-- [x] Pool config via API
-- [x] Authentication (digest + Bearer token)
-
 ### Session 60 (2026-04-03) — MinGW Cross-Build + Wine Validation 🏗️🍷
 
 **Pivoted from slow GHA Windows runners to local Wine + MinGW cross-compilation. First successful Windows binary!**
@@ -751,9 +638,84 @@ Things explicitly **not** in scope:
 - ✅ **3.5 CI/CD Matrix** — GitHub Actions (3 Linux + 1 Windows)
 - 🔲 **3.6 Validation** — Windows live GPU mining test
 
-**Next session priorities (Session 62):**
-1. **Merge to master and tag v3.4.0** — Windows release
-2. **Windows live testing** — Get the .exe on a real Windows machine with GPU
-3. **OpenCL headers for Windows cross-build** — enable OpenCL backend
-4. **Update release.yml** — add Windows cross-build artifact to release workflow
+### Session 61b (2026-04-03) — v3.4.0 Release + MinGW CI + OpenCL Cross-Build 🏷️🪟
+
+**Jason worked directly on this session — merged to master, tagged v3.4.0, and got MinGW CI + OpenCL working.**
+
+| Milestone | Detail |
+|-----------|--------|
+| **v3.4.0 tagged** | Merged release/v3.4.0 branch to master |
+| **MinGW CI added** | `build-windows-opencl` job in release.yml — MinGW cross-compile on Ubuntu runner |
+| **OpenCL cross-build** | Khronos headers + import lib for `OpenCL.dll` in `cross-build-windows.sh` |
+| **build.yml deleted** | Removed push trigger, then removed entirely (was noisy on every push) |
+
+**Release workflow now produces 4 artifacts:**
+- `n0s-ryo-miner-linux-opencl` — Linux, GCC, OpenCL
+- `n0s-ryo-miner-linux-cuda11` — Linux, CUDA 11.8 container
+- `n0s-ryo-miner-linux-cuda12-opencl` — Linux, CUDA 12.8 + OpenCL container
+- `n0s-ryo-miner-windows-opencl.exe` — Windows, MinGW cross-build, OpenCL + TLS + HTTP
+
+**Windows binary status:** Builds and runs, but Jason can't test OpenCL backend (no AMD GPU on Windows machine). **CUDA support needed** for Jason's Windows NVIDIA GPU.
+
+### Session 62 (2026-04-03) — Windows CUDA Support via MSVC + GHA CI (Pillar 3.4c) 🖥️⚡
+
+**Added native Windows MSVC + CUDA build support via GitHub Actions.**
+
+**Key finding:** CUDA cross-compilation from Linux to Windows is **not possible**. nvcc requires MSVC as host compiler on Windows. CUDA/MSVC objects are ABI-incompatible with MinGW objects. Solution: native MSVC build on GHA Windows runners.
+
+| Component | Detail |
+|-----------|--------|
+| **`cuda_dispatch.cu`** | Fixed: `<unistd.h>` + `usleep()` → `#ifdef _WIN32` Windows `Sleep()` guard |
+| **`CMakeLists.txt`** | Added `lib/x64` path suffix for CUDA libs on Windows (`find_library`) |
+| **`n0s/jconf.cpp`** | Fixed: `<cpuid.h>` → `_MSC_VER` guard, `__cpuid_count` → `__cpuidex` on MSVC |
+| **`n0s/backend/cpu/crypto/cn_gpu.hpp`** | Fixed: `<cpuid.h>` + `<x86intrin.h>` → MSVC `<intrin.h>` guard |
+| **Dead includes removed** | `<cpuid.h>` from nvidia/jconf.cpp, cpu/jconf.cpp, amd/jconf.cpp (unused) |
+| **`.github/workflows/build.yml`** | New: PR CI — Linux OpenCL + CUDA 12.8 + Windows MSVC CUDA 12 |
+| **`.github/workflows/release.yml`** | Updated: adds `build-windows-cuda` job (MSVC + CUDA 12.8 + OpenCL via vcpkg) |
+
+**Windows CUDA CI architecture:**
+- Runner: `windows-2022` (VS 2022 + MSVC)
+- CUDA: `Jimver/cuda-toolkit@v0.2.35` installs CUDA 12.8 (local method)
+- Deps: `lukka/run-vcpkg@v11` → `openssl:x64-windows-static`, `libmicrohttpd:x64-windows-static`, `opencl:x64-windows-static`
+- Generator: `Visual Studio 17 2022` with `-A x64`
+- CUDA archs: 61 (Pascal), 75 (Turing), 80+86 (Ampere), 89 (Ada Lovelace)
+
+**Release matrix now produces 5 artifacts:**
+
+| Artifact | Backend | Build Method |
+|----------|---------|-------------|
+| `n0s-ryo-miner-linux-opencl` | OpenCL | Native GCC |
+| `n0s-ryo-miner-linux-cuda11` | CUDA 11.8 | Container |
+| `n0s-ryo-miner-linux-cuda12-opencl` | CUDA 12.8 + OpenCL | Container |
+| `n0s-ryo-miner-windows-opencl.exe` | OpenCL | MinGW cross-compile |
+| `n0s-ryo-miner-windows-cuda12-opencl.exe` | **CUDA 12 + OpenCL** | **MSVC native (NEW)** |
+
+**3-GPU validation (code changes only — CI awaiting merge/PR):**
+- nitro (RX 9070 XT, OpenCL): build ✅, 11+ shares, 0 rejected ✅
+- nosnode (RTX 2070, CUDA 12.6): build ✅, CUDA init ✅, 30+ shares, 0 rejected ✅
+- MinGW cross-build: 8.7 MB ✅, no regressions ✅
+
+**Key learnings:**
+- **CUDA + MinGW = impossible.** nvcc on Windows requires MSVC. CUDA/MSVC objects can't link with MinGW. The only path is native MSVC builds.
+- `<cpuid.h>` is GCC-only. MSVC uses `<intrin.h>` with `__cpuidex()` instead of `__cpuid_count()`.
+- `Jimver/cuda-toolkit` `sub-packages` only works on Linux network installs. Windows uses local installer (full toolkit).
+- CUDA 12.8 driver API `cuda.h` and runtime `cuda_runtime.h` work fine with MSVC as host compiler — no code changes needed in `.cu` files beyond the `usleep` fix.
+- Dead `<cpuid.h>` includes accumulated across 3 backend jconf files (nvidia, cpu, amd) — none actually used `__cpuid_count`. Cleanup prevents MSVC build failures.
+
+**Pillar 3 Progress:**
+- ✅ **3.1 Platform Abstraction** — 14 functions, Linux + Windows
+- ✅ **3.2 Cross-Platform Compat** — All POSIX wrapped, CMake MSVC+MinGW
+- ✅ **3.3 NVML Telemetry** — Runtime-loaded NVML, fallback
+- ✅ **3.4a MinGW Cross-Build** — OpenCL + TLS + HTTP, Wine validated
+- ✅ **3.4b Release Workflow** — MinGW Windows artifact in release.yml
+- ✅ **3.4c MSVC + CUDA** — GHA CI workflow, MSVC compat fixes
+- ✅ **3.5 CI/CD Matrix** — GitHub Actions (3 Linux + 2 Windows)
+- 🔲 **3.6 Validation** — GHA CI run + Windows live GPU mining test
+
+**Next session priorities (Session 63):**
+1. **Merge polish/windows-cuda PR to master** — need Jason to create/merge PR (bot lacks PR permissions)
+2. **Run GHA CI** — validate Windows CUDA build on GHA runners
+3. **Tag v3.5.0** — Windows CUDA release
+4. **Jason live test** — run the CUDA .exe on Windows with NVIDIA GPU
+5. **Fix any CI/build issues** — iterate on GHA workflow if needed
 

@@ -21,7 +21,12 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 // ============================================================
 // usleep wrapper (extern "C" for ABI compatibility)
@@ -29,7 +34,15 @@
 
 extern "C" void compat_usleep(uint64_t waitTime)
 {
+#ifdef _WIN32
+	// Windows Sleep() takes milliseconds; usleep takes microseconds
+	if(waitTime >= 1000)
+		Sleep(static_cast<DWORD>(waitTime / 1000));
+	else if(waitTime > 0)
+		Sleep(1);
+#else
 	usleep(waitTime);
+#endif
 }
 
 // ============================================================

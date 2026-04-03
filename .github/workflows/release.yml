@@ -112,7 +112,7 @@ jobs:
           name: n0s-ryo-miner-linux-cuda12-opencl
           path: build/bin/n0s-ryo-miner
 
-  # ─── Windows Build (MinGW cross-compile on Linux) ───────────────────────────
+  # ─── Windows Builds ─────────────────────────────────────────────────────────
   build-windows-opencl:
     name: Windows OpenCL (MinGW)
     runs-on: ubuntu-24.04
@@ -138,10 +138,84 @@ jobs:
           name: n0s-ryo-miner-windows-opencl
           path: dist/windows-opencl/n0s-ryo-miner.exe
 
+  build-windows-cuda:
+    name: Windows CUDA 12 + OpenCL (MSVC)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.35
+        id: cuda-toolkit
+        with:
+          cuda: '12.8.0'
+          method: 'local'
+
+      - name: Verify CUDA
+        run: nvcc -V
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '52f5569a8e867859fac967c1e3f10ca0a8a3cc39'
+
+      - name: Install vcpkg dependencies
+        run: vcpkg install openssl:x64-windows-static libmicrohttpd:x64-windows-static opencl:x64-windows-static
+
+      - name: Generate embedded GUI assets
+        shell: bash
+        run: |
+          # Ensure xxd is available (Git Bash includes vim tools)
+          if command -v xxd &>/dev/null; then
+            bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
+          else
+            echo "xxd not found — using committed embedded_assets.hpp"
+          fi
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCUDA_ENABLE=ON `
+            -DOpenCL_ENABLE=ON `
+            -DMICROHTTPD_ENABLE=ON `
+            -DHWLOC_ENABLE=OFF `
+            -DCUDA_ARCH="61;75;80;86;89" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DN0S_COMPILE=generic `
+            -DCMAKE_LINK_STATIC=ON
+
+      - name: Build
+        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Verify binary
+        run: |
+          $binary = "build/bin/Release/n0s-ryo-miner.exe"
+          if (-not (Test-Path $binary)) {
+            $binary = "build/bin/n0s-ryo-miner.exe"
+          }
+          if (-not (Test-Path $binary)) {
+            # Search for it
+            $found = Get-ChildItem -Path build -Recurse -Filter "n0s-ryo-miner.exe" | Select-Object -First 1
+            if ($found) { $binary = $found.FullName }
+          }
+          Write-Host "Binary: $binary"
+          Write-Host "Size: $([math]::Round((Get-Item $binary).Length / 1MB, 1)) MB"
+          & $binary --version
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: n0s-ryo-miner-windows-cuda12-opencl
+          path: |
+            build/bin/Release/n0s-ryo-miner.exe
+            build/bin/n0s-ryo-miner.exe
+
   # ─── Create GitHub Release ─────────────────────────────────────────────────
   release:
     name: Create Release
-    needs: [build-linux-opencl, build-linux-cuda11, build-linux-cuda12, build-windows-opencl]
+    needs: [build-linux-opencl, build-linux-cuda11, build-linux-cuda12, build-windows-opencl, build-windows-cuda]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -162,9 +236,21 @@ jobs:
           cp artifacts/n0s-ryo-miner-linux-cuda12-opencl/n0s-ryo-miner \
              release/n0s-ryo-miner-linux-cuda12-opencl
           chmod +x release/n0s-ryo-miner-linux-*
-          # Windows binary
+          # Windows OpenCL binary (MinGW cross-build)
           cp artifacts/n0s-ryo-miner-windows-opencl/n0s-ryo-miner.exe \
              release/n0s-ryo-miner-windows-opencl.exe
+          # Windows CUDA + OpenCL binary (MSVC native)
+          # MSVC may output to bin/ or bin/Release/ depending on generator
+          if [ -f artifacts/n0s-ryo-miner-windows-cuda12-opencl/Release/n0s-ryo-miner.exe ]; then
+            cp artifacts/n0s-ryo-miner-windows-cuda12-opencl/Release/n0s-ryo-miner.exe \
+               release/n0s-ryo-miner-windows-cuda12-opencl.exe
+          elif [ -f artifacts/n0s-ryo-miner-windows-cuda12-opencl/n0s-ryo-miner.exe ]; then
+            cp artifacts/n0s-ryo-miner-windows-cuda12-opencl/n0s-ryo-miner.exe \
+               release/n0s-ryo-miner-windows-cuda12-opencl.exe
+          else
+            echo "WARNING: Windows CUDA binary not found in expected locations"
+            find artifacts/n0s-ryo-miner-windows-cuda12-opencl/ -name "*.exe" -exec cp {} release/n0s-ryo-miner-windows-cuda12-opencl.exe \;
+          fi
           # Generate checksums
           cd release && sha256sum * > SHA256SUMS
 
@@ -179,4 +265,5 @@ jobs:
             release/n0s-ryo-miner-linux-cuda11
             release/n0s-ryo-miner-linux-cuda12-opencl
             release/n0s-ryo-miner-windows-opencl.exe
+            release/n0s-ryo-miner-windows-cuda12-opencl.exe
             release/SHA256SUMS

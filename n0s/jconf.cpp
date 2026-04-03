@@ -36,7 +36,11 @@
 #include <cstring>
 #include <vector>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
 #include <cpuid.h>
+#endif
 
 using namespace rapidjson;
 
@@ -264,7 +268,11 @@ void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
 {
 	memset(val, 0, sizeof(int32_t) * 4);
 
+#ifdef _MSC_VER
+	__cpuidex(val, static_cast<int>(eax), static_cast<int>(ecx));
+#else
 	__cpuid_count(eax, ecx, val[0], val[1], val[2], val[3]);
+#endif
 }
 
 bool jconf::check_cpu_features()

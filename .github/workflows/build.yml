@@ -1,0 +1,143 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Linux OpenCL (fast sanity check) ───────────────────────────────────────
+  build-linux-opencl:
+    name: Linux OpenCL
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            cmake g++ \
+            libmicrohttpd-dev libssl-dev libhwloc-dev \
+            ocl-icd-opencl-dev opencl-headers \
+            gzip xxd
+
+      - name: Generate embedded GUI assets
+        run: bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
+
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. \
+            -DCUDA_ENABLE=OFF \
+            -DOpenCL_ENABLE=ON \
+            -DMICROHTTPD_ENABLE=ON \
+            -DHWLOC_ENABLE=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DN0S_COMPILE=generic \
+            -DCMAKE_LINK_STATIC=ON
+          cmake --build . -j$(nproc)
+
+      - name: Verify single binary
+        run: |
+          ls -lh build/bin/n0s-ryo-miner
+          file build/bin/n0s-ryo-miner
+          build/bin/n0s-ryo-miner --version
+
+  # ─── Linux CUDA 12.8 (container build) ──────────────────────────────────────
+  build-linux-cuda12:
+    name: Linux CUDA 12.8
+    runs-on: ubuntu-24.04
+    container:
+      image: docker.io/nvidia/cuda:12.8.0-devel-ubuntu24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq cmake g++ libmicrohttpd-dev libssl-dev gzip xxd
+
+      - name: Generate embedded GUI assets
+        run: bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
+
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. \
+            -DCUDA_ENABLE=ON -DOpenCL_ENABLE=OFF \
+            -DMICROHTTPD_ENABLE=ON -DHWLOC_ENABLE=OFF \
+            -DCUDA_ARCH="61;75;80;86;89;90;100;120" \
+            -DCMAKE_BUILD_TYPE=Release -DN0S_COMPILE=generic
+          cmake --build . -j$(nproc)
+
+      - name: Verify
+        run: |
+          ls -lh build/bin/n0s-ryo-miner
+          build/bin/n0s-ryo-miner --version
+
+  # ─── Windows CUDA + OpenCL (MSVC native) ────────────────────────────────────
+  build-windows-cuda:
+    name: Windows CUDA 12 + OpenCL (MSVC)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.35
+        id: cuda-toolkit
+        with:
+          cuda: '12.8.0'
+          method: 'local'
+
+      - name: Verify CUDA
+        run: nvcc -V
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '52f5569a8e867859fac967c1e3f10ca0a8a3cc39'
+
+      - name: Install vcpkg dependencies
+        run: vcpkg install openssl:x64-windows-static libmicrohttpd:x64-windows-static opencl:x64-windows-static
+
+      - name: Generate embedded GUI assets
+        shell: bash
+        run: |
+          if command -v xxd &>/dev/null; then
+            bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
+          else
+            echo "xxd not found — using committed embedded_assets.hpp"
+          fi
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCUDA_ENABLE=ON `
+            -DOpenCL_ENABLE=ON `
+            -DMICROHTTPD_ENABLE=ON `
+            -DHWLOC_ENABLE=OFF `
+            -DCUDA_ARCH="61;75;80;86;89" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DN0S_COMPILE=generic `
+            -DCMAKE_LINK_STATIC=ON
+
+      - name: Build
+        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Verify binary
+        run: |
+          $found = Get-ChildItem -Path build -Recurse -Filter "n0s-ryo-miner.exe" | Select-Object -First 1
+          if ($found) {
+            Write-Host "Binary: $($found.FullName)"
+            Write-Host "Size: $([math]::Round($found.Length / 1MB, 1)) MB"
+            & $found.FullName --version
+          } else {
+            Write-Error "Binary not found!"
+            exit 1
+          }

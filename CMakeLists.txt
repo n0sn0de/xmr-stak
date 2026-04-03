@@ -61,13 +61,13 @@ if(CUDA_ENABLE)
         find_library(CUDA_LIB
             NAMES libcuda cuda
             HINTS ${CUDA_TOOLKIT_ROOT_DIR} /usr /usr/local/cuda
-            PATH_SUFFIXES lib64 lib64/stubs lib)
+            PATH_SUFFIXES lib64 lib64/stubs lib lib/x64)
 
         # Find nvrtc (runtime compilation)
         find_library(CUDA_NVRTC_LIB
             NAMES libnvrtc nvrtc
             HINTS ${CUDA_TOOLKIT_ROOT_DIR} /usr /usr/local/cuda
-            PATH_SUFFIXES lib64 lib)
+            PATH_SUFFIXES lib64 lib lib/x64)
 
         list(APPEND BACKEND_TYPES "nvidia")
 
