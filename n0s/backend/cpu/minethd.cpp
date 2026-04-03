@@ -50,7 +50,9 @@
 #include <thread>
 #include <unordered_map>
 
+#ifndef _WIN32
 #include <pthread.h>
+#endif
 
 namespace n0s
 {
@@ -59,10 +61,15 @@ namespace cpu
 
 bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
+#ifdef _WIN32
+	DWORD_PTR mask = 1ULL << cpu_id;
+	return SetThreadAffinityMask(reinterpret_cast<HANDLE>(h), mask) != 0;
+#else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
 	return pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn) == 0;
+#endif
 }
 
 minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity)

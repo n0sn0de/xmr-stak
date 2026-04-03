@@ -144,23 +144,30 @@ endif()
 
 option(OpenCL_ENABLE "Enable AMD OpenCL backend" ON)
 if(OpenCL_ENABLE)
-    find_path(OpenCL_INCLUDE_DIR
-        NAMES CL/cl.h OpenCL/cl.h
-        NO_DEFAULT_PATH
-        PATHS ENV "OCL_ROOT" ENV "OpenCL_ROOT" ENV AMDAPPSDKROOT /usr
-        PATH_SUFFIXES include OpenCL/common/inc)
+    if(NOT WIN32)
+        # Linux: try vendor SDK paths first, then system
+        find_path(OpenCL_INCLUDE_DIR
+            NAMES CL/cl.h OpenCL/cl.h
+            NO_DEFAULT_PATH
+            PATHS ENV "OCL_ROOT" ENV "OpenCL_ROOT" ENV AMDAPPSDKROOT /usr
+            PATH_SUFFIXES include OpenCL/common/inc)
 
-    find_library(OpenCL_LIBRARY
-        NAMES OpenCL
-        NO_DEFAULT_PATH
-        PATHS ENV "OCL_ROOT" ENV "OpenCL_ROOT" ENV AMDAPPSDKROOT
-        PATH_SUFFIXES lib/x86_64 lib/x86_64-linux-gnu lib64)
+        find_library(OpenCL_LIBRARY
+            NAMES OpenCL
+            NO_DEFAULT_PATH
+            PATHS ENV "OCL_ROOT" ENV "OpenCL_ROOT" ENV AMDAPPSDKROOT
+            PATH_SUFFIXES lib/x86_64 lib/x86_64-linux-gnu lib64)
+    endif()
 
+    # Standard CMake OpenCL module works on both platforms
+    # On Windows: finds OpenCL.lib from CUDA toolkit, AMD SDK, or Khronos loader
     find_package(OpenCL)
     if(OpenCL_FOUND)
         list(APPEND BACKEND_TYPES "amd")
         include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
-        link_directories(${OpenCL_LIBRARY})
+        if(NOT WIN32)
+            link_directories(${OpenCL_LIBRARY})
+        endif()
     else()
         message(FATAL_ERROR "OpenCL NOT found: use `-DOpenCL_ENABLE=OFF` to build without AMD support")
     endif()
@@ -189,13 +196,25 @@ set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 # microhttpd (HTTP monitoring API)
 option(MICROHTTPD_ENABLE "Enable HTTP monitoring daemon" ON)
 if(MICROHTTPD_ENABLE)
-    find_path(MTHD_INCLUDE_DIR NAMES microhttpd.h PATHS /opt/local /usr/local /usr PATH_SUFFIXES include)
-    find_library(MHTD NAMES microhttpd PATHS ENV "MICROHTTPD_ROOT" PATH_SUFFIXES lib)
-    if(MHTD STREQUAL "MHTD-NOTFOUND")
-        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without HTTP daemon")
+    # Try vcpkg config-mode first (MSVC builds only)
+    if(MSVC)
+        find_package(unofficial-libmicrohttpd CONFIG)
+        if(unofficial-libmicrohttpd_FOUND)
+            set(MHTD_TARGET unofficial::libmicrohttpd::libmicrohttpd)
+            message(STATUS "microhttpd found via vcpkg (config mode)")
+        else()
+            message(FATAL_ERROR "microhttpd NOT found: install via vcpkg (`vcpkg install libmicrohttpd`) or use `-DMICROHTTPD_ENABLE=OFF`")
+        endif()
     else()
-        set(LIBS ${LIBS} ${MHTD})
-        include_directories(AFTER ${MTHD_INCLUDE_DIR})
+        # Native Linux or MinGW cross-compile: find_library
+        find_path(MTHD_INCLUDE_DIR NAMES microhttpd.h PATHS /opt/local /usr/local /usr PATH_SUFFIXES include)
+        find_library(MHTD NAMES microhttpd PATHS ENV "MICROHTTPD_ROOT" PATH_SUFFIXES lib)
+        if(MHTD STREQUAL "MHTD-NOTFOUND")
+            message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without HTTP daemon")
+        else()
+            set(LIBS ${LIBS} ${MHTD})
+            include_directories(AFTER ${MTHD_INCLUDE_DIR})
+        endif()
     endif()
 else()
     add_definitions("-DCONF_NO_HTTPD")
@@ -204,10 +223,17 @@ endif()
 # OpenSSL
 option(OpenSSL_ENABLE "Enable OpenSSL (TLS pool connections)" ON)
 if(OpenSSL_ENABLE)
+    if(CMAKE_LINK_STATIC)
+        set(OPENSSL_USE_STATIC_LIBS ON)
+    endif()
     find_package(OpenSSL)
     if(OPENSSL_FOUND)
         include_directories(${OPENSSL_INCLUDE_DIR})
         set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
+        # Windows static OpenSSL needs additional system libs
+        if(WIN32)
+            set(LIBS ${LIBS} crypt32 ws2_32)
+        endif()
     else()
         message(FATAL_ERROR "OpenSSL NOT found: use `-DOpenSSL_ENABLE=OFF` to build without TLS")
     endif()
@@ -280,8 +306,11 @@ else()
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
         endif()
-        set(CMAKE_CXX_FLAGS "-Wl,-z,noexecstack ${CMAKE_CXX_FLAGS}")
-        set(CMAKE_C_FLAGS "-Wl,-z,noexecstack ${CMAKE_C_FLAGS}")
+        # -z noexecstack is ELF-only (Linux), not supported by Windows PE linker
+        if(NOT WIN32)
+            set(CMAKE_CXX_FLAGS "-Wl,-z,noexecstack ${CMAKE_CXX_FLAGS}")
+            set(CMAKE_C_FLAGS "-Wl,-z,noexecstack ${CMAKE_C_FLAGS}")
+        endif()
     endif()
 endif()
 
@@ -293,7 +322,8 @@ if(CMAKE_LINK_STATIC)
     else()
         set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
         endif()
     endif()
 endif()
@@ -321,7 +351,11 @@ endif()
 add_library(n0s-backend STATIC ${BACKEND_CPP})
 add_dependencies(n0s-backend gui_assets)
 if(MICROHTTPD_ENABLE)
-    target_link_libraries(n0s-backend ${MHTD})
+    if(TARGET unofficial::libmicrohttpd::libmicrohttpd)
+        target_link_libraries(n0s-backend unofficial::libmicrohttpd::libmicrohttpd)
+    else()
+        target_link_libraries(n0s-backend ${MHTD})
+    endif()
 endif()
 # dlopen/dlsym for runtime NVML loading (gpu telemetry)
 target_link_libraries(n0s-backend ${CMAKE_DL_LIBS})

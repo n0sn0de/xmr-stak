@@ -51,7 +51,10 @@
 #include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 
-#ifndef OPENSSL_THREADS
+// OPENSSL_THREADS check: On Windows, threading is always available (winthreads).
+// OpenSSL 3.0+ mingw64 builds don't define OPENSSL_THREADS in configuration.h
+// even when threads are enabled, so skip the check on Windows.
+#if !defined(OPENSSL_THREADS) && !defined(_WIN32)
 #error OpenSSL was compiled without thread support
 #endif
 #endif
