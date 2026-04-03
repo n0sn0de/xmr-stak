@@ -177,67 +177,43 @@ jobs:
           path: build/bin/n0s-ryo-miner
           retention-days: 14
 
-  # ─── Windows OpenCL Build ──────────────────────────────────────────────────
+  # ─── Windows OpenCL Build (MinGW cross-compile on Linux) ────────────────────
   windows-opencl:
-    name: Windows OpenCL (MSVC)
-    runs-on: windows-2022
-    env:
-      VCPKG_DEFAULT_TRIPLET: x64-windows-static
+    name: Windows OpenCL (MinGW)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '52f5569a8e867859fac967c1e3f10ca0a8a3cc39'  # 2026.03.18
-          runVcpkgInstall: true
+      - name: Install MinGW-w64 cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            g++-mingw-w64-x86-64-posix \
+            cmake gzip xxd curl
 
       - name: Generate embedded GUI assets
-        shell: bash
         run: bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
 
-      - name: Configure (OpenCL only, MSVC)
-        shell: pwsh
-        run: |
-          cmake -G "Visual Studio 17 2022" -A x64 -S . -B build `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
-            -DCUDA_ENABLE=OFF `
-            -DOpenCL_ENABLE=ON `
-            -DMICROHTTPD_ENABLE=ON `
-            -DHWLOC_ENABLE=OFF `
-            -DCMAKE_LINK_STATIC=ON `
-            -DN0S_COMPILE=generic
-
-      - name: Build
-        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+      - name: Cross-build Windows binary
+        run: bash scripts/cross-build-windows.sh
 
       - name: Verify binary
-        shell: pwsh
         run: |
-          # VS generator puts binaries in Release/ subdirectory
-          $bin = Get-ChildItem -Recurse -Filter "n0s-ryo-miner.exe" -Path build | Select-Object -First 1
-          if (-not $bin) {
-            Write-Error "Binary not found!"
-            exit 1
-          }
-          $size = $bin.Length / 1MB
-          Write-Host "Binary: $($bin.FullName)"
-          Write-Host "Binary size: $([math]::Round($size, 1)) MB"
-          & $bin.FullName --version
+          test -f dist/windows-opencl/n0s-ryo-miner.exe
+          file dist/windows-opencl/n0s-ryo-miner.exe | grep -q "PE32+"
+          echo "Binary size: $(du -h dist/windows-opencl/n0s-ryo-miner.exe | cut -f1)"
+          echo "DLL dependencies:"
+          objdump -p dist/windows-opencl/n0s-ryo-miner.exe | grep "DLL Name" | awk '{print "  " $3}' | sort
 
       - name: Golden hash constants test
-        shell: pwsh
         run: |
           cd tests
-          cmake -G "Visual Studio 17 2022" -A x64 -S . -B build_test
-          cmake --build build_test --config Release
-          .\build_test\Release\test_constants.exe
+          g++ -std=c++17 -O2 -I.. test_constants.cpp -o test_constants
+          ./test_constants
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: n0s-ryo-miner-windows-opencl
-          path: build/**/n0s-ryo-miner.exe
+          path: dist/windows-opencl/n0s-ryo-miner.exe
           retention-days: 14
