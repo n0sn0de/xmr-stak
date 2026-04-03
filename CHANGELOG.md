@@ -1,5 +1,49 @@
 # Changelog
 
+## v3.3.0 — CI/CD, NVML Telemetry & Windows Prep (2026-04-03)
+
+### CI/CD Pipeline
+
+- **GitHub Actions CI** — Automated build & test on every push/PR to master
+  - 3 parallel jobs: Linux OpenCL (Ubuntu 24.04), CUDA 11.8 (container), CUDA 12.8+OpenCL (container)
+  - Golden hash constant verification on every build
+  - Single-binary artifact verification (no .so files produced)
+  - Concurrency groups with `cancel-in-progress` to prevent stacking builds
+- **Automated Release workflow** — Tag `v*` triggers full build matrix → GitHub Release with SHA256 checksums
+  - 3 Linux variants: OpenCL-only, CUDA 11.8, CUDA 12.8+OpenCL
+  - Auto-generated release notes
+
+### API Authentication
+
+- **Bearer token authentication** for REST API endpoints
+  - New `http_api_token` config key (optional)
+  - Dual auth: Bearer token OR digest auth (http_login/http_pass) — either accepted
+  - Backward compatible: old configs without token parse fine (open access when unconfigured)
+
+### NVML Direct Telemetry
+
+- **Replaced nvidia-smi subprocess with direct NVML API calls**
+  - Runtime-loaded NVML via dlopen (8 function pointers, lazy init)
+  - ~50-100ms per query → <1ms — eliminates ~25-50 subprocess spawns/min
+  - Graceful fallback to nvidia-smi if NVML unavailable
+  - Clean shutdown (nvmlShutdown + socket cleanup on exit)
+
+### Windows Preparation (Pillar 3)
+
+- **Platform abstraction layer** (`n0s/platform/`) — 14 cross-platform functions
+  - `openBrowser()`, `getConfigDir()`, `getCacheDir()`, `getHomePath()`
+  - `setThreadName()`, `setupSignalHandlers()`, `enableConsoleColors()`
+  - Linux + Windows implementations (Windows untested until CI available)
+- **Cross-platform compatibility layer** (`n0s/platform/compat.hpp`)
+  - 7 function families: strcasecmp, mkdir, sleep, popen/pclose, mkstemp, sysconf_nproc
+  - All POSIX-only code wrapped — every .cpp/.hpp now compiles under both GCC and MSVC
+  - VirtualAlloc/VirtualLock on Windows, mmap/mlock on Linux (with large page support on both)
+  - CreateProcess on Windows, fork/exec on Linux for autotune subprocess isolation
+- **CMake MSVC support** — /W4, static CRT, /arch:AVX2, ws2_32+shell32 linking
+- **Dead includes removed** — cleaned up `<unistd.h>` and other POSIX-only headers
+
+---
+
 ## v3.2.0 — Single Binary + GUI Dashboard (2026-04-02)
 
 ### Single Executable (Pillar 1)

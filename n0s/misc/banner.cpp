@@ -57,7 +57,7 @@ void print_banner()
 		RYO_DARK  "   ║ " RST
 			RYO_CYAN  "╚═╝  ╚═══╝ ╚═════╝ ╚══════╝" RYO_DARK "      " RYO_BCYAN "╚═╝  ╚═╝   ╚═╝    ╚═════╝    " RYO_DARK  "║\n" RST
 		RYO_DARK  "   ║" "                                                               " RYO_DARK "║\n" RST
-		RYO_DARK  "   ║" CLR_DIM "     GPU Miner for RYO Currency • CryptoNight-GPU • v3.2.0     " RYO_DARK  "║\n" RST
+		RYO_DARK  "   ║" CLR_DIM "     GPU Miner for RYO Currency • CryptoNight-GPU • v3.3.0     " RYO_DARK  "║\n" RST
 		RYO_DARK  "   ╚═══════════════════════════════════════════════════════════════╝\n" RST
 	);
 

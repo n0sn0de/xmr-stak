@@ -20,7 +20,7 @@
 #endif
 
 #define N0S_NAME "n0s-ryo-miner"
-#define N0S_VERSION "3.2.0"
+#define N0S_VERSION "3.3.0"
 #define OS_TYPE "lin"
 
 #define N0S_PP_TOSTRING1(str) #str
