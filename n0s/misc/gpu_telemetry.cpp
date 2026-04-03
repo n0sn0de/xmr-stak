@@ -129,16 +129,17 @@ std::string findHwmonPath(uint32_t card_index)
 	if(!dir) return "";
 
 	struct dirent* entry;
+	std::string result;
 	while((entry = readdir(dir)) != nullptr)
 	{
 		if(strncmp(entry->d_name, "hwmon", 5) == 0)
 		{
-			closedir(dir);
-			return base + entry->d_name + "/";
+			result = base + entry->d_name + "/";
+			break;
 		}
 	}
 	closedir(dir);
-	return "";
+	return result;
 }
 
 /// Parse active clock from pp_dpm_sclk/pp_dpm_mclk

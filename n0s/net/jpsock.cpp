@@ -800,3 +800,45 @@ void jpsock::bin2hex(const unsigned char* in, unsigned int len, char* out)
 		out[i * 2 + 1] = hf_bin2hex(in[i] & 0x0F);
 	}
 }
+
+bool jpsock::is_tls() const
+{
+#ifndef CONF_NO_TLS
+	return dynamic_cast<tls_socket*>(sck.get()) != nullptr;
+#else
+	return false;
+#endif
+}
+
+void jpsock::update_config(const std::string& addr, const std::string& wallet,
+	const std::string& rigid, const std::string& passwd,
+	bool use_tls, bool use_nicehash)
+{
+	// Disconnect first (joins recv thread, safe to mutate fields after)
+	if(bRunning)
+		disconnect(true);
+
+	net_addr = addr;
+	usr_login = wallet;
+	usr_rigid = rigid;
+	usr_pass = passwd;
+	nicehash = use_nicehash;
+
+	// Recreate socket if TLS state changed
+	bool currently_tls = is_tls();
+	if(use_tls != currently_tls)
+	{
+#ifndef CONF_NO_TLS
+		if(use_tls)
+			sck = std::make_unique<tls_socket>(this);
+		else
+			sck = std::make_unique<plain_socket>(this);
+#else
+		sck = std::make_unique<plain_socket>(this);
+#endif
+	}
+
+	// Reset disconnect tracking so eval_pool_choice picks us up immediately
+	disconnect_time = 0;
+	connect_attempts = 0;
+}
