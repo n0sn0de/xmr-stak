@@ -260,10 +260,47 @@ tbody tr:hover { background: rgba(0, 215, 255, 0.04); }
   font-variant-numeric: tabular-nums;
 }
 
+/* Card name truncation */
+.card-name {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* GPU table horizontal scroll on small screens */
+.gpu-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
 /* Responsive */
+@media (max-width: 900px) {
+  .card-name { max-width: 150px; }
+  header { flex-direction: column; gap: 8px; }
+  .header-right { text-align: left; }
+}
+
 @media (max-width: 640px) {
-  .stats-row { grid-template-columns: 1fr 1fr; }
+  #app { padding: 10px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 12px 8px; }
   .stat-value { font-size: 1.2rem; }
+  .stat-label { font-size: 0.65rem; }
   #hashrate-chart { height: 150px; }
-  table { font-size: 0.75rem; }
+  table { font-size: 0.7rem; }
+  thead th, tbody td { padding: 6px 6px; }
+  .card-name { max-width: 100px; }
+  .chart-container, .gpu-section, .top-diff-section, .config-section { padding: 12px; }
+  .tab-btn { padding: 8px 12px; font-size: 0.7rem; }
+  .logo { font-size: 1.2rem; }
+  .logo-sub { font-size: 0.6rem; letter-spacing: 2px; }
+  .info-grid { font-size: 0.8rem; }
+}
+
+@media (max-width: 400px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .stat-value { font-size: 1.4rem; }
 }

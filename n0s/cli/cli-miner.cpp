@@ -790,7 +790,7 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--gui-dev") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--gui-dev'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--gui-dev'"); n0s_exit(); return 1; }
 			params::inst().guiDev = true;
 			params::inst().guiDevPath = argv[i];
 			// Also enable GUI mode
@@ -805,20 +805,20 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--autotune-mode") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-mode'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-mode'"); n0s_exit(); return 1; }
 			params::inst().autotune = true;
 			params::inst().autotune_mode = argv[i];
 		}
 		else if(opName.compare("--autotune-backend") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-backend'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-backend'"); n0s_exit(); return 1; }
 			params::inst().autotune_backend = argv[i];
 		}
 		else if(opName.compare("--autotune-gpu") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-gpu'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-gpu'"); n0s_exit(); return 1; }
 			params::inst().autotune_gpus = argv[i];
 		}
 		else if(opName.compare("--autotune-reset") == 0)
@@ -832,25 +832,25 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--autotune-benchmark-seconds") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-benchmark-seconds'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-benchmark-seconds'"); n0s_exit(); return 1; }
 			params::inst().autotune_benchmark_sec = std::stoi(argv[i]);
 		}
 		else if(opName.compare("--autotune-stability-seconds") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-stability-seconds'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-stability-seconds'"); n0s_exit(); return 1; }
 			params::inst().autotune_stability_sec = std::stoi(argv[i]);
 		}
 		else if(opName.compare("--autotune-target") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-target'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-target'"); n0s_exit(); return 1; }
 			params::inst().autotune_target = argv[i];
 		}
 		else if(opName.compare("--autotune-export") == 0)
 		{
 			++i;
-			if(i >= argc) { printer::inst()->print_msg(L0, "No argument for '--autotune-export'"); n0s_exit(); return 1; }
+			if(i >= argc_sz) { printer::inst()->print_msg(L0, "No argument for '--autotune-export'"); n0s_exit(); return 1; }
 			params::inst().autotune_export = argv[i];
 		}
 		else
@@ -1040,8 +1040,6 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...", work_sec);
 	constexpr uint32_t work_size = 76; // Realistic CryptoNight-GPU block size
 	n0s::globalStates::inst().switch_work(n0s::miner_work("bench", work, work_size, 0, false, 1, 0), dat);
-	uint64_t iStartStamp = get_timestamp_ms();
-
 	// Sample hashrate at intervals for stability tracking
 	constexpr int sample_interval_sec = 5;
 	const int num_samples = std::max(1, work_sec / sample_interval_sec);
