@@ -293,6 +293,8 @@ add_dependencies(n0s-backend gui_assets)
 if(MICROHTTPD_ENABLE)
     target_link_libraries(n0s-backend ${MHTD})
 endif()
+# dlopen/dlsym for runtime NVML loading (gpu telemetry)
+target_link_libraries(n0s-backend ${CMAKE_DL_LIBS})
 target_link_libraries(n0s-backend ${LIBS})
 
 # CUDA backend (static library, linked directly into executable)
