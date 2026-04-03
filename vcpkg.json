@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "n0s-ryo-miner",
+  "version-string": "3.3.0",
+  "description": "GPU Miner for RYO Currency — CryptoNight-GPU",
+  "homepage": "https://github.com/n0sn0de/n0s-ryo-miner",
+  "dependencies": [
+    {
+      "name": "openssl",
+      "platform": "windows"
+    },
+    {
+      "name": "libmicrohttpd",
+      "platform": "windows"
+    },
+    {
+      "name": "opencl",
+      "platform": "windows"
+    }
+  ],
+  "builtin-baseline": "01f602195983451bc83e72f4214af2c7571881eb"
+}

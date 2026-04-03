@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  # ─── Build all variants ────────────────────────────────────────────────────
+  # ─── Linux Builds ──────────────────────────────────────────────────────────
   build-linux-opencl:
     name: Linux OpenCL
     runs-on: ubuntu-24.04
@@ -112,10 +112,56 @@ jobs:
           name: n0s-ryo-miner-linux-cuda12-opencl
           path: build/bin/n0s-ryo-miner
 
+  # ─── Windows Build ─────────────────────────────────────────────────────────
+  build-windows-opencl:
+    name: Windows OpenCL
+    runs-on: windows-2022
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '01f602195983451bc83e72f4214af2c7571881eb'
+          runVcpkgInstall: true
+
+      - name: Generate embedded GUI assets
+        shell: bash
+        run: bash scripts/embed_assets.sh gui n0s/http/embedded_assets.hpp
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake -G "Visual Studio 17 2022" -A x64 -S . -B build `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON `
+            -DMICROHTTPD_ENABLE=ON -DHWLOC_ENABLE=OFF `
+            -DCMAKE_LINK_STATIC=ON -DN0S_COMPILE=generic
+          cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Collect binary
+        shell: pwsh
+        run: |
+          $bin = Get-ChildItem -Recurse -Filter "n0s-ryo-miner.exe" -Path build | Select-Object -First 1
+          if (-not $bin) { Write-Error "Binary not found!"; exit 1 }
+          # Copy to consistent location for artifact upload
+          New-Item -ItemType Directory -Force -Path "build/bin" | Out-Null
+          Copy-Item $bin.FullName "build/bin/n0s-ryo-miner.exe"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: n0s-ryo-miner-windows-opencl
+          path: build/bin/n0s-ryo-miner.exe
+
   # ─── Create GitHub Release ─────────────────────────────────────────────────
   release:
     name: Create Release
-    needs: [build-linux-opencl, build-linux-cuda11, build-linux-cuda12]
+    needs: [build-linux-opencl, build-linux-cuda11, build-linux-cuda12, build-windows-opencl]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -128,14 +174,17 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          # Rename binaries to include variant
+          # Linux binaries
           cp artifacts/n0s-ryo-miner-linux-opencl/n0s-ryo-miner \
              release/n0s-ryo-miner-linux-opencl
           cp artifacts/n0s-ryo-miner-linux-cuda11/n0s-ryo-miner \
              release/n0s-ryo-miner-linux-cuda11
           cp artifacts/n0s-ryo-miner-linux-cuda12-opencl/n0s-ryo-miner \
              release/n0s-ryo-miner-linux-cuda12-opencl
-          chmod +x release/*
+          chmod +x release/n0s-ryo-miner-linux-*
+          # Windows binary
+          cp artifacts/n0s-ryo-miner-windows-opencl/n0s-ryo-miner.exe \
+             release/n0s-ryo-miner-windows-opencl.exe
           # Generate checksums
           cd release && sha256sum * > SHA256SUMS
 
@@ -149,4 +198,5 @@ jobs:
             release/n0s-ryo-miner-linux-opencl
             release/n0s-ryo-miner-linux-cuda11
             release/n0s-ryo-miner-linux-cuda12-opencl
+            release/n0s-ryo-miner-windows-opencl.exe
             release/SHA256SUMS

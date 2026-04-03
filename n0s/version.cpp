@@ -21,7 +21,11 @@
 
 #define N0S_NAME "n0s-ryo-miner"
 #define N0S_VERSION "3.3.0"
+#ifdef _WIN32
+#define OS_TYPE "win"
+#else
 #define OS_TYPE "lin"
+#endif
 
 #define N0S_PP_TOSTRING1(str) #str
 #define N0S_PP_TOSTRING(str) N0S_PP_TOSTRING1(str)
