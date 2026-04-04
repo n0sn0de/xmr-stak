@@ -135,17 +135,20 @@ jobs:
         run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
 
       - name: Verify binary
+        shell: pwsh
         run: |
+          $ErrorActionPreference = 'Continue'
           $found = Get-ChildItem -Path build -Recurse -Filter "n0s-ryo-miner.exe" | Select-Object -First 1
-          if ($found) {
-            Write-Host "Binary: $($found.FullName)"
-            Write-Host "Size: $([math]::Round($found.Length / 1MB, 1)) MB"
-            # --version may fail on GHA runner (no GPU driver / DLL dependencies)
-            & $found.FullName --version 2>&1
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "Note: --version returned exit code $LASTEXITCODE (expected on headless runner)"
-            }
-          } else {
+          if (-not $found) {
             Write-Error "Binary not found!"
             exit 1
           }
+          Write-Host "Binary: $($found.FullName)"
+          Write-Host "Size: $([math]::Round($found.Length / 1MB, 1)) MB"
+          # --version may fail on GHA runner (missing CUDA DLLs / no GPU driver)
+          & $found.FullName --version 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Note: --version exited $LASTEXITCODE (expected — no GPU driver on runner)"
+          }
+          Write-Host "Windows CUDA+OpenCL build verified successfully."
+          exit 0
