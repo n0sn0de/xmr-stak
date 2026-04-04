@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–61). CI/CD live. v3.4.0 released. Windows cross-build with OpenCL + TLS + HTTP dashboard (Session 61b). Windows CUDA support via MSVC + GHA CI (Session 62). Remaining: GHA Windows CUDA CI validation + live GPU testing on Windows.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–62). CI/CD live. v3.4.0 released. Windows CUDA build validated on live hardware — RTX 3070 + MSVC 2019 + CUDA 11.0 (Session 62b). Remaining: GHA CI validation, PR merge, v3.5.0 tag.*
 
 ---
 
