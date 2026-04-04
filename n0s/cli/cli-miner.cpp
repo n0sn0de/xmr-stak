@@ -448,13 +448,13 @@ int main(int argc, char* argv[])
 		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
 		{
 			std::cout << "Version: " << get_version_str_short() << std::endl;
-			n0s_exit();
+			n0s_exit(0);
 			return 0;
 		}
 		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
 		{
 			std::cout << "Version: " << get_version_str() << std::endl;
-			n0s_exit();
+			n0s_exit(0);
 			return 0;
 		}
 		else if(opName.compare("--noAMD") == 0)
