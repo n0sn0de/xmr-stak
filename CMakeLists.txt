@@ -447,6 +447,10 @@ if(CUDA_FOUND)
 endif()
 if(OpenCL_FOUND)
     target_link_libraries(n0s-ryo-miner n0s_opencl_backend)
+    if(WIN32)
+        # OpenCL ICD loader on Windows needs cfgmgr32 for device enumeration
+        target_link_libraries(n0s-ryo-miner cfgmgr32)
+    endif()
 endif()
 
 ################################################################################
