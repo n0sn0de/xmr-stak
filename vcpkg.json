@@ -10,10 +10,6 @@
       "platform": "windows"
     },
     {
-      "name": "libmicrohttpd",
-      "platform": "windows"
-    },
-    {
       "name": "opencl",
       "platform": "windows"
     }

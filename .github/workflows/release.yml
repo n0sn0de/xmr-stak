@@ -179,7 +179,7 @@ jobs:
             -DVCPKG_TARGET_TRIPLET=x64-windows-static `
             -DCUDA_ENABLE=ON `
             -DOpenCL_ENABLE=ON `
-            -DMICROHTTPD_ENABLE=ON `
+            -DMICROHTTPD_ENABLE=OFF `
             -DHWLOC_ENABLE=OFF `
             -DCUDA_ARCH="61;75;80;86;89" `
             -DCMAKE_BUILD_TYPE=Release `
