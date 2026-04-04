@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+// Cross-platform popen/pclose via compat layer
+#include "n0s/platform/compat.hpp"
+
 namespace n0s
 {
 namespace autotune
@@ -59,7 +62,11 @@ TuneTarget parseTuneTarget(const std::string& str)
 std::vector<uint32_t> discoverNvidiaGpus()
 {
 	std::vector<uint32_t> gpus;
-	FILE* pipe = popen("nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null", "r");
+#ifdef _WIN32
+	FILE* pipe = n0s::compat::popen("nvidia-smi --query-gpu=index --format=csv,noheader 2>nul", "r");
+#else
+	FILE* pipe = n0s::compat::popen("nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null", "r");
+#endif
 	if(!pipe) return gpus;
 
 	std::array<char, 128> buf;
@@ -73,7 +80,7 @@ std::vector<uint32_t> discoverNvidiaGpus()
 			try { gpus.push_back(std::stoul(line)); } catch(...) {}
 		}
 	}
-	pclose(pipe);
+	n0s::compat::pclose(pipe);
 	return gpus;
 }
 
@@ -82,7 +89,11 @@ std::vector<uint32_t> discoverNvidiaGpus()
 std::vector<uint32_t> discoverAmdGpus()
 {
 	std::vector<uint32_t> gpus;
-	FILE* pipe = popen("clinfo 2>/dev/null | grep 'Number of devices' | head -1", "r");
+#ifdef _WIN32
+	FILE* pipe = n0s::compat::popen("clinfo 2>nul", "r");
+#else
+	FILE* pipe = n0s::compat::popen("clinfo 2>/dev/null | grep 'Number of devices' | head -1", "r");
+#endif
 	if(!pipe)
 	{
 		gpus.push_back(0); // Fallback: assume at least GPU 0
@@ -93,7 +104,7 @@ std::vector<uint32_t> discoverAmdGpus()
 	std::string output;
 	while(fgets(buf.data(), buf.size(), pipe))
 		output += buf.data();
-	pclose(pipe);
+	n0s::compat::pclose(pipe);
 
 	// Parse "Number of devices                              1"
 	auto pos = output.rfind(' ');

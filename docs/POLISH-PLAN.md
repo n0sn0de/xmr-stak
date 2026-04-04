@@ -2,7 +2,7 @@
 
 **From Optimized Engine to Shipped Product**
 
-*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–61). CI/CD live. v3.4.0 released. Windows cross-build with OpenCL + TLS + HTTP dashboard (Session 61b). Windows CUDA support via MSVC + GHA CI (Session 62). Remaining: GHA Windows CUDA CI validation + live GPU testing on Windows.*
+*Status: Active. Pillar 1 complete (Session 50). Pillar 2 complete including auth (Session 59). Pillar 3.1–3.5 complete (Sessions 56–62). CI/CD live. v3.4.0 released. Windows CUDA build validated on live hardware — RTX 3070 + MSVC 2019 + CUDA 11.0 (Session 62b). Remaining: GHA CI validation, PR merge, v3.5.0 tag.*
 
 ---
 
@@ -712,10 +712,52 @@ Things explicitly **not** in scope:
 - ✅ **3.5 CI/CD Matrix** — GitHub Actions (3 Linux + 2 Windows)
 - 🔲 **3.6 Validation** — GHA CI run + Windows live GPU mining test
 
+---
+
+### Session 62b — Windows CUDA Build Debugging (Live Windows 11 Box)
+
+**Live-validated MSVC + CUDA build on Jason's Windows 11 desktop (RTX 3070).**
+
+SSH'd into `win11` (Windows 11, Ryzen 3900X, RTX 3070, Driver 591.86) and built from source.
+
+**Environment discovered:**
+- VS 2019 Community (MSVC 14.27) — not 2022
+- CUDA 11.0 (not 12.x) — but driver supports CUDA 13.1
+- CMake 3.18.0
+- Git 2.27.0
+
+**Three build failures fixed:**
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| `bash` → WSL error (no distro installed) | CMake `add_custom_command` called bare `bash`, Windows resolved to WSL | Added `find_program(BASH_EXECUTABLE)` with Git Bash preference; fallback to pre-committed `embedded_assets.hpp` |
+| `popen`/`pclose` not found | MSVC names them `_popen`/`_pclose` | Changed `autotune_entry.cpp` to use existing `n0s::compat::popen/pclose` layer |
+| `std::max` "illegal token" error | Windows `<windows.h>` defines `max`/`min` macros that collide with `std::max` | Added `/DNOMINMAX /DWIN32_LEAN_AND_MEAN` to MSVC compile flags |
+
+**Build result:** ✅ Successful — `n0s-ryo-miner.exe` with CUDA 11 on MSVC 2019
+
+**Binary validation:**
+- `--version` → `n0s-ryo-miner/3.4.0/d08a7e1/polish/windows-cuda/win/nvidia/` ✅
+- `--help` → full options including NVIDIA GPU args ✅
+- `--version-long` → shows nvidia backend type ✅
+
+**Live GPU test:**
+- CUDA backend initialized: `CUDA [13.1/11.0] GPU#0, device architecture 86: "NVIDIA GeForce RTX 3070"... device init succeeded` ✅
+- Pool login attempted (invalid wallet — expected). Network connectivity confirmed ✅
+- GPU auto-config generated `nvidia.txt` with optimal settings ✅
+
+**Key learnings:**
+- `NOMINMAX` is essential for any Windows C++ project using `<windows.h>` + STL `<algorithm>`
+- Git Bash provides bash/gzip/xxd on Windows — but the system `bash` resolves to WSL first
+- CUDA 11.0 doesn't support `compute_86` (Ampere) — was added in 11.1. CMakeLists.txt auto-detection handles this correctly
+- `VirtualLock` warnings are expected without "Lock Pages in Memory" privilege — doesn't affect mining, just uses non-locked memory
+
+**CI remains correct:** The GHA workflow uses `windows-2022` (VS 2022) + `Jimver/cuda-toolkit@v0.2.35` (CUDA 12.8), which is the correct modern setup. The local build used older tooling (VS 2019 + CUDA 11.0) which validated backward compatibility.
+
 **Next session priorities (Session 63):**
 1. **Merge polish/windows-cuda PR to master** — need Jason to create/merge PR (bot lacks PR permissions)
 2. **Run GHA CI** — validate Windows CUDA build on GHA runners
 3. **Tag v3.5.0** — Windows CUDA release
-4. **Jason live test** — run the CUDA .exe on Windows with NVIDIA GPU
+4. **Live mining test** — run with valid wallet to verify shares accepted
 5. **Fix any CI/build issues** — iterate on GHA workflow if needed
 

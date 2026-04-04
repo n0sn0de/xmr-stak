@@ -86,8 +86,8 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		return ERR_STUPID_PARAMS;
 	}
 
-	cl_platform_id PlatformIDList[entries];
-	if((ret = clGetPlatformIDs(entries, PlatformIDList, nullptr)) != CL_SUCCESS)
+	std::vector<cl_platform_id> PlatformIDList(entries);
+	if((ret = clGetPlatformIDs(entries, PlatformIDList.data(), nullptr)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clGetPlatformIDs for platform ID information.", err_to_str(ret));
 		return ERR_OCL_API;
@@ -119,8 +119,8 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		}
 	}
 
-	cl_device_id DeviceIDList[entries];
-	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, entries, DeviceIDList, nullptr)) != CL_SUCCESS)
+	std::vector<cl_device_id> DeviceIDList(entries);
+	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, entries, DeviceIDList.data(), nullptr)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clGetDeviceIDs for device ID information.", err_to_str(ret));
 		return ERR_OCL_API;
