@@ -287,8 +287,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if(MSVC)
     # MSVC: intrinsics enabled by default, use /arch:AVX2 for broader coverage
     # SSE2/AES are always available on x86-64 MSVC targets
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN")
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
@@ -399,16 +399,39 @@ set(GUI_ASSETS
 )
 set(EMBEDDED_ASSETS_HPP ${CMAKE_SOURCE_DIR}/n0s/http/embedded_assets.hpp)
 
-add_custom_command(
-    OUTPUT ${EMBEDDED_ASSETS_HPP}
-    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh
-            ${CMAKE_SOURCE_DIR}/gui
-            ${EMBEDDED_ASSETS_HPP}
-    DEPENDS ${GUI_ASSETS} ${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh
-    COMMENT "Embedding GUI assets into embedded_assets.hpp"
-    VERBATIM
-)
-add_custom_target(gui_assets DEPENDS ${EMBEDDED_ASSETS_HPP})
+# Find a real bash (Git Bash on Windows, or system bash on Linux/Mac)
+# Avoid WSL's bash on Windows by preferring Git's bash.exe
+if(WIN32)
+    find_program(BASH_EXECUTABLE bash
+        PATHS "C:/Program Files/Git/bin" "C:/Program Files (x86)/Git/bin"
+              "$ENV{PROGRAMFILES}/Git/bin" "$ENV{ProgramW6432}/Git/bin"
+        NO_DEFAULT_PATH)
+    if(NOT BASH_EXECUTABLE)
+        find_program(BASH_EXECUTABLE bash)
+    endif()
+else()
+    find_program(BASH_EXECUTABLE bash)
+endif()
+
+if(BASH_EXECUTABLE AND EXISTS "${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh")
+    add_custom_command(
+        OUTPUT ${EMBEDDED_ASSETS_HPP}
+        COMMAND "${BASH_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh"
+                "${CMAKE_SOURCE_DIR}/gui"
+                "${EMBEDDED_ASSETS_HPP}"
+        DEPENDS ${GUI_ASSETS} ${CMAKE_SOURCE_DIR}/scripts/embed_assets.sh
+        COMMENT "Embedding GUI assets into embedded_assets.hpp"
+        VERBATIM
+    )
+    add_custom_target(gui_assets DEPENDS ${EMBEDDED_ASSETS_HPP})
+elseif(EXISTS ${EMBEDDED_ASSETS_HPP})
+    # Use pre-committed embedded_assets.hpp (e.g. Windows without Git Bash / xxd)
+    message(STATUS "Using pre-committed embedded_assets.hpp (bash/xxd not available)")
+    add_custom_target(gui_assets)
+else()
+    message(FATAL_ERROR "No bash found and embedded_assets.hpp does not exist. "
+            "Install Git for Windows (includes bash) or pre-generate the file.")
+endif()
 
 # Main executable
 file(GLOB SRCFILES_CPP "n0s/cli/*.cpp")
